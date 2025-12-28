@@ -1,4 +1,4 @@
-module adder (a, b, cin, cout, sum);
+module full_adder (a, b, cin, cout, sum);
 	
 	input a, b, cin;
 	output cout, sum;
