@@ -1,4 +1,4 @@
-module adder (a, b, c0, cout, sum);
+module ripple_carry_adder (a, b, c0, cout, sum);
 	
 	input [31:0]a, b;
 	input c0;
@@ -43,15 +43,5 @@ module adder (a, b, c0, cout, sum);
 	
 	assign cout = carry[32];
 	
-	
-endmodule
-
-module full_adder (a, b, cin, cout, sum);
-	
-	input a, b, cin;
-	output cout, sum;
-	
-	assign cout = (a & b) | (cin & (a ^ b));
-	assign sum = a ^ b ^ cin;
 	
 endmodule
