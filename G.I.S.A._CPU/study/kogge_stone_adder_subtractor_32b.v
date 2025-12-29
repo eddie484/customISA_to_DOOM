@@ -84,19 +84,19 @@ module kogge_stone_adder_subtractor_32b (a, b, s, cout, sum);
 
     // carry cell 모듈들
     carry_cell carry_0 (p_0[0], g_0[0], s, c[1]);
-    carry_cell carry_1 (p_1[1], g_1[1], c[1], c[2]);
-    carry_cell carry_2 (p_2[2], g_2[2], c[2], c[3]);
-    carry_cell carry_3 (p_2[3], g_2[3], c[3], c[4]);
-    carry_cell carry_4 (p_3[4], g_3[4], c[4], c[5]);
-    carry_cell carry_5 (p_3[5], g_3[5], c[5], c[6]);
-    carry_cell carry_6 (p_3[6], g_3[6], c[6], c[7]);
-    carry_cell carry_7 (p_3[7], g_3[7], c[7], c[8]);
+    carry_cell carry_1 (p_1[1], g_1[1], s, c[2]);
+    carry_cell carry_2 (p_2[2], g_2[2], s, c[3]);
+    carry_cell carry_3 (p_2[3], g_2[3], s, c[4]);
+    carry_cell carry_4 (p_3[4], g_3[4], s, c[5]);
+    carry_cell carry_5 (p_3[5], g_3[5], s, c[6]);
+    carry_cell carry_6 (p_3[6], g_3[6], s, c[7]);
+    carry_cell carry_7 (p_3[7], g_3[7], s, c[8]);
     generate
         for (i = 8; i < 16; i = i + 1) begin: carry_p4
-            carry_cell carry_p4 (p_4[i], g_4[i], c[i], c[i+1]);
+            carry_cell carry_p4 (p_4[i], g_4[i], s, c[i+1]);
         end
         for (i = 16; i < 31; i = i + 1) begin: carry_p5
-            carry_cell carry_p5 (p_5[i], g_5[i], c[i], c[i+1]);
+            carry_cell carry_p5 (p_5[i], g_5[i], s, c[i+1]);
         end
     endgenerate
     carry_cell carry_31 (p_5[31], g_5[31], c[31], cout);
