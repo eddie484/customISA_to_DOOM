@@ -1,4 +1,4 @@
-module adder (a, b, s, cout, sum);
+module kogge_stone_adder_subtractor_32b (a, b, s, cout, sum);
 	
 	input [31:0]a, b;	// 입력으로 받은 두 32비트 피연산값 a, b
 	input s;	// 덧셈, 뺄셈을 결정하는 입력. cin으로 쓰인다. 0일 경우 덧셈, 1일 경우 뺄셈.
