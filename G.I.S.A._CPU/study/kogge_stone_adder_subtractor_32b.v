@@ -99,7 +99,7 @@ module kogge_stone_adder_subtractor_32b (a, b, s, cout, sum);
             carry_cell carry_p5 (p_5[i], g_5[i], s, c[i+1]);
         end
     endgenerate
-    carry_cell carry_31 (p_5[31], g_5[31], c[31], cout);
+    carry_cell carry_31 (p_5[31], g_5[31], s, cout);
 
 
     // sum cell 모듈들
