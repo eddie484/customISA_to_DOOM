@@ -1,4 +1,4 @@
-module array_multiplier_4b (a, b, sumout, cout);
+module array_multiplier_32b (a, b, sumout, cout);
 	
 	input [31:0]a, b;
 	
