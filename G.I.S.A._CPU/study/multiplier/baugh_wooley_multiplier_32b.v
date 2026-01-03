@@ -1,4 +1,4 @@
-module multiplier (a, b, sumout, cout);
+module baugh_wooley_multiplier_32b (a, b, sumout, cout);
 	
 	input [31:0]a, b;
 	
