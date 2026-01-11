@@ -5,19 +5,20 @@
 
 // 나눗셈 연산 세 종류, 로테이트 연산 두 종류, 시스템 명령어들은 일단 처리되지 않음.
 // b, jmp에서 라벨 받을 수 있도록 해야 함
-// 즉시값 범위 초과 감지는 부호확장 확정한 뒤...
 
 int main()
 {
-    FILE *fp = fopen("assembly.asm", "r");
+    FILE *asmfp = fopen("assembly.asm", "r");
+    FILE *binfp = fopen("binary.bin", "w");
 
-    if (fp == NULL) {
+    if (asmfp == NULL || binfp == NULL) {
         printf("파일 읽기 실패\n");
         return 1;
     }
 
 
     char buf[100];
+    char binbuf[40];
     char **lines = NULL;
     char **original_lines = NULL;
     int count = 0;
@@ -26,7 +27,7 @@ int main()
     lines = malloc(cap * sizeof(char *));
     original_lines = malloc(cap * sizeof(char *));
 
-    while (fgets(buf, sizeof(buf), fp)) {
+    while (fgets(buf, sizeof(buf), asmfp)) {
 
         if (strchr(buf, ':') != NULL) {
             printf("라벨 라인! %d줄!\n", count);
@@ -61,67 +62,21 @@ int main()
 
         if (strcmp(token, "MOV") == 0) {            // opcode가 MOV일 경우
             token = strtok(NULL, " \t\n");          // 두 번째 토큰으로 목적지 레지스터를 확인한다.
-
-            if (token[0] != 'r') {
-                printf("Line %d 명령어 %s의 첫 번째 인자로 레지스터가 입력되지 않았습니다: %s\n오류 명령어: %s\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             int rD = atoi(token + 1);               // 목적지 레지스터의 번호를 int로 변환
-
-            if (rD > 15 || rD <1) {
-                printf("Line %d 명령어 %s의 목적지 레지스터로 존재하지 않는 레지스터가 입력되었습니다: %s\n오류 명령어: %s\n범용 레지스터는 r0부터 r15까지 존재합니다.\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             binary |= (rD << 20);                   // 바이너리 코드의 rD 자리를 채운다.
             
-
-
             token = strtok(NULL, " \t\n");
-
-            if (token[0] != 'r') {
-                printf("Line %d 명령어 %s의 두 번째 인자로 레지스터가 입력되지 않았습니다: %s\n오류 명령어: %s\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             int rB = atoi(token + 1);
-
-            if (rB > 15 || rB <1) {
-                printf("Line %d 명령어 %s의 소스 레지스터로 존재하지 않는 레지스터가 입력되었습니다: %s\n오류 명령어: %s\n범용 레지스터는 r0부터 r15까지 존재합니다.\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             binary |= (rB << 12);
 
         } else if (strcmp(token, "MOVI") == 0) {    // opcode가 MOVI일 경우
             binary |= (0b00000010U << 24);          // 바이너리 코드의 opcode, i, s 자리를 채운다
             
             token = strtok(NULL, " \t\n");
-
-            if (token[0] != 'r') {
-                printf("Line %d 명령어 %s의 첫 번째 인자로 레지스터가 입력되지 않았습니다: %s\n오류 명령어: %s\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             int rD = atoi(token + 1);
-
-            if (rD > 15 || rD <1) {
-                printf("Line %d 명령어 %s의 목적지 레지스터로 존재하지 않는 레지스터가 입력되었습니다: %s\n오류 명령어: %s\n범용 레지스터는 r0부터 r15까지 존재합니다.\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             binary |= (rD << 20);
             
-
-
             token = strtok(NULL, " \t\n");
-
-            if (token[0] != '#') {
-                printf("Line %d 명령어 %s의 두 번째 인자로 즉시값이 입력되지 않았습니다: %s\n오류 명령어: %s\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             int immB = atoi(token + 1);
             binary |= (immB);
 
@@ -129,67 +84,21 @@ int main()
             binary |= (0b00000001U << 24);
 
             token = strtok(NULL, " \t\n");
-
-            if (token[0] != 'r') {
-                printf("Line %d 명령어 %s의 첫 번째 인자로 레지스터가 입력되지 않았습니다: %s\n오류 명령어: %s\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             int rD = atoi(token + 1);
-
-            if (rD > 15 || rD <1) {
-                printf("Line %d 명령어 %s의 목적지 레지스터로 존재하지 않는 레지스터가 입력되었습니다: %s\n오류 명령어: %s\n범용 레지스터는 r0부터 r15까지 존재합니다.\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             binary |= (rD << 20);
-            
-
 
             token = strtok(NULL, " \t\n");
-
-            if (token[0] != 'r') {
-                printf("Line %d 명령어 %s의 두 번째 인자로 레지스터가 입력되지 않았습니다: %s\n오류 명령어: %s\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             int rB = atoi(token + 1);
-
-            if (rB > 15 || rB <1) {
-                printf("Line %d 명령어 %s의 소스 레지스터로 존재하지 않는 레지스터가 입력되었습니다: %s\n오류 명령어: %s\n범용 레지스터는 r0부터 r15까지 존재합니다.\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             binary |= (rB << 12);
 
         } else if (strcmp(token, "MOVIS") == 0) {
             binary |= (0b00000011U << 24);
             
             token = strtok(NULL, " \t\n");
-
-            if (token[0] != 'r') {
-                printf("Line %d 명령어 %s의 첫 번째 인자로 레지스터가 입력되지 않았습니다: %s\n오류 명령어: %s\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             int rD = atoi(token + 1);
-
-            if (rD > 15 || rD <1) {
-                printf("Line %d 명령어 %s의 목적지 레지스터로 존재하지 않는 레지스터가 입력되었습니다: %s\n오류 명령어: %s\n범용 레지스터는 r0부터 r15까지 존재합니다.\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             binary |= (rD << 20);
-            
-
-
+        
             token = strtok(NULL, " \t\n");
-
-            if (token[0] != '#') {
-                printf("Line %d 명령어 %s의 두 번째 인자로 즉시값이 입력되지 않았습니다: %s\n오류 명령어: %s\n어셈블러를 종료합니다.\n", i, lines[i], token, original_lines[i]);
-                return 1;
-            }
-
             int immB = atoi(token + 1);
             binary |= (immB);
 
@@ -1578,15 +1487,29 @@ int main()
             }
             printf("\n");
 
+            int binindex = 0;
+            for (int i = 38; i >= 0; i--){
+                if ((i + 1) % 5 != 0){
+                    binbuf[i] = '0' + ((binary >> binindex) & 1);
+                    binindex++;
+                } else binbuf[i] = '_';
+                
+            }
+            binbuf[39] = '\n';
+            fwrite (binbuf, 1, 40, binfp); 
+
     }
 
 
     for (int i = 0; i < count; i++) {
         free(lines[i]);
+        free(original_lines[i]);
     }
     free(lines);
+    free(original_lines);
 
 
-    fclose(fp);
+    fclose(asmfp);
+    fclose(binfp);
     return 0;
 }
