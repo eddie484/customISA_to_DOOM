@@ -3,8 +3,7 @@
 #include <string.h>
 #include <stdint.h>
 
-// 나눗셈 연산 세 종류, 로테이트 연산 두 종류, 시스템 명령어들은 일단 처리되지 않음.
-// b, jmp에서 라벨 받을 수 있도록 해야 함
+// b, jmp에서 라벨 받을 수 있도록 해야 함. 아직 라벨처리 미지원.
 
 int main()
 {
@@ -29,6 +28,17 @@ int main()
 
     while (fgets(buf, sizeof(buf), asmfp)) {
 
+        char *findcomment = strchr(buf, ';');
+        if (findcomment != NULL){
+            findcomment[0] = '\n';
+            findcomment[1] = '\0';
+        }
+
+        char *findcomma = strchr(buf, ',');
+        if (findcomma != NULL){
+           * findcomma = ' ';
+        }
+
         if (strchr(buf, ':') != NULL) {
             printf("라벨 라인! %d줄!\n", count);
             continue;
@@ -42,6 +52,15 @@ int main()
             lines = realloc(lines, cap * sizeof(char *));
             original_lines = realloc(original_lines, cap * sizeof(char *));
         }
+
+        /*for (int i = 0; i < sizeof(buf); i++){
+            if (buf[i] == ';'){
+                buf[i] = '\0';
+            }
+        }*/
+
+
+
         lines[count] = malloc(strlen(buf) + 1);
         original_lines[count] = malloc(strlen(buf) + 1);
         strcpy(lines[count], buf);
@@ -78,20 +97,9 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU); // <- 나머지에도 이거 해서 즉시값 부호가 범위 추가하지 않도록 고쳐야 함!!
 
-        } else if (strcmp(token, "MOVS") == 0) {
-            binary |= (0b00000001U << 24);
-
-            token = strtok(NULL, " \t\n");
-            int rD = atoi(token + 1);
-            binary |= (rD << 20);
-
-            token = strtok(NULL, " \t\n");
-            int rB = atoi(token + 1);
-            binary |= (rB << 12);
-
-        } else if (strcmp(token, "MOVIS") == 0) {
+        } else if (strcmp(token, "MOVIZ") == 0) {
             binary |= (0b00000011U << 24);
             
             token = strtok(NULL, " \t\n");
@@ -100,7 +108,7 @@ int main()
         
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "ADD") == 0) {    // opcode가 ADD일 경우
             binary |= (0b00000100U << 24);
@@ -130,7 +138,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "ADDS") == 0) {
             binary |= (0b00000101U << 24);
@@ -160,7 +168,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "SUB") == 0) {    // opcode가 SUB일 경우
             binary |= (0b00001000U << 24);
@@ -190,7 +198,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "SUBS") == 0) {
             binary |= (0b00001001U << 24);
@@ -220,7 +228,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MOVH") == 0) {    // opcode가 MOVH일 경우
             binary |= (0b00001100U << 24);
@@ -231,7 +239,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MOVHL") == 0) {
             binary |= (0b00001110U << 24);
@@ -242,9 +250,9 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
-        } else if (strcmp(token, "MOVHS") == 0) {
+        } else if (strcmp(token, "MOVHK") == 0) {
             binary |= (0b00001101U << 24);
             
             token = strtok(NULL, " \t\n");
@@ -253,9 +261,9 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
-        } else if (strcmp(token, "MOVHLS") == 0) {
+        } else if (strcmp(token, "MOVHLK") == 0) {
             binary |= (0b00001111U << 24);
             
             token = strtok(NULL, " \t\n");
@@ -264,7 +272,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "CMP") == 0) {    // opcode가 CMP일 경우
             binary |= (0b00010000U << 24);
@@ -286,7 +294,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "CMPS") == 0) {
             binary |= (0b00010001U << 24);
@@ -308,7 +316,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MUL") == 0) {    // opcode가 MUL일 경우
             binary |= (0b00010100U << 24);
@@ -338,7 +346,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MULS") == 0) {
             binary |= (0b00010101U << 24);
@@ -368,7 +376,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MULH") == 0) {    // opcode가 MULH일 경우
             binary |= (0b00011000U << 24);
@@ -398,7 +406,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MULHS") == 0) {
             binary |= (0b00011001U << 24);
@@ -428,7 +436,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MULHU") == 0) {    // opcode가 MULHU일 경우
             binary |= (0b00011100U << 24);
@@ -458,7 +466,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MULHUS") == 0) {
             binary |= (0b00011101U << 24);
@@ -488,7 +496,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MULFX") == 0) {    // opcode가 MULFX일 경우
             binary |= (0b00100000U << 24);
@@ -518,7 +526,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "MULFXS") == 0) {
             binary |= (0b00100001U << 24);
@@ -548,7 +556,247 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "DIV") == 0) {    // opcode가 DIV일 경우
+            binary |= (0b00100100U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "DIVI") == 0) {
+            binary |= (0b00100110U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "DIVS") == 0) {
+            binary |= (0b00100101U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "DIVIS") == 0) {
+            binary |= (0b00100111U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "DIVU") == 0) {    // opcode가 DIVU일 경우
+            binary |= (0b00101000U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "DIVUI") == 0) {
+            binary |= (0b00101010U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "DIVUS") == 0) {
+            binary |= (0b00101001U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "DIVUIS") == 0) {
+            binary |= (0b00101011U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "MOD") == 0) {    // opcode가 MOD일 경우
+            binary |= (0b00101100U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "MODI") == 0) {
+            binary |= (0b00101110U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "MODS") == 0) {
+            binary |= (0b00101101U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "MODIS") == 0) {
+            binary |= (0b00101111U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "MODU") == 0) {    // opcode가 MODU일 경우
+            binary |= (0b00110000U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "MODUI") == 0) {
+            binary |= (0b00110010U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "MODUS") == 0) {
+            binary |= (0b00110001U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "MODUIS") == 0) {
+            binary |= (0b00110011U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "SHL") == 0) {    // opcode가 SHL일 경우
             binary |= (0b01100000U << 24);
@@ -578,7 +826,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "SHLS") == 0) {
             binary |= (0b01100001U << 24);
@@ -608,7 +856,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "ASR") == 0) {    // opcode가 ASR일 경우
             binary |= (0b01100100U << 24);
@@ -638,7 +886,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "ASRS") == 0) {
             binary |= (0b01100101U << 24);
@@ -668,7 +916,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "LSR") == 0) {    // opcode가 LSR일 경우
             binary |= (0b01101000U << 24);
@@ -698,7 +946,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "LSRS") == 0) {
             binary |= (0b01101001U << 24);
@@ -728,7 +976,127 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "ROL") == 0) {    // opcode가 ROL일 경우
+            binary |= (0b01101100U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "ROLI") == 0) {
+            binary |= (0b01101110U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "ROLS") == 0) {
+            binary |= (0b01101101U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "ROLIS") == 0) {
+            binary |= (0b01101111U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "ROR") == 0) {    // opcode가 ROR일 경우
+            binary |= (0b01110000U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "RORI") == 0) {
+            binary |= (0b01110010U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
+
+        } else if (strcmp(token, "RORS") == 0) {
+            binary |= (0b01110001U << 24);
+
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int rB = atoi(token + 1);
+            binary |= (rB << 12);
+
+        } else if (strcmp(token, "RORIS") == 0) {
+            binary |= (0b01110011U << 24);
+            
+            token = strtok(NULL, " \t\n");
+            int rD = atoi(token + 1);
+            binary |= (rD << 20);
+            
+            token = strtok(NULL, " \t\n");
+            int rA = atoi(token + 1);
+            binary |= (rA << 16);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "AND") == 0) {    // opcode가 AND인 경우
             binary |= (0b10000100U << 24);
@@ -758,7 +1126,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "ANDS") == 0) {
             binary |= (0b10000101U << 24);
@@ -788,7 +1156,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "OR") == 0) {    // opcode가 OR인 경우
             binary |= (0b10001000U << 24);
@@ -818,7 +1186,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "ORS") == 0) {
             binary |= (0b10001001U << 24);
@@ -848,7 +1216,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "XOR") == 0) {    // opcode가 XOR인 경우
             binary |= (0b10001100U << 24);
@@ -878,7 +1246,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "XORS") == 0) {
             binary |= (0b10001101U << 24);
@@ -908,7 +1276,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "NOT") == 0) {    // opcode가 NOT인 경우
             binary |= (0b10010000U << 24);
@@ -930,7 +1298,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "NOTS") == 0) {
             binary |= (0b10010001U << 24);
@@ -952,7 +1320,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "BCHK") == 0) {    // opcode가 BCHK인 경우
             binary |= (0b10010100U << 24);
@@ -974,7 +1342,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "BCHKS") == 0) {
             binary |= (0b10010101U << 24);
@@ -996,7 +1364,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "LDR") == 0) {    // opcode가 LDR인 경우
             binary |= (0b10100000U << 24);
@@ -1011,7 +1379,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "LDRI") == 0) {
             binary |= (0b10100010U << 24);
@@ -1022,7 +1390,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "LDRR") == 0) {
             binary |= (0b10100001U << 24);
@@ -1033,7 +1401,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "LDRB") == 0) {    // opcode가 LDRB인 경우
             binary |= (0b10100100U << 24);
@@ -1048,7 +1416,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "LDRBI") == 0) {
             binary |= (0b10100110U << 24);
@@ -1059,7 +1427,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "LDRBR") == 0) {
             binary |= (0b10100101U << 24);
@@ -1070,7 +1438,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "LDRSB") == 0) {    // opcode가 LDRSB인 경우
             binary |= (0b10101000U << 24);
@@ -1085,7 +1453,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "LDRSBI") == 0) {
             binary |= (0b10101010U << 24);
@@ -1096,7 +1464,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "LDRSBR") == 0) {
             binary |= (0b10101001U << 24);
@@ -1107,7 +1475,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "LDRH") == 0) {    // opcode가 LDRH인 경우
             binary |= (0b10101100U << 24);
@@ -1122,7 +1490,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "LDRHI") == 0) {
             binary |= (0b10101110U << 24);
@@ -1133,7 +1501,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "LDRHR") == 0) {
             binary |= (0b10101101U << 24);
@@ -1144,7 +1512,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "LDRSH") == 0) {    // opcode가 LDRSH인 경우
             binary |= (0b10110000U << 24);
@@ -1159,7 +1527,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "LDRSHI") == 0) {
             binary |= (0b10110010U << 24);
@@ -1170,7 +1538,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "LDRSHR") == 0) {
             binary |= (0b10110001U << 24);
@@ -1181,7 +1549,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else if (strcmp(token, "STR") == 0) {    // opcode가 STR인 경우
             binary |= (0b10110100U << 24);
@@ -1198,7 +1566,7 @@ int main()
             int immB = atoi(token + 1);
             int immBf = immB >> 12;
             int immBb = immB & 0xFFF;
-            binary |= (immBf << 20 | immBb);
+            binary |= ((immBf << 20 | immBb) & 0x00f00fffU);
 
         } else if (strcmp(token, "STRI") == 0) {
             binary |= (0b10110110U << 24);
@@ -1211,7 +1579,7 @@ int main()
             int immB = atoi(token + 1);
             int immBf = immB >> 12;
             int immBb = immB & 0xFFF;
-            binary |= (immBf << 16 | immBb);
+            binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
 
         } else if (strcmp(token, "STRR") == 0) {
             binary |= (0b10110101U << 24);
@@ -1224,7 +1592,7 @@ int main()
             int immB = atoi(token + 1);
             int immBf = immB >> 12;
             int immBb = immB & 0xFFF;
-            binary |= (immBf << 16 | immBb);
+            binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
 
         } else if (strcmp(token, "STRB") == 0) {    // opcode가 STRB인 경우
             binary |= (0b10111000U << 24);
@@ -1241,7 +1609,7 @@ int main()
             int immB = atoi(token + 1);
             int immBf = immB >> 12;
             int immBb = immB & 0xFFF;
-            binary |= (immBf << 20 | immBb);
+            binary |= ((immBf << 20 | immBb) & 0x00f00fffU);
 
         } else if (strcmp(token, "STRBI") == 0) {
             binary |= (0b10111010U << 24);
@@ -1254,7 +1622,7 @@ int main()
             int immB = atoi(token + 1);
             int immBf = immB >> 12;
             int immBb = immB & 0xFFF;
-            binary |= (immBf << 16 | immBb);
+            binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
 
         } else if (strcmp(token, "STRBR") == 0) {
             binary |= (0b10111001U << 24);
@@ -1267,7 +1635,7 @@ int main()
             int immB = atoi(token + 1);
             int immBf = immB >> 12;
             int immBb = immB & 0xFFF;
-            binary |= (immBf << 16 | immBb);
+            binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
 
         } else if (strcmp(token, "STRH") == 0) {    // opcode가 STRH인 경우
             binary |= (0b10111100U << 24);
@@ -1284,7 +1652,7 @@ int main()
             int immB = atoi(token + 1);
             int immBf = immB >> 12;
             int immBb = immB & 0xFFF;
-            binary |= (immBf << 20 | immBb);
+            binary |= ((immBf << 20 | immBb) & 0x00f00fffU);
 
         } else if (strcmp(token, "STRHI") == 0) {
             binary |= (0b10111110U << 24);
@@ -1297,7 +1665,7 @@ int main()
             int immB = atoi(token + 1);
             int immBf = immB >> 12;
             int immBb = immB & 0xFFF;
-            binary |= (immBf << 16 | immBb);
+            binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
 
         } else if (strcmp(token, "STRHR") == 0) {
             binary |= (0b10111101U << 24);
@@ -1310,7 +1678,7 @@ int main()
             int immB = atoi(token + 1);
             int immBf = immB >> 12;
             int immBb = immB & 0xFFF;
-            binary |= (immBf << 16 | immBb);
+            binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
 
         } else if (strcmp(token, "BEQ") == 0) {    // opcode가 B인 경우
             binary |= (0b110010U << 26);
@@ -1327,9 +1695,25 @@ int main()
             int immB = atoi(token + 1);
             binary |= (immB << 4);
 
-        } else if (strcmp(token, "BHS") == 0) {
+        } else if (strcmp(token, "BCS") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0010U);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB << 4);
+
+        }  else if (strcmp(token, "BHS") == 0) {
+            binary |= (0b110010U << 26);
+            binary |= (0b0010U);
+            
+            token = strtok(NULL, " \t\n");
+            int immB = atoi(token + 1);
+            binary |= (immB << 4);
+
+        } else if (strcmp(token, "BCC") == 0) {
+            binary |= (0b110010U << 26);
+            binary |= (0b0011U);
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
@@ -1440,14 +1824,14 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "JMPI") == 0) {
             binary |= (0b11001110U << 24);
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x00ffffffU);
 
         } else if (strcmp(token, "JMPL") == 0) {
             binary |= (0b11001101U << 24);
@@ -1462,7 +1846,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x0000ffffU);
 
         } else if (strcmp(token, "JMPIL") == 0) {
             binary |= (0b11001111U << 24);
@@ -1473,7 +1857,7 @@ int main()
             
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
-            binary |= (immB);
+            binary |= (immB & 0x000fffffU);
 
         } else {
             printf ("Line %d에 정의되지 않은 명령어가 입력되었습니다: %s\n어셈블러를 종료합니다.\n", i, token);
@@ -1499,6 +1883,9 @@ int main()
             fwrite (binbuf, 1, 40, binfp); 
 
     }
+
+    char finish[39] = "1111_1111_1111_1111_1111_1111_1111_1111";
+    fwrite (finish, sizeof(char), 39, binfp); 
 
 
     for (int i = 0; i < count; i++) {
