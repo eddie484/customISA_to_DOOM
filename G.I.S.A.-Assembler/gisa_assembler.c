@@ -3,6 +3,36 @@
 #include <string.h>
 #include <stdint.h>
 
+typedef struct {
+    char name[50];
+    int line;
+} Label;
+
+Label labels [100];
+int labelcount = 0;
+
+void labelput(char *labelname, int labelline){
+    strcpy(labels[labelcount].name, labelname);
+    labels[labelcount].line = labelline;
+
+    printf("라벨 저장. 라벨 카운트: %d, 라벨 네임: %s, 라벨 라인: %d.\n", labelcount, labelname, labelline);
+
+    labelcount++;
+}
+
+int labelget(char *labelname){
+    int count = 0;
+    while(count < labelcount){
+        if (strcmp(labelname, labels[count].name) == 0){
+            return labels[count].line;
+        } else {
+            count++;
+        }
+    }
+    printf("선언되지 않은 라벨입니다: %s\n", labelname);
+    exit(1);
+}
+
 // b, jmp에서 라벨 받을 수 있도록 해야 함. 아직 라벨처리 미지원.
 
 int main()
@@ -39,8 +69,12 @@ int main()
            * findcomma = ' ';
         }
 
-        if (strchr(buf, ':') != NULL) {
+        char *islabel = strchr(buf, ':');
+
+        if (islabel != NULL) {
             printf("라벨 라인! %d줄!\n", count);
+            *islabel = '\0';
+            labelput(buf, count);
             continue;
         } else if (buf[0] == '\n') {
             printf("빈 라인! %d줄!\n", count);
@@ -1684,136 +1718,358 @@ int main()
             binary |= (0b110010U << 26);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BNE") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0001U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);
+                int immB = (labelline - i) * 4 ;
+                if(immB < 2097151 || immB > -2097151){
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BCS") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0010U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
+
 
         }  else if (strcmp(token, "BHS") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0010U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BCC") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0011U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BLO") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0011U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BMI") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0100U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BPL") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0101U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BVS") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0110U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BVC") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b0111U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BHI") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b1000U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BLS") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b1001U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BGE") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b1010U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BLT") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b1011U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BGT") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b1100U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BLE") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b1101U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "BAL") == 0) {
             binary |= (0b110010U << 26);
             binary |= (0b1110U);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB << 4);
+            if (token[0] != '#') {
+                int labelline = labelget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = (labelline - i) * 4 ;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 2097151 || immB > -2097151){    // 결과값이 22비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    immB = immB & 0x3fffff;
+                    binary |= (immB << 4);
+                } else {    // 22비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소로 Branch를 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {
+                int immB = atoi(token + 1);
+                binary |= (immB << 4);
+            }
 
         } else if (strcmp(token, "JMP") == 0) {    // opcode가 JMP일 경우
             binary |= (0b11001100U << 24);
