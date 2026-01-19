@@ -5,13 +5,13 @@
 
 typedef struct {
     char name[50];
-    int line;
+    uint32_t line;
 } Label;
 
 Label labels [100];
 int labelcount = 0;
 
-void labelput(char *labelname, int labelline){
+void labelput(char *labelname, uint32_t labelline){
     strcpy(labels[labelcount].name, labelname);
     labels[labelcount].line = labelline;
 
@@ -20,7 +20,7 @@ void labelput(char *labelname, int labelline){
     labelcount++;
 }
 
-int labelget(char *labelname){
+uint32_t labelget(char *labelname){
     int count = 0;
     while(count < labelcount){
         if (strcmp(labelname, labels[count].name) == 0){
@@ -50,7 +50,7 @@ int main()
     char binbuf[40];
     char **lines = NULL;
     char **original_lines = NULL;
-    int count = 0;
+    uint32_t count = 0;
     int cap = 10;
 
     lines = malloc(cap * sizeof(char *));
@@ -2074,13 +2074,27 @@ int main()
         } else if (strcmp(token, "JMP") == 0) {    // opcode가 JMP일 경우
             binary |= (0b11001100U << 24);
             
-            token = strtok(NULL, " \t\n");
-            int rA = atoi(token + 1);
-            binary |= (rA << 16);
-            
-            token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB & 0x0000ffffU);
+            char *tokenjmp1 = strtok(NULL, " \t\n");
+            char *tokenjmp2 = strtok(NULL, " \t\n");
+
+            if (tokenjmp2 == NULL){
+                uint32_t labelline = labelget(tokenjmp1);
+                labelline *= 4;
+                if (labelline <= 0xffffff){
+                    binary = 0;
+                    binary |= (0b11001110U << 24);
+                    int immB = labelline;
+                    binary |= (immB & 0x00ffffffU);
+                } else {
+                    // 24비트 초과 시.
+                }
+            } else {
+                int rA = atoi(tokenjmp1 + 1);
+                binary |= (rA << 16);
+                
+                int immB = atoi(tokenjmp2 + 1);
+                binary |= (immB & 0x0000ffffU);
+            }
 
         } else if (strcmp(token, "JMPI") == 0) {
             binary |= (0b11001110U << 24);
@@ -2096,13 +2110,27 @@ int main()
             int rD = atoi(token + 1);
             binary |= (rD << 20);
             
-            token = strtok(NULL, " \t\n");
-            int rA = atoi(token + 1);
-            binary |= (rA << 16);
-            
-            token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB & 0x0000ffffU);
+            char *tokenjmp1 = strtok(NULL, " \t\n");
+            char *tokenjmp2 = strtok(NULL, " \t\n");
+
+            if (tokenjmp2 == NULL){
+                int labelline = labelget(tokenjmp1);
+                labelline *= 4;
+                if (labelline <= 0xfffff){
+                    binary &= 0x00f00000;
+                    binary |= (0b11001111U << 24);
+                    int immB = labelline;
+                    binary |= (immB & 0x000fffffU);
+                } else {
+                    // 20비트 초과 시.
+                }
+            } else {
+                int rA = atoi(tokenjmp1 + 1);
+                binary |= (rA << 16);
+                
+                int immB = atoi(tokenjmp2 + 1);
+                binary |= (immB & 0x0000ffffU);
+            }
 
         } else if (strcmp(token, "JMPIL") == 0) {
             binary |= (0b11001111U << 24);
