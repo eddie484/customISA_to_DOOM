@@ -713,7 +713,7 @@ void div_op(struct GISA *cpu, int rD, int rA, int rB)
     uint32_t oldrD = cpu->reg[rD];
     int32_t result;
 
-    if (rBdata != 0){
+    if (rBdata != 0 && (rAdata != 0x80000000 || rBdata != -1)){
         result = (int32_t)rAdata / (int32_t)rBdata;
     } else {
         result = 0;
@@ -751,7 +751,7 @@ void divs(struct GISA *cpu, int rD, int rA, int rB)
     uint32_t oldrD = cpu->reg[rD];
     int32_t result;
 
-    if (rBdata != 0){
+    if (rBdata != 0 && (rAdata != 0x80000000 || rBdata != -1)){
         result = (int32_t)rAdata / (int32_t)rBdata;
     } else {
         result = 0;
@@ -917,7 +917,7 @@ void mod(struct GISA *cpu, int rD, int rA, int rB)
     
     cpu->reg[rD] = (uint32_t)result;
 
-    printf("IMEM[%d]\t%d % %d = %d,   Register[%d] updated from %d to %d.\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD]);
+    printf("IMEM[%d]\t%d %% %d = %d,   Register[%d] updated from %d to %d.\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD]);
     cpu->pc = cpu->pc + 4;
 }
 
@@ -936,7 +936,7 @@ void modi(struct GISA *cpu, int rD, int rA, int immB)
     
     cpu->reg[rD] = (uint32_t)result;
 
-    printf("IMEM[%d]\t%d % %d = %d,   Register[%d] updated from %d to %d.\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD]);
+    printf("IMEM[%d]\t%d %% %d = %d,   Register[%d] updated from %d to %d.\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD]);
     cpu->pc = cpu->pc + 4;
 }
 
@@ -965,7 +965,7 @@ void mods(struct GISA *cpu, int rD, int rA, int rB)
     cpu->nzcv[2] = (rBdata == 0);
     cpu->nzcv[3] = 0;
 
-    printf("IMEM[%d]\t%d % %d = %d,   Register[%d] updated from %d to %d,   NZCV updated from [%d, %d, %d, %d] to [%d, %d, %d, %d].\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD], oldnzcv[0], oldnzcv[1], oldnzcv[2], oldnzcv[3], cpu->nzcv[0], cpu->nzcv[1], cpu->nzcv[2], cpu->nzcv[3]);
+    printf("IMEM[%d]\t%d %% %d = %d,   Register[%d] updated from %d to %d,   NZCV updated from [%d, %d, %d, %d] to [%d, %d, %d, %d].\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD], oldnzcv[0], oldnzcv[1], oldnzcv[2], oldnzcv[3], cpu->nzcv[0], cpu->nzcv[1], cpu->nzcv[2], cpu->nzcv[3]);
     cpu->pc = cpu->pc + 4;
 }
 
@@ -994,7 +994,7 @@ void modis(struct GISA *cpu, int rD, int rA, int immB)
     cpu->nzcv[2] = (rBdata == 0);
     cpu->nzcv[3] = 0;
 
-    printf("IMEM[%d]\t%d % %d = %d,   Register[%d] updated from %d to %d,   NZCV updated from [%d, %d, %d, %d] to [%d, %d, %d, %d].\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD], oldnzcv[0], oldnzcv[1], oldnzcv[2], oldnzcv[3], cpu->nzcv[0], cpu->nzcv[1], cpu->nzcv[2], cpu->nzcv[3]);
+    printf("IMEM[%d]\t%d %% %d = %d,   Register[%d] updated from %d to %d,   NZCV updated from [%d, %d, %d, %d] to [%d, %d, %d, %d].\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD], oldnzcv[0], oldnzcv[1], oldnzcv[2], oldnzcv[3], cpu->nzcv[0], cpu->nzcv[1], cpu->nzcv[2], cpu->nzcv[3]);
     cpu->pc = cpu->pc + 4;
 }
 
@@ -1015,7 +1015,7 @@ void modu(struct GISA *cpu, int rD, int rA, int rB)
     
     cpu->reg[rD] = result;
 
-    printf("IMEM[%d]\t%d % %d = %d,   Register[%d] updated from %d to %d.\n", cpu->pc, rAdata, rBdata, result, rD, oldrD, cpu->reg[rD]);
+    printf("IMEM[%d]\t%d %% %d = %d,   Register[%d] updated from %d to %d.\n", cpu->pc, rAdata, rBdata, result, rD, oldrD, cpu->reg[rD]);
     cpu->pc = cpu->pc + 4;
 }
 
@@ -1034,7 +1034,7 @@ void modui(struct GISA *cpu, int rD, int rA, int immB)
     
     cpu->reg[rD] = result;
 
-    printf("IMEM[%d]\t%d % %d = %d,   Register[%d] updated from %d to %d.\n", cpu->pc, rAdata, rBdata, result, rD, oldrD, cpu->reg[rD]);
+    printf("IMEM[%d]\t%d %% %d = %d,   Register[%d] updated from %d to %d.\n", cpu->pc, rAdata, rBdata, result, rD, oldrD, cpu->reg[rD]);
     cpu->pc = cpu->pc + 4;
 }
 
@@ -1063,7 +1063,7 @@ void modus(struct GISA *cpu, int rD, int rA, int rB)
     cpu->nzcv[2] = (rBdata == 0);
     cpu->nzcv[3] = 0;
 
-    printf("IMEM[%d]\t%d % %d = %d,   Register[%d] updated from %d to %d,   NZCV updated from [%d, %d, %d, %d] to [%d, %d, %d, %d].\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD], oldnzcv[0], oldnzcv[1], oldnzcv[2], oldnzcv[3], cpu->nzcv[0], cpu->nzcv[1], cpu->nzcv[2], cpu->nzcv[3]);
+    printf("IMEM[%d]\t%d %% %d = %d,   Register[%d] updated from %d to %d,   NZCV updated from [%d, %d, %d, %d] to [%d, %d, %d, %d].\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD], oldnzcv[0], oldnzcv[1], oldnzcv[2], oldnzcv[3], cpu->nzcv[0], cpu->nzcv[1], cpu->nzcv[2], cpu->nzcv[3]);
     cpu->pc = cpu->pc + 4;
 }
 
@@ -1092,7 +1092,7 @@ void moduis(struct GISA *cpu, int rD, int rA, int immB)
     cpu->nzcv[2] = (rBdata == 0);
     cpu->nzcv[3] = 0;
 
-    printf("IMEM[%d]\t%d % %d = %d,   Register[%d] updated from %d to %d,   NZCV updated from [%d, %d, %d, %d] to [%d, %d, %d, %d].\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD], oldnzcv[0], oldnzcv[1], oldnzcv[2], oldnzcv[3], cpu->nzcv[0], cpu->nzcv[1], cpu->nzcv[2], cpu->nzcv[3]);
+    printf("IMEM[%d]\t%d %% %d = %d,   Register[%d] updated from %d to %d,   NZCV updated from [%d, %d, %d, %d] to [%d, %d, %d, %d].\n", cpu->pc, (int32_t)rAdata, (int32_t)rBdata, (int32_t)result, rD, oldrD, cpu->reg[rD], oldnzcv[0], oldnzcv[1], oldnzcv[2], oldnzcv[3], cpu->nzcv[0], cpu->nzcv[1], cpu->nzcv[2], cpu->nzcv[3]);
     cpu->pc = cpu->pc + 4;
 }
 
