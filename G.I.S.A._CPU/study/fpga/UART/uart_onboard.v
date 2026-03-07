@@ -12,11 +12,15 @@ module uart_onboard (clk, nRESET, switch, send, rdx, tdx, LED);
 	wire uart_outen;		// 신호가 해석되었음을 표시. 1일 때 uart_receive이 사용 가능하다.
 	wire [3:0] binary;	// 라인에서 받은 값을 이진수로 변환한 값
 	wire [7:0] send_data;	// 라인으로 보낼 값
+	wire send_sig, send_pos;
 	
 	reg [7:0] give_back;
 	
 	
-	uart uart_core (clk, nRESET, rdx, send_data, ~send, tdx, uart_receive, uart_outen);
+	assign send_sig = ~send;	
+	
+	edge_checker button_edge (clk, nRESET, send_sig, send_pos);
+	uart uart_core (clk, nRESET, rdx, send_data, send_pos, tdx, uart_receive, uart_outen);
 	ascii_to_bin bin_making (uart_receive, binary);		// 아스키 코드로 표현된 16진수 수신값을 이진수로 변환한다.
 	assign send_data = give_back + switch;		// 받은 값에 스위치만큼 더해 보낼 값을 구성한다.
 	
