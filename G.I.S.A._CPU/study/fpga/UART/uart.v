@@ -1,13 +1,16 @@
-module uart (clk, nRESET, rdx, data_out, outen);
+module uart (clk, nRESET, rdx, data_in, send, tdx, data_out, outen);
 	
 	input clk, nRESET;
-	input rdx;
+	input rdx, send;
+	input [7:0] data_in;
 	
 	output reg [7:0] data_out;
-	output reg outen;
+	output reg outen, tdx;
 	
-	reg [3:0] state;
-	reg [8:0] counter;
+	reg [3:0] r_state;
+	reg [3:0] t_state;
+	reg [8:0] r_counter;
+	reg [8:0] t_counter;
 	
 	localparam IDLE = 4'b0000;
 	localparam START = 4'b0001;
@@ -24,115 +27,115 @@ module uart (clk, nRESET, rdx, data_out, outen);
 	
 	always @(posedge clk or negedge nRESET) begin
 		if (!nRESET) begin
-			state <= IDLE;
+			r_state <= IDLE;
 			data_out <= 8'b0;
 			outen <= 1'b0;
 		end else begin
-			case (state)
+			case (r_state)
 				IDLE: begin
 					data_out <= 8'b0;
 					outen <= 1'b0;
-					counter <= 9'b0;
-					if (rdx == 1'b0) state <= START;
+					r_counter <= 9'b0;
+					if (rdx == 1'b0) r_state <= START;
 				end
 				
 				START: begin
-					counter <= counter + 1;
-					if (counter >= 9'b011011001) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b011011001) begin
 						if (rdx == 1'b0) begin
-							state <= DATA_0;
-							counter <= 9'b0;
+							r_state <= DATA_0;
+							r_counter <= 9'b0;
 						end else begin
 							data_out <= 8'b0;
-							state <= IDLE;
-							counter <= 9'b0;
+							r_state <= IDLE;
+							r_counter <= 9'b0;
 						end
 					end
 				end
 				
 				DATA_0: begin
-					counter <= counter + 1;
-					if (counter >= 9'b110110010) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b110110010) begin
 						data_out[0] <= rdx;
-						state <= DATA_1;
-						counter <= 9'b0;
+						r_state <= DATA_1;
+						r_counter <= 9'b0;
 					end
 				end 
 				
 				DATA_1: begin
-					counter <= counter + 1;
-					if (counter >= 9'b110110010) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b110110010) begin
 						data_out[1] <= rdx;
-						state <= DATA_2;
-						counter <= 9'b0;
+						r_state <= DATA_2;
+						r_counter <= 9'b0;
 					end
 				end 
 				
 				DATA_2: begin
-					counter <= counter + 1;
-					if (counter >= 9'b110110010) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b110110010) begin
 						data_out[2] <= rdx;
-						state <= DATA_3;
-						counter <= 9'b0;
+						r_state <= DATA_3;
+						r_counter <= 9'b0;
 					end
 				end 
 				
 				DATA_3: begin
-					counter <= counter + 1;
-					if (counter >= 9'b110110010) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b110110010) begin
 						data_out[3] <= rdx;
-						state <= DATA_4;
-						counter <= 9'b0;
+						r_state <= DATA_4;
+						r_counter <= 9'b0;
 					end
 				end 
 				
 				DATA_4: begin
-					counter <= counter + 1;
-					if (counter >= 9'b110110010) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b110110010) begin
 						data_out[4] <= rdx;
-						state <= DATA_5;
-						counter <= 9'b0;
+						r_state <= DATA_5;
+						r_counter <= 9'b0;
 					end
 				end 
 				
 				DATA_5: begin
-					counter <= counter + 1;
-					if (counter >= 9'b110110010) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b110110010) begin
 						data_out[5] <= rdx;
-						state <= DATA_6;
-						counter <= 9'b0;
+						r_state <= DATA_6;
+						r_counter <= 9'b0;
 					end
 				end 
 				
 				DATA_6: begin
-					counter <= counter + 1;
-					if (counter >= 9'b110110010) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b110110010) begin
 						data_out[6] <= rdx;
-						state <= DATA_7;
-						counter <= 9'b0;
+						r_state <= DATA_7;
+						r_counter <= 9'b0;
 					end
 				end 
 				
 				DATA_7: begin
-					counter <= counter + 1;
-					if (counter >= 9'b110110010) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b110110010) begin
 						data_out[7] <= rdx;
-						state <= STOP;
-						counter <= 9'b0;
+						r_state <= STOP;
+						r_counter <= 9'b0;
 					end
 				end 
 				
 				STOP: begin
-					counter <= counter + 1;
-					if (counter >= 9'b110110010) begin
+					r_counter <= r_counter + 1;
+					if (r_counter >= 9'b110110010) begin
 						if (rdx == 1'b1) begin
-							state <= IDLE;
+							r_state <= IDLE;
 							outen <= 1'b1;
-							counter <= 9'b0;
+							r_counter <= 9'b0;
 						end else begin
 							data_out <= 8'b11111111;
-							state <= IDLE;
-							counter <= 9'b0;
+							r_state <= IDLE;
+							r_counter <= 9'b0;
 						end
 					end
 				end 
@@ -140,5 +143,111 @@ module uart (clk, nRESET, rdx, data_out, outen);
 		end
 	end				
 	
+	
+	
+	always @(posedge clk or negedge nRESET) begin
+		if (!nRESET) begin
+			t_state <= IDLE;
+			tdx <= 1'b1;
+		end else begin
+			case (t_state)
+				IDLE: begin
+					tdx <= 1'b1;
+					t_counter <= 9'b0;
+					if (send == 1'b1) t_state <= START;
+				end
+				
+				START: begin
+					tdx <= 1'b0;
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= DATA_0;
+							t_counter <= 9'b0;
+					end
+				end
+				
+				DATA_0: begin
+					tdx <= data_in[0];
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= DATA_1;
+							t_counter <= 9'b0;
+					end
+				end
+				
+				DATA_1: begin
+					tdx <= data_in[1];
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= DATA_2;
+							t_counter <= 9'b0;
+					end
+				end
+				
+				DATA_2: begin
+					tdx <= data_in[2];
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= DATA_3;
+							t_counter <= 9'b0;
+					end
+				end
+				
+				DATA_3: begin
+					tdx <= data_in[3];
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= DATA_4;
+							t_counter <= 9'b0;
+					end
+				end
+				
+				DATA_4: begin
+					tdx <= data_in[4];
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= DATA_5;
+							t_counter <= 9'b0;
+					end
+				end
+				
+				DATA_5: begin
+					tdx <= data_in[5];
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= DATA_6;
+							t_counter <= 9'b0;
+					end
+				end 
+				
+				DATA_6: begin
+					tdx <= data_in[6];
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= DATA_7;
+							t_counter <= 9'b0;
+					end
+				end
+				
+				DATA_7: begin
+					tdx <= data_in[7];
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= STOP;
+							t_counter <= 9'b0;
+					end
+				end
+				
+				STOP: begin
+					tdx <= 1'b1;
+					t_counter <= t_counter + 1;
+					if (t_counter >= 9'b110110010) begin
+							t_state <= IDLE;
+							t_counter <= 9'b0;
+					end
+				end 
+			endcase
+		end
+	end			
 	
 endmodule
