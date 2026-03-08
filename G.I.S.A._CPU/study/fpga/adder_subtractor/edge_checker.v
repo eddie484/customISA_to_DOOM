@@ -12,7 +12,7 @@ module edge_checker (clk, nRESET, signal, pos_sig, neg_sig);
 	localparam NEGEDGE = 3'b101;
 	
 	
-	always @(posedge clk or negedge nRESET) begin
+	always @(posedge clk) begin
 		if (!nRESET) begin
 			state <= OFF;
 			pos_sig <= 1'b0;

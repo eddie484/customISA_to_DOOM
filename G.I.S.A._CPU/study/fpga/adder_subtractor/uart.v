@@ -25,7 +25,7 @@ module uart (clk, nRESET, rdx, data_in, send, tdx, data_out, outen);
 	localparam DATA_7 = 4'b1111;
 	
 	
-	always @(posedge clk or negedge nRESET) begin
+	always @(posedge clk) begin
 		if (!nRESET) begin
 			r_state <= IDLE;
 			data_out <= 8'b0;
@@ -145,7 +145,7 @@ module uart (clk, nRESET, rdx, data_in, send, tdx, data_out, outen);
 	
 	
 	
-	always @(posedge clk or negedge nRESET) begin
+	always @(posedge clk) begin
 		if (!nRESET) begin
 			t_state <= IDLE;
 			tdx <= 1'b1;
