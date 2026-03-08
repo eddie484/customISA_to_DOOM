@@ -7,24 +7,27 @@ module adder_subtractor_onboard (CLK, SWITCH, BUTTON_A, BUTTON_B, LED);
 	
 	output [7:0] LED;
 	
-	reg [31:0] valA = 32'b0;
-	reg [31:0] valB = 32'b0; 
 	wire [31:0] result;
 	wire cout;
+	wire sig_A, sig_B;
+	
 	reg sign = 1'b0;
+	reg [31:0] valA = 32'b0;
+	reg [31:0] valB = 32'b0; 
 	
 	
-	
+	assign sig_A = ~BUTTON_A;
+	assign sig_B = ~BUTTON_B;
 	
 	
 	always @ (posedge CLK) begin
-		if (~BUTTON_A && ~BUTTON_B && (SWITCH == 4'b0101)) begin
+		if (sig_A && sig_B && (SWITCH == 4'b0101)) begin
 			sign <= 1'b0;
-		end else if (~BUTTON_A && ~BUTTON_B && (SWITCH == 4'b1010)) begin
+		end else if (sig_A && sig_B && (SWITCH == 4'b1010)) begin
 			sign <= 1'b1;
-		end else if (~BUTTON_A) begin
+		end else if (sig_A) begin
 			valA <= {28'b0, SWITCH};
-		end else if (~BUTTON_B) begin
+		end else if (sig_B) begin
 			valB <= {28'b0, SWITCH};
 		end
 	end
@@ -33,6 +36,6 @@ module adder_subtractor_onboard (CLK, SWITCH, BUTTON_A, BUTTON_B, LED);
 	adder add_sub_module (valA, valB, sign, cout, result);
 
 	
-	assign LED = ~{sign, ~BUTTON_A, ~BUTTON_B, cout, result[3:0]};
+	assign LED = ~{sign, sig_A, sig_B, cout, result[3:0]};
 	
 endmodule
