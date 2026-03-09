@@ -20,7 +20,7 @@ module adder_subtractor_onboard (clk, nRESET, switch, result_send_button, rdx, t
 	
 	reg [31:0] input_A, input_B;	// 이진수로 변환된 신호를 순차적으로 저장한다.
 	reg [31:0] output_result;
-	reg [4:0] sending_data;
+	reg [7:0] sending_data;
 	reg [5:0] sending_state;
 	reg [12:0] sending_counter;
 	reg result_sending;
@@ -28,6 +28,8 @@ module adder_subtractor_onboard (clk, nRESET, switch, result_send_button, rdx, t
 	localparam IDLE = 6'b100000;
 	localparam LF = 6'b100001;
 	localparam CR = 6'b100010;
+	localparam COUT = 6'b100011;
+	localparam US = 6'b100100;
 	localparam B0 = 6'b000000;
 	localparam B1 = 6'b000001;
 	localparam B2 = 6'b000010;
@@ -100,8 +102,28 @@ module adder_subtractor_onboard (clk, nRESET, switch, result_send_button, rdx, t
 					sending_counter <= 13'b0;
 					result_sending <= 1'b0;
 					if (result_send_pos) begin
-						sending_state <= B31;
+						sending_state <= COUT;
 						result_sending <= 1'b1;
+					end
+				end
+				
+				COUT: begin
+					sending_data <= carry_out;
+					result_sending <= 1'b1;
+					sending_counter <= sending_counter + 1'b1;
+					if (sending_counter >= 13'b1000011110100) begin
+						sending_state <= US;
+						sending_counter <= 13'b0;
+					end
+				end
+				
+				US: begin
+					sending_data <= 8'b01011111;
+					result_sending <= 1'b1;
+					sending_counter <= sending_counter + 1'b1;
+					if (sending_counter >= 13'b1000011110100) begin
+						sending_state <= B31;
+						sending_counter <= 13'b0;
 					end
 				end
 				
