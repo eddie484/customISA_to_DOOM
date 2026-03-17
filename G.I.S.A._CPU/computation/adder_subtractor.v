@@ -1,21 +1,21 @@
-module adder (a, b, s, cout, sum);
+module adder_subtractor (a, b, s, cout, sum);
 	
 	input [31:0]a, b;	// 입력으로 받은 두 32비트 피연산값 a, b
 	input s;	// 덧셈, 뺄셈을 결정하는 입력. cin으로 쓰인다. 0일 경우 덧셈, 1일 경우 뺄셈.
 	
-	output cout;	// 최상위 비트에서 발생하는 carry out.
-	output [31:0]sum;	// 출력으로 나오는 32비트 덧셈 결과값
+	(* keep *) output cout;	// 최상위 비트에서 발생하는 carry out.
+	(* keep *) output [31:0]sum;	// 출력으로 나오는 32비트 덧셈 결과값
 	
-	wire [31:0] p_0, g_0;   // input cell의 연산 결과. 두 피연산값을 이용해 만든 p, g이다.
-	wire [31:0] p_1, g_1;   // 1단계 black cell의 연산 결과. [i:i-1] 범위 연결.
-	wire [31:0] p_2, g_2;   // 2단계 black cell의 연산 결과. [i:i-2] 범위 연결.
-	wire [31:0] p_3, g_3;   // 3단계 black cell의 연산 결과. [i:i-4] 범위 연결.
-	wire [31:0] p_4, g_4;   // 4단계 black cell의 연산 결과. [i:i-8] 범위 연결.
-	wire [31:0] p_5, g_5;   // 5단계 black cell의 연산 결과. [i:i-16] 의 연결.
-	wire [31:0] p_6, g_6;   // 6단계 black cell의 연산 결과. [i:i-8] 의 연결.
-    wire [31:1] c;  // carry cell의 연산 결과. 각 자리의 prefix carry 값.
+	(* keep *) wire [31:0] p_0, g_0;   // input cell의 연산 결과. 두 피연산값을 이용해 만든 p, g이다.
+	(* keep *) wire [31:0] p_1, g_1;   // 1단계 black cell의 연산 결과. [i:i-1] 범위 연결.
+	(* keep *) wire [31:0] p_2, g_2;   // 2단계 black cell의 연산 결과. [i:i-2] 범위 연결.
+	(* keep *) wire [31:0] p_3, g_3;   // 3단계 black cell의 연산 결과. [i:i-4] 범위 연결.
+	(* keep *) wire [31:0] p_4, g_4;   // 4단계 black cell의 연산 결과. [i:i-8] 범위 연결.
+	(* keep *) wire [31:0] p_5, g_5;   // 5단계 black cell의 연산 결과. [i:i-16] 의 연결.
+	(* keep *) wire [31:0] p_6, g_6;   // 6단계 black cell의 연산 결과. [i:i-8] 의 연결.
+   (* keep *) wire [31:1] c;  // carry cell의 연산 결과. 각 자리의 prefix carry 값.
 
-    wire [31:0] b_cal;	// 연산에 사용될 b 값.
+   (* keep *) wire [31:0] b_cal;	// 연산에 사용될 b 값.
 	assign b_cal = b ^ {32{s}};	// 뺄셈의 경우 입력으로 받은 b의 비트 반전값을 사용한다.
 
     genvar i;
@@ -127,7 +127,7 @@ endmodule
 module input_cell (a, b, p, g);
 
     input a, b;
-    output p, g;
+    (* keep *) output p, g;
 
     assign p = a ^ b;
     assign g = a & b;
@@ -138,7 +138,7 @@ module black_cell (pl, gl, ph, gh, pout, gout); // p/g low, p/g high.
 
     input ph, gh;
     input pl, gl;
-    output pout, gout;
+    (* keep *) output pout, gout;
 
     assign pout = ph & pl;
     assign gout = gh | (ph & gl);
@@ -148,7 +148,7 @@ endmodule
 module carry_cell (p, g, cz, cout);
 
     input p, g, cz;
-    output cout;
+    (* keep *) output cout;
 
     assign cout = g | (p & cz);
 
@@ -157,7 +157,7 @@ endmodule
 module sum_cell (p, c, sum);
 
     input p, c;
-    output sum;
+    (* keep *) output sum;
 
     assign sum = p ^ c;
 

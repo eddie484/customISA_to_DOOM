@@ -29,7 +29,7 @@ module ALU (valA, valB, signed_sig, aluop, mulsel, valE, alucc);
     assign sftmode = aluop[1:0];    // 00: ror, 01: shl, 10: shr, 11: rol
 
 
-    adder add_module(valA, valB, isSub, adder_cout, adder_result);
+    adder_subtractor add_sub_module(valA, valB, isSub, adder_cout, adder_result);
     multiplier mul_module(valA, valB, signed_sig, multiplier_result);
     assign divider_result = 32'b0;//valA / valB;    // 개발해야함
     shifter_rotator sft_module(valA, valB, sftmode, signed_sig, shifter_result, shifter_pushed);
