@@ -204,3 +204,22 @@ module reg_file (clk, nRESET, srcA_in, srcB_in, wben_in, dst_in, valD_in, valA_o
 							(srcB_in == 4'b1111) ? reg_15 : 32'bx;
 	
 endmodule
+
+
+module nzcv_reg (clk, nRESET, alucc_in, setcc_in, nzcv_out);
+
+	input clk, nRESET;
+	input [3:0] alucc_in;
+	input setcc_in;
+	
+	output reg [3:0] nzcv_out;
+	
+	
+	always @(posedge clk) begin
+		if (!nRESET)
+			nzcv_out <= 4'b0;
+		else if (setcc_in == 1'b1)
+			nzcv_out <= alucc_in;
+	end
+
+endmodule
