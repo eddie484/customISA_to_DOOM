@@ -4,11 +4,11 @@ module shifter_rotator (valA, valB, sftmode, signed_sig, result, pushed);
     input [1:0] sftmode;
     input signed_sig;
 
-    output [31:0] result;
-    output pushed;
+    (* keep *) output [31:0] result;
+    (* keep *) output pushed;
 
-    wire shirot, lftrgt;
-    wire [31:0] stage_0, stage_1, stage_2, stage_3, stage_4;
+    (* keep *) wire shirot, lftrgt;
+    (* keep *) wire [31:0] stage_0, stage_1, stage_2, stage_3, stage_4;
     
     genvar i;
 
