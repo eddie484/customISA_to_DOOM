@@ -16,7 +16,7 @@ module instr_decoder (instr_in, icode_out, aluop_out, imode_out, rmode_out, lkmo
 	output dmsext_out;
 	output wben_out;
 	
-	wire icode;
+	wire [5:0] icode;
 	wire mode_A, mode_B;
 	wire zmode, lgmode;
 	wire store;
@@ -34,7 +34,7 @@ module instr_decoder (instr_in, icode_out, aluop_out, imode_out, rmode_out, lkmo
 	assign load = (icode == `LDR || icode == `LDRB || icode == `LDRSB || icode == `LDRH || icode == `LDRSH);
 	
 	assign icode_out = icode;
-	assign imode_out = mode_A || load || branch || jump || store || (icode == `MOVH);
+	assign imode_out = mode_A || load || branch || (jump && mode_A) || store || (icode == `MOVH);
 	assign rmode_out = ((load || store) && mode_B) || branch;
 	assign lkmode_out = jump && mode_B;
 	assign setcc_out = mode_B;
@@ -50,7 +50,7 @@ module instr_decoder (instr_in, icode_out, aluop_out, imode_out, rmode_out, lkmo
 	assign dmen_out = load || store;
 	assign dmrw_out = store;
 	assign dmsext_out =  (icode == `LDRSB || icode == `LDRSH);
-	assign wben =(icode != `CMP && icode != `BCHK) && !store && !branch && !(jump && !mode_B);
+	assign wben_out =(icode != `CMP && icode != `BCHK) && !store && !branch && !(jump && !mode_B);
 	
 
 	
@@ -83,6 +83,23 @@ module instr_decoder (instr_in, icode_out, aluop_out, imode_out, rmode_out, lkmo
 	
 	always @(*) begin
 		case (icode)
+			`MOV, `ADD, `MOVH, `LDR, `LDRB, `LDRSB, `LDRH, `LDRSH, `STR, `STRB, `STRH, `B, `JMP: aluop_out = `add;
+			`SUB, `CMP: aluop_out = `sub;
+			`MUL, `MULH, `MULHU, `MULFX: aluop_out = `mul;
+			`DIV, `DIVU: aluop_out = `div;
+			`MOD, `MODU: aluop_out = `mod;
+			`SHL: aluop_out = `shl;
+			`ASR, `LSR: aluop_out = `shr;
+			`ROL: aluop_out = `rol;
+			`ROR: aluop_out = `ror;
+			`AND, `BCHK: aluop_out = `and;
+			`OR: aluop_out = `or;
+			`XOR: aluop_out = `xor;
+			`NOT: aluop_out = `not;
+			default: aluop_out = 4'b0;
+		endcase
+	
+		case (icode)
 			`MUL: mulsel_out = 2'b00;
 			`MULH, `MULHU: mulsel_out = 2'b01;
 			`MULFX: mulsel_out = 2'b10;
@@ -107,12 +124,14 @@ module instr_decoder (instr_in, icode_out, aluop_out, imode_out, rmode_out, lkmo
 			end
 			`B: immB_out = immB_b22;
 			`JMP: immB_out = mode_B ? immB_u20 : immB_j24;
+			default: immB_out = 32'b0;
 		endcase
 		
 		case(icode)
 			`LDR, `STR: dmsize_out = 2'b00;
 			`LDRB, `LDRSB, `STRB: dmsize_out = 2'b01;
 			`LDRH, `LDRSH, `STRH: dmsize_out = 2'b00;
+			default: dmsize_out = 2'b00;
 		endcase
 	end
 	
