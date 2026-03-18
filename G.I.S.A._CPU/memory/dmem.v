@@ -8,14 +8,14 @@ module dmem (clk, nRESET, valE_in, dmen_in, dmrw_in, dmsize_in, dmsext_in, wdata
 	
 	output reg [31:0] valM_out;
 	
-	reg [7:0] dmem [0:1023];
+	reg [7:0] dmem [0:2047];
 	
 	integer i;
 	
 	
 	always @(posedge clk) begin
 		if (!nRESET) begin
-			for (i = 0; i < 1024; i = i + 1) begin
+			for (i = 0; i < 2048; i = i + 1) begin
 				dmem[i] <= 8'b0;
 			end
 		end else if (dmen_in) begin
