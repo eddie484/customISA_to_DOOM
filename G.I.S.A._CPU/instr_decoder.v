@@ -77,7 +77,7 @@ module instr_decoder (instr_in, icode_out, aluop_out, imode_out, rmode_out, lkmo
 	assign immB_strs16 = {{16{instr_in[23]}}, instr_in[23:20], instr_in[11:0]};
 	assign immB_stru20 = {12'b0, instr_in[23:16], instr_in[11:0]};
 	assign immB_strs20 = {{12{instr_in[23]}}, instr_in[23:16], instr_in[11:0]};
-	assign immB_b22 = {10'b0, instr_in[25:4]};
+	assign immB_b22 = {{10{instr_in[25]}}, instr_in[25:4]};
 	assign immB_j24 = {8'b0, instr_in[23:0]};
 	
 	
