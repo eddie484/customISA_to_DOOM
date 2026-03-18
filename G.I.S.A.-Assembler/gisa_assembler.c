@@ -2089,11 +2089,8 @@ int main()
                     // 24비트 초과 시.
                 }
             } else {
-                int rA = atoi(tokenjmp1 + 1);
-                binary |= (rA << 16);
-                
-                int immB = atoi(tokenjmp2 + 1);
-                binary |= (immB & 0x0000ffffU);
+                int rB = atoi(tokenjmp1 + 1);
+                binary |= (rB << 12);
             }
 
         } else if (strcmp(token, "JMPI") == 0) {
@@ -2125,11 +2122,8 @@ int main()
                     // 20비트 초과 시.
                 }
             } else {
-                int rA = atoi(tokenjmp1 + 1);
-                binary |= (rA << 16);
-                
-                int immB = atoi(tokenjmp2 + 1);
-                binary |= (immB & 0x0000ffffU);
+                int rB = atoi(tokenjmp1 + 1);
+                binary |= (rB << 16);
             }
 
         } else if (strcmp(token, "JMPIL") == 0) {
