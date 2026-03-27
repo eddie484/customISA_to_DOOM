@@ -1,4 +1,4 @@
-module decode (clk, nRESET, instr_in, pc_in, icode_out, load_out, dmen_out, dmrw_out, aluop_out, sign_out, mulsel_out, lk_out, valA_out, valB_out, wdata_out, dmsize_out, dmsext_out, setcc_out, cond_out, branch_out, rD_out, wben_out, jump_out, wben_W, dst_W, valD_W, fwd_E, fwd_M, rD_E, rD_M, wben_E, wben_M);
+module decode (clk, nRESET, instr_in, pc_in, icode_out, load_out, dmen_out, dmrw_out, aluop_out, sign_out, mulsel_out, lk_out, valA_out, valB_out, wdata_out, dmsize_out, dmsext_out, setcc_out, cond_out, branch_out, rD_out, wben_out, jump_out, rA_out, rB_out, wben_W, dst_W, valD_W, fwd_E, fwd_M, rD_E, rD_M, wben_E, wben_M);
 
 	input clk, nRESET;
 	input [31:0] instr_in, pc_in;
@@ -15,7 +15,7 @@ module decode (clk, nRESET, instr_in, pc_in, icode_out, load_out, dmen_out, dmrw
 
 	output [31:0] valA_out, valB_out, wdata_out;
 	output [5:0] icode_out;
-	output [3:0] aluop_out, cond_out, rD_out;
+	output [3:0] aluop_out, cond_out, rD_out, rA_out, rB_out;
 	output [1:0] mulsel_out, dmsize_out;
 	output load_out, dmen_out, dmrw_out, sign_out, lk_out, dmsext_out, setcc_out, branch_out, wben_out, jump_out;
 	
@@ -44,5 +44,7 @@ module decode (clk, nRESET, instr_in, pc_in, icode_out, load_out, dmen_out, dmrw
 	assign valA_out = (unary ? 32'b0 : (rmode ? pc_in : fwdA));
 	assign valB_out = (imode ? immB : fwdB);
 	assign wdata_out = valB;
+	assign rA_out = rA;
+	assign rB_out = rB;
 	
 endmodule

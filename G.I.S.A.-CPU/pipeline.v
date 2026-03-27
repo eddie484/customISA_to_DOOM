@@ -1,6 +1,26 @@
-module pipereg_F (clk, nRESET, nextPC, PC_F);
+`include "defines.v"
 
-	input clk, nRESET;
+
+module pipeline_controller (icode_E, rA_D, rB_D, rD_E, stall_F, stall_D, bubble_E);
+
+	input [5:0] icode_E;
+	input [3:0] rA_D, rB_D, rD_E;
+	
+	output stall_F, stall_D;
+	output bubble_E;
+	
+	
+	assign stall_F = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D));
+	assign stall_D = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D));
+	assign bubble_E = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D));
+	
+endmodule
+
+
+
+module pipereg_F (clk, nRESET, stall_F, nextPC, PC_F);
+
+	input clk, nRESET, stall_F;
 	input [31:0] nextPC;
 	
 	output reg [31:0] PC_F;
@@ -9,16 +29,16 @@ module pipereg_F (clk, nRESET, nextPC, PC_F);
 	always @(posedge clk)
 		if (!nRESET) 
 			PC_F <= 32'b0;
-		else 
+		else if (!stall_F) 
 			PC_F <= nextPC;
 		
 endmodule
 
 
 
-module pipereg_D (clk, nRESET, PC_F, IR_F, PCplus4_F, PC_D, IR_D, PCplus4_D);
+module pipereg_D (clk, nRESET, stall_D, PC_F, IR_F, PCplus4_F, PC_D, IR_D, PCplus4_D);
 
-	input clk, nRESET;
+	input clk, nRESET, stall_D;
 	input [31:0] PC_F, IR_F, PCplus4_F;
 	
 	output reg [31:0] PC_D, IR_D, PCplus4_D;
@@ -29,7 +49,7 @@ module pipereg_D (clk, nRESET, PC_F, IR_F, PCplus4_F, PC_D, IR_D, PCplus4_D);
 			PC_D <= 32'b0;
 			IR_D <= 32'b0;
 			PCplus4_D <= 32'b0;
-		end else begin
+		end else if (!stall_D) begin
 			PC_D <= PC_F;
 			IR_D <= IR_F;
 			PCplus4_D <= PCplus4_F;
@@ -39,9 +59,9 @@ endmodule
 
 
 
-module pipereg_E (clk, nRESET, icode_D, load_D, dmen_D, dmrw_D, aluop_D, sign_D, mulsel_D, lk_D, valA_D, valB_D, wdata_D, dmsize_D, dmsext_D, setcc_D, cond_D, branch_D, PCplus4_D, rD_D, wben_D, icode_E, load_E, dmen_E, dmrw_E, aluop_E, sign_E, mulsel_E, lk_E, valA_E, valB_E, wdata_E, dmsize_E, dmsext_E, setcc_E, cond_E, branch_E, PCplus4_E, rD_E, wben_E);
+module pipereg_E (clk, nRESET, bubble_E, icode_D, load_D, dmen_D, dmrw_D, aluop_D, sign_D, mulsel_D, lk_D, valA_D, valB_D, wdata_D, dmsize_D, dmsext_D, setcc_D, cond_D, branch_D, PCplus4_D, rD_D, wben_D, icode_E, load_E, dmen_E, dmrw_E, aluop_E, sign_E, mulsel_E, lk_E, valA_E, valB_E, wdata_E, dmsize_E, dmsext_E, setcc_E, cond_E, branch_E, PCplus4_E, rD_E, wben_E);
 
-	input clk, nRESET;
+	input clk, nRESET, bubble_E;
 
 	input [31:0] valA_D, valB_D, wdata_D, PCplus4_D;
 	input [5:0] icode_D;
@@ -57,7 +77,7 @@ module pipereg_E (clk, nRESET, icode_D, load_D, dmen_D, dmrw_D, aluop_D, sign_D,
 
 	
 	always @(posedge clk)
-		if (!nRESET) begin
+		if (!nRESET || bubble_E) begin
 			valA_E <= 32'b0;
 			valB_E <= 32'b0;
 			wdata_E <= 32'b0;
