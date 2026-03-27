@@ -1,14 +1,14 @@
 `include "v/defines.v"
 
-module execute (clk, nRESET, aluop_in, sign_in, mulsel_in, valA_in, valB_in, setcc_in, cond_in, branch_in, valE_out, taken_out);
+module execute (clk, nRESET, aluop_in, sign_in, mulsel_in, lk_in, valA_in, valB_in, setcc_in, cond_in, branch_in, PCplus4_in, valE_out, taken_out, fwd_out);
 
 	input clk, nRESET;
-	input [31:0] valA_in, valB_in;
+	input [31:0] valA_in, valB_in, PCplus4_in;
 	input [3:0] aluop_in, cond_in;
 	input [1:0] mulsel_in;
-	input sign_in, setcc_in, branch_in;
+	input sign_in, lk_in, setcc_in, branch_in;
 	
-	output [31:0] valE_out;
+	output [31:0] valE_out, fwd_out;
 	output reg taken_out;
 	
 	wire [3:0] alucc, nzcv;
@@ -16,6 +16,8 @@ module execute (clk, nRESET, aluop_in, sign_in, mulsel_in, valA_in, valB_in, set
 	
 	ALU ALU_module (valA_in, valB_in, sign_in, aluop_in, mulsel_in, valE_out, alucc);
 	nzcv_reg nzcv_module (clk, nRESET, alucc, setcc_in, nzcv);
+	
+	assign fwd_out = lk_in ? PCplus4_in : valE_out;
 	
 	
 	
