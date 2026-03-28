@@ -2123,7 +2123,7 @@ int main()
                 }
             } else {
                 int rB = atoi(tokenjmp1 + 1);
-                binary |= (rB << 16);
+                binary |= (rB << 12);
             }
 
         } else if (strcmp(token, "JMPIL") == 0) {
