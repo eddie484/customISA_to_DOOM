@@ -2075,9 +2075,24 @@ int main()
             binary |= (0b11001100U << 24);
             
             char *tokenjmp1 = strtok(NULL, " \t\n");
-            char *tokenjmp2 = strtok(NULL, " \t\n");
 
-            if (tokenjmp2 == NULL){
+            if (strcmp(tokenjmp1, "R0") != 0 &&
+                strcmp(tokenjmp1, "R1") != 0 &&
+                strcmp(tokenjmp1, "R2") != 0 &&
+                strcmp(tokenjmp1, "R3") != 0 &&
+                strcmp(tokenjmp1, "R4") != 0 &&
+                strcmp(tokenjmp1, "R5") != 0 &&
+                strcmp(tokenjmp1, "R6") != 0 &&
+                strcmp(tokenjmp1, "R7") != 0 &&
+                strcmp(tokenjmp1, "R8") != 0 &&
+                strcmp(tokenjmp1, "R9") != 0 &&
+                strcmp(tokenjmp1, "R10") != 0 &&
+                strcmp(tokenjmp1, "R11") != 0 &&
+                strcmp(tokenjmp1, "R12") != 0 &&
+                strcmp(tokenjmp1, "R13") != 0 &&
+                strcmp(tokenjmp1, "R14") != 0 &&
+                strcmp(tokenjmp1, "R15") != 0)
+            {
                 uint32_t labelline = labelget(tokenjmp1);
                 labelline *= 4;
                 if (labelline <= 0xffffff){
@@ -2110,7 +2125,23 @@ int main()
             char *tokenjmp1 = strtok(NULL, " \t\n");
             char *tokenjmp2 = strtok(NULL, " \t\n");
 
-            if (tokenjmp2 == NULL){
+            if (strcmp(tokenjmp1, "R0") != 0 &&
+                strcmp(tokenjmp1, "R1") != 0 &&
+                strcmp(tokenjmp1, "R2") != 0 &&
+                strcmp(tokenjmp1, "R3") != 0 &&
+                strcmp(tokenjmp1, "R4") != 0 &&
+                strcmp(tokenjmp1, "R5") != 0 &&
+                strcmp(tokenjmp1, "R6") != 0 &&
+                strcmp(tokenjmp1, "R7") != 0 &&
+                strcmp(tokenjmp1, "R8") != 0 &&
+                strcmp(tokenjmp1, "R9") != 0 &&
+                strcmp(tokenjmp1, "R10") != 0 &&
+                strcmp(tokenjmp1, "R11") != 0 &&
+                strcmp(tokenjmp1, "R12") != 0 &&
+                strcmp(tokenjmp1, "R13") != 0 &&
+                strcmp(tokenjmp1, "R14") != 0 &&
+                strcmp(tokenjmp1, "R15") != 0)
+            {
                 int labelline = labelget(tokenjmp1);
                 labelline *= 4;
                 if (labelline <= 0xfffff){
