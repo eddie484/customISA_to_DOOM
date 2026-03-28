@@ -130,7 +130,7 @@ module instr_decoder (instr_in, icode_out, aluop_out, imode_out, rmode_out, lkmo
 		case(icode)
 			`LDR, `STR: dmsize_out = 2'b00;
 			`LDRB, `LDRSB, `STRB: dmsize_out = 2'b01;
-			`LDRH, `LDRSH, `STRH: dmsize_out = 2'b00;
+			`LDRH, `LDRSH, `STRH: dmsize_out = 2'b10;
 			default: dmsize_out = 2'b00;
 		endcase
 	end
