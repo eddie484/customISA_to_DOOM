@@ -43,7 +43,7 @@ module decode (clk, nRESET, instr_in, pc_in, icode_out, load_out, dmen_out, dmrw
 	
 	assign valA_out = (unary ? 32'b0 : (rmode ? pc_in : fwdA));
 	assign valB_out = (imode ? immB : fwdB);
-	assign wdata_out = valB;
+	assign wdata_out = fwdB;
 	assign rA_out = rA;
 	assign rB_out = rB;
 	
