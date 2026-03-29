@@ -1,17 +1,17 @@
-module fetch (pc_in, nextpc_out, pcplus4_out, instr_out);
+module fetch (pc_in, predPC_out, PCplus4_out, instr_out);
 	
 	input [31:0] pc_in;
 	
-	output [31:0] nextpc_out, pcplus4_out, instr_out;
+	output [31:0] predPC_out, PCplus4_out, instr_out;
 	
-	wire [31:0] instr, pcplus4;
+	wire [31:0] instr, PCplus4, predPC;
 	
 	
 	imem imem_module (pc_in, instr);
-	adder_subtractor pc_adder (pc_in, 32'd4, 1'b0, , pcplus4);
+	branch_predictor bp_module (pc_in, instr[31:26], {{10{instr[25]}}, instr[25:4]}, PCplus4, predPC);
 	
-	assign nextpc_out = pcplus4;
-	assign pcplus4_out = pcplus4;
+	assign predPC_out = predPC;
+	assign PCplus4_out = PCplus4;
 	assign instr_out = instr;
 	
 endmodule

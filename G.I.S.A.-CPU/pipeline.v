@@ -1,18 +1,20 @@
 `include "defines.v"
 
 
-module pipeline_controller (icode_E, rA_D, rB_D, rD_E, stall_F, stall_D, bubble_E);
+module pipeline_controller (icode_D, icode_E, rA_D, rB_D, rD_E, mispred_E, stall_F, stall_D, bubble_D, bubble_E);
 
-	input [5:0] icode_E;
+	input [5:0] icode_D, icode_E;
 	input [3:0] rA_D, rB_D, rD_E;
+	input mispred_E;
 	
 	output stall_F, stall_D;
-	output bubble_E;
+	output bubble_D, bubble_E;
 	
 	
 	assign stall_F = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D));
 	assign stall_D = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D));
-	assign bubble_E = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D));
+	assign bubble_D = (mispred_E || (icode_D == `JMP)) && (!stall_D);
+	assign bubble_E = (((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || mispred_E);
 	
 endmodule
 
@@ -36,16 +38,16 @@ endmodule
 
 
 
-module pipereg_D (clk, nRESET, stall_D, PC_F, IR_F, PCplus4_F, PC_D, IR_D, PCplus4_D);
+module pipereg_D (clk, nRESET, stall_D, bubble_D, PC_F, IR_F, PCplus4_F, PC_D, IR_D, PCplus4_D);
 
-	input clk, nRESET, stall_D;
+	input clk, nRESET, stall_D, bubble_D;
 	input [31:0] PC_F, IR_F, PCplus4_F;
 	
 	output reg [31:0] PC_D, IR_D, PCplus4_D;
 	
 	
 	always @(posedge clk)
-		if (!nRESET) begin
+		if (!nRESET || bubble_D) begin
 			PC_D <= 32'b0;
 			IR_D <= 32'b0;
 			PCplus4_D <= 32'b0;
@@ -114,7 +116,7 @@ module pipereg_E (clk, nRESET, bubble_E, icode_D, load_D, dmen_D, dmrw_D, aluop_
 			sign_E <= sign_D;
 			lk_E <= lk_D;
 			dmsext_E <= dmsext_D;
-			setcc_E <= dmsext_D;
+			setcc_E <= setcc_D;
 			branch_E <= branch_D;
 			wben_E <= wben_D;
 		end
