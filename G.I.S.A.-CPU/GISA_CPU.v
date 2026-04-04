@@ -1,6 +1,6 @@
 `include "defines.v"
 
-module GISA_CPU (clk, nRESET);
+(* noprune *) module GISA_CPU (clk, nRESET);
 	
 	input clk, nRESET;
 	
@@ -30,7 +30,7 @@ module GISA_CPU (clk, nRESET);
 	
 	pipereg_F PR_F (clk, nRESET, stall_F, pc_computed, pc_F);
 	
-	fetch F (pc_F, predPC_F, PCplus4_F, instr_F);
+	fetch F (clk, nRESET, pc_F, predPC_F, PCplus4_F, instr_F, stall_D, bubble_D);
 	
 	
 	
