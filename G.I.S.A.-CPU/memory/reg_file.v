@@ -1,13 +1,13 @@
-module reg_file (clk, nRESET, srcA_in, srcB_in, wben_in, dst_in, valD_in, valA_out, valB_out);
+(* keep_hierarchy *) module reg_file (clk, nRESET, srcA_in, srcB_in, wben_in, dst_in, valD_in, valA_out, valB_out,  reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15);
 
 	input clk, nRESET;
 	input [3:0] srcA_in, srcB_in, dst_in;
 	input wben_in;
 	input [31:0] valD_in;
 	
-	output [31:0] valA_out, valB_out;
+	(* keep *) output [31:0] valA_out, valB_out;
 	
-	reg [31:0] reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15;
+	output reg [31:0] reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15;
 	
 	wire [15:0] enable_reg;
 	

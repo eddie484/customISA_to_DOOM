@@ -1,9 +1,18 @@
 `include "defines.v"
 
-(* noprune *) module GISA_CPU (clk, nRESET);
+(* noprune *) module GISA_CPU (clk, switch, button, led);
 	
-	input clk, nRESET;
+	input clk;
+	input [3:0] switch;
+	input [1:0] button;
 	
+	output [7:0] led;
+	
+	wire [1:0] button_not;
+	assign button_not = ~button[1:0];
+	
+	wire nRESET;
+	assign nRESET = !((switch == 4'b1111) && (button_not == 2'b11));
 	
 	wire [31:0] pc_computed;
 	
@@ -50,11 +59,14 @@
 	wire [31:0] fwd_E, fwd_M;
 	wire [3:0] rD_M;
 	wire wben_E, wben_M;
+	
+	// onboard debugging을 위한 와이어
+	wire [31:0] reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15;
 
 	
 	pipereg_D PR_D (clk, nRESET, stall_D, bubble_D, pc_F, instr_F, PCplus4_F, pc_D, instr_D, PCplus4_D);
 	
-	decode D (clk, nRESET, instr_D, pc_D, icode_D, load_D, dmen_D, dmrw_D, aluop_D, sign_D, mulsel_D, lk_D, valA_D, valB_D, wdata_D, dmsize_D, dmsext_D, setcc_D, cond_D, branch_D, rD_D, wben_D, jump_D, rA_D, rB_D, wben_W, rD_W, valD_W, fwd_E, fwd_M, rD_E, rD_M, wben_E, wben_M);
+	decode D (clk, nRESET, instr_D, pc_D, icode_D, load_D, dmen_D, dmrw_D, aluop_D, sign_D, mulsel_D, lk_D, valA_D, valB_D, wdata_D, dmsize_D, dmsext_D, setcc_D, cond_D, branch_D, rD_D, wben_D, jump_D, rA_D, rB_D, wben_W, rD_W, valD_W, fwd_E, fwd_M, rD_E, rD_M, wben_E, wben_M,  reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15);
 
 	
 	
@@ -102,5 +114,31 @@
 	
 	assign pc_computed = mispred_E ? PCplus4_E : (jump_D ? valB_D : predPC_F);
 	
+	
+
+	// ----- OnBoard Logic -----
+	
+	wire [31:0] selected_reg;
+	wire [7:0] selected_bit;
+	
+	assign selected_reg = (switch == 4'b0000) ? reg_0 :
+								 (switch == 4'b0001) ? reg_1 :
+								 (switch == 4'b0010) ? reg_2 :
+								 (switch == 4'b0011) ? reg_3 :
+								 (switch == 4'b0100) ? reg_4 :
+								 (switch == 4'b0101) ? reg_5 :
+								 (switch == 4'b0110) ? reg_6 :
+								 (switch == 4'b0111) ? reg_7 :
+								 (switch == 4'b1000) ? reg_8 :
+								 (switch == 4'b1001) ? reg_9 :
+								 (switch == 4'b1010) ? reg_10 :
+								 (switch == 4'b1011) ? reg_11 :
+								 (switch == 4'b1100) ? reg_12 :
+								 (switch == 4'b1101) ? reg_13 :
+								 (switch == 4'b1110) ? reg_14 : reg_15;
+								 
+
+	assign selected_bit = (selected_reg >> (button_not * 8));
+	assign led = ~selected_bit;	
 
 endmodule
