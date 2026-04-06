@@ -1,6 +1,6 @@
 `include "v/defines.v"
 
-module execute (clk, nRESET, aluop_in, sign_in, mulsel_in, lk_in, valA_in, valB_in, setcc_in, cond_in, branch_in, PCplus4_in, valE_out, mispred_out, fwd_out);
+(* keep_hierarchy *) module execute (clk, nRESET, aluop_in, sign_in, mulsel_in, lk_in, valA_in, valB_in, setcc_in, cond_in, branch_in, PCplus4_in, valE_out, mispred_out, fwd_out, mul_finished_out);
 
 	input clk, nRESET;
 	input [31:0] valA_in, valB_in, PCplus4_in;
@@ -8,14 +8,15 @@ module execute (clk, nRESET, aluop_in, sign_in, mulsel_in, lk_in, valA_in, valB_
 	input [1:0] mulsel_in;
 	input sign_in, lk_in, setcc_in, branch_in;
 	
-	output [31:0] valE_out, fwd_out;
-	output reg mispred_out;
+	(* keep *) output [31:0] valE_out, fwd_out;
+	(* keep *) output reg mispred_out;
+	output mul_finished_out;
 	
 	wire [3:0] alucc, nzcv;
 	reg taken;
 	
 	
-	ALU ALU_module (valA_in, valB_in, sign_in, aluop_in, mulsel_in, valE_out, alucc);
+	ALU ALU_module (clk, nRESET, valA_in, valB_in, sign_in, aluop_in, mulsel_in, valE_out, alucc, mul_finished_out);
 	nzcv_reg nzcv_module (clk, nRESET, alucc, setcc_in, nzcv);
 	
 	assign fwd_out = lk_in ? PCplus4_in : valE_out;

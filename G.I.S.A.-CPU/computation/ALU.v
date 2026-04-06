@@ -1,5 +1,6 @@
-module ALU (valA, valB, signed_sig, aluop, mulsel, valE, alucc);
+(* keep_hierarchy *) module ALU (clk, nRESET, valA, valB, signed_sig, aluop, mulsel, valE, alucc, mul_finished_out);
 
+	 input clk, nRESET;
     input [31:0] valA, valB;
     input signed_sig;
     input [3:0] aluop;
@@ -7,8 +8,9 @@ module ALU (valA, valB, signed_sig, aluop, mulsel, valE, alucc);
 
     (* keep *) output reg [31:0] valE;
     (* keep *) output [3:0] alucc;
+	 output mul_finished_out;
 
-    (* keep *) wire isSub, isMod;
+    (* keep *) wire isSub, isMul, isMod;
     (* keep *) wire [1:0] sftmode;
 
     (* keep *) wire [31:0] adder_result;
@@ -25,12 +27,13 @@ module ALU (valA, valB, signed_sig, aluop, mulsel, valE, alucc);
     (* keep *) wire [31:0] and_result, or_result, xor_result, not_result;
 
     assign isSub = aluop[0];
+	 assign isMul = (aluop == 4'b0010);
     assign isMod = aluop[2];
     assign sftmode = aluop[1:0];    // 00: ror, 01: shl, 10: shr, 11: rol
 
 
     adder_subtractor add_sub_module(valA, valB, isSub, adder_cout, adder_result);
-    multiplier mul_module(valA, valB, signed_sig, multiplier_result);
+    multiplier mul_module(clk, nRESET, valA, valB, signed_sig, isMul, multiplier_result, mul_finished_out);
     assign divider_result = 32'b0;//valA / valB;    // 개발해야함
     shifter_rotator sft_module(valA, valB, sftmode, signed_sig, shifter_result, shifter_pushed);
 

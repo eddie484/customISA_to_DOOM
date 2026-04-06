@@ -1,39 +1,13 @@
-`define BOOTH_M2 3'd1
-`define BOOTH_M1 3'd2
-`define BOOTH_0 3'd3
-`define BOOTH_P1 3'd4
-`define BOOTH_P2 3'd5
+module ppacc_level (pp, sign, signed_sig, a, b_31, tree_result_PA);	
 
-
-module multiplier (a, b, signed_sig, sumout);
+	input [33:0] pp [15:0];
+	input [31:0] a;
+   input [15:0] sign;
+	input signed_sig, b_31;
 	
-	input [31:0] a, b;
-   input signed_sig;   // 1: signed mul, 0: unsigned mul.
+	output [63:0] tree_result_PA [1:0];
 	
-	(* keep *) output [63:0] sumout;
-
-	wire [32:0] ext_a;
-   (* keep *) wire [2:0] booth_b [15:0];
-	(* keep *) wire [33:0] pp [15:0];
-   (* keep *) wire [15:0] sign;
-
-
-	assign ext_a = signed_sig ? {a[31], a} : {1'b0, a};
-
-    genvar i;
-
-    generate
-        booth_radix_4 booth_recoding_0 (b[1], b[0], 1'b0, booth_b[0]);
-        for (i = 2; i < 32; i = i + 2) begin: booth_level
-            booth_radix_4 booth_recoding (b[i+1], b[i], b[i-1], booth_b[i/2]);
-        end
-
-        for (i = 0; i < 16; i = i + 1) begin: ppgen_level
-            ppgen ppgenerator (ext_a, booth_b[i], pp[i], sign[i]);
-        end
-    endgenerate
-
-    (* keep *) wire [63:0] tree_level_1 [16:0];
+	 (* keep *) wire [63:0] tree_level_1 [16:0];
     (* keep *) wire [63:0] tree_level_2 [11:0];
     (* keep *) wire [63:0] tree_level_3 [7:0];
     (* keep *) wire [63:0] tree_level_4 [5:0];
@@ -41,7 +15,7 @@ module multiplier (a, b, signed_sig, sumout);
     (* keep *) wire [63:0] tree_level_6 [2:0];
     (* keep *) wire [63:0] tree_level_7 [1:0];
 
-    assign tree_level_1 [0] = !(!signed_sig && b[31]) ? {32'b0, pp[0][31:0]} : {a, pp[0][31:0]};
+    assign tree_level_1 [0] = !(!signed_sig && b_31) ? {32'b0, pp[0][31:0]} : {a, pp[0][31:0]};
     assign tree_level_1 [1] = {1'b1, ~pp[14][33], 1'b1, ~pp[13][33], 1'b1, ~pp[12][33], 1'b1, ~pp[11][33], 1'b1, ~pp[10][33], 1'b1, ~pp[9][33], 1'b1, ~pp[8][33], 1'b1, ~pp[7][33], 1'b1, ~pp[6][33], 1'b1, ~pp[5][33], 1'b1, ~pp[4][33], 1'b1, ~pp[3][33], 1'b1, ~pp[2][33], 1'b1, ~pp[1][33], pp[1], 1'b0, sign[0]};
     assign tree_level_1 [2] = {pp[15][33:32], pp[14][33:32], pp[13][33:32], pp[12][33:32], pp[11][33:32], pp[10][33:32], pp[9][33:32], pp[8][33:32], pp[7][33:32], pp[6][33:32], pp[5][33:32], pp[4][33:32], pp[3][33:32], pp[2], 1'b0, sign[1], 2'b0};
     assign tree_level_1 [3] = {2'b0, pp[15][31:30], pp[14][31:30], pp[13][31:30], pp[12][31:30], pp[11][31:30], pp[10][31:30], pp[9][31:30], pp[8][31:30], pp[7][31:30], pp[6][31:30], pp[5][31:30], pp[4][31:30], pp[3][31:0], 1'b0, sign[2], 4'b0};
@@ -65,81 +39,10 @@ module multiplier (a, b, signed_sig, sumout);
     csa_level_4 csa4 (tree_level_4, tree_level_5);
     csa_level_5 csa5 (tree_level_5, tree_level_6);
     csa_level_6 csa6 (tree_level_6, tree_level_7);
-
-    adder_64b cpa (tree_level_7[0], tree_level_7[1], 1'b0, , sumout);
-
-
-
-endmodule
-
-
-
-module booth_radix_4 (x_high, x_low, x_prev, y);
-
-    input x_high, x_low, x_prev;
-    (* keep *) output reg [2:0] y;
-
-    (* keep *) wire [2:0] x_in;
-    assign x_in = {x_high, x_low, x_prev};
-
-    always @(*) begin
-        case (x_in)
-            3'b000: y = `BOOTH_0;
-            3'b010: y = `BOOTH_P1;
-            3'b100: y = `BOOTH_M2;
-            3'b110: y = `BOOTH_M1;
-            3'b001: y = `BOOTH_P1;
-            3'b011: y = `BOOTH_P2;
-            3'b101: y = `BOOTH_M1;
-            3'b111: y = `BOOTH_0;
-            default: y = 3'd0;
-        endcase
-    end
-endmodule
-
-
-
-module ppgen (a, booth_b, pp, sign);
-
-    input [32:0] a;
-    input [2:0] booth_b;
-
-    (* keep *) output reg [33:0] pp;
-    (* keep *) output reg sign;
-
-    always @(*) begin
-        case (booth_b)
-            `BOOTH_M2: begin
-                pp = {~a, 1'b1};
-                sign = 1'b1;
-            end
-
-            `BOOTH_M1: begin
-                pp = {~a[32], ~a};
-                sign = 1'b1;
-            end
-
-            `BOOTH_0: begin
-                pp = 33'b0;
-                sign = 1'b0;
-            end
-
-            `BOOTH_P1: begin
-                pp = {a[32], a};
-                sign = 1'b0;
-            end
-            
-            `BOOTH_P2: begin
-                pp = {a, 1'b0};
-                sign = 1'b0;
-            end
-
-            default: begin
-                pp = 33'b0;
-                sign = 1'b0;
-            end
-        endcase
-    end
+	 
+	 assign tree_result_PA[0] = tree_level_7[0];
+	 assign tree_result_PA[1] = tree_level_7[1];
+	 
 endmodule
 
 

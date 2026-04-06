@@ -1,21 +1,22 @@
 `include "defines.v"
 
 
-(* keep_hierarchy *) module pipeline_controller (icode_D, icode_E, rA_D, rB_D, rD_E, mispred_E, stall_F, stall_D, bubble_D, bubble_E);
+(* keep_hierarchy *) module pipeline_controller (icode_D, icode_E, rA_D, rB_D, rD_E, mispred_E, mul_finished_E, stall_F, stall_D, stall_E, bubble_D, bubble_E, bubble_M);
 
 	input [5:0] icode_D, icode_E;
 	input [3:0] rA_D, rB_D, rD_E;
-	input mispred_E;
+	input mispred_E, mul_finished_E;
 	
-	(* keep *) output stall_F, stall_D;
-	(* keep *) output bubble_D, bubble_E;
+	(* keep *) output stall_F, stall_D, stall_E;
+	(* keep *) output bubble_D, bubble_E, bubble_M;
 	
 	
-	assign stall_F = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D));
-	assign stall_D = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D));
+	assign stall_F = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX) && (!mul_finished_E));
+	assign stall_D = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX) && (!mul_finished_E));
+	assign stall_E = ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX) && (!mul_finished_E));
 	assign bubble_D = (mispred_E || (icode_D == `JMP)) && (!stall_D);
-	assign bubble_E = (((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || mispred_E);
-	
+	assign bubble_E = (((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || mispred_E) && (!stall_E);
+	assign bubble_M = ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX) && (!mul_finished_E));
 endmodule
 
 
@@ -62,9 +63,9 @@ endmodule
 
 
 
-(* keep_hierarchy *) module pipereg_E (clk, nRESET, bubble_E, icode_D, load_D, dmen_D, dmrw_D, aluop_D, sign_D, mulsel_D, lk_D, valA_D, valB_D, wdata_D, dmsize_D, dmsext_D, setcc_D, cond_D, branch_D, PCplus4_D, rD_D, wben_D, icode_E, load_E, dmen_E, dmrw_E, aluop_E, sign_E, mulsel_E, lk_E, valA_E, valB_E, wdata_E, dmsize_E, dmsext_E, setcc_E, cond_E, branch_E, PCplus4_E, rD_E, wben_E);
+(* keep_hierarchy *) module pipereg_E (clk, nRESET, stall_E, bubble_E, icode_D, load_D, dmen_D, dmrw_D, aluop_D, sign_D, mulsel_D, lk_D, valA_D, valB_D, wdata_D, dmsize_D, dmsext_D, setcc_D, cond_D, branch_D, PCplus4_D, rD_D, wben_D, icode_E, load_E, dmen_E, dmrw_E, aluop_E, sign_E, mulsel_E, lk_E, valA_E, valB_E, wdata_E, dmsize_E, dmsext_E, setcc_E, cond_E, branch_E, PCplus4_E, rD_E, wben_E);
 
-	input clk, nRESET, bubble_E;
+	input clk, nRESET, stall_E, bubble_E;
 
 	input [31:0] valA_D, valB_D, wdata_D, PCplus4_D;
 	input [5:0] icode_D;
@@ -100,7 +101,7 @@ endmodule
 			setcc_E <= 1'b0;
 			branch_E <= 1'b0;
 			wben_E <= 1'b0;
-		end else begin
+		end else if (!stall_E) begin
 			valA_E <= valA_D;
 			valB_E <= valB_D;
 			wdata_E <= wdata_D;
@@ -126,9 +127,9 @@ endmodule
 
 
 
-(* keep_hierarchy *) module pipereg_M (clk, nRESET, icode_E, load_E, dmen_E, dmrw_E, lk_E, valE_E, wdata_E, dmsize_E, dmsext_E, PCplus4_E, rD_E, wben_E, icode_M, load_M, dmen_M, dmrw_M, lk_M, valE_M, wdata_M, dmsize_M, dmsext_M, PCplus4_M, rD_M, wben_M);
+(* keep_hierarchy *) module pipereg_M (clk, nRESET, bubble_M, icode_E, load_E, dmen_E, dmrw_E, lk_E, valE_E, wdata_E, dmsize_E, dmsext_E, PCplus4_E, rD_E, wben_E, icode_M, load_M, dmen_M, dmrw_M, lk_M, valE_M, wdata_M, dmsize_M, dmsext_M, PCplus4_M, rD_M, wben_M);
 
-	input clk, nRESET;
+	input clk, nRESET, bubble_M;
 	
 	input [31:0] valE_E, wdata_E, PCplus4_E;
 	input [5:0] icode_E;
@@ -144,7 +145,7 @@ endmodule
 
 	
 	always @(posedge clk)
-		if (!nRESET) begin
+		if (!nRESET || bubble_M) begin
 			valE_M <= 32'b0;
 			wdata_M <= 32'b0;
 			PCplus4_M <= 32'b0;
