@@ -46,10 +46,22 @@ uint32_t labelget(char *labelname){
 **********************************
 ******************************* */
 
-int main()
+int main(int argc, char *argv[])
 {
-    FILE *asmfp = fopen("assembly.asm", "r");       // 처리할 어셈블리가 적힌 파일 오픈
-    FILE *binfp = fopen("binary.bin", "w");         // 처리 결과 바이너리를 저장할 파일 오픈
+    char *asm_name;
+    char *bin_name;
+
+        // 인자 개수 확인해 파일이름 지정.
+        if (argc == 3) {
+            asm_name = argv[1];
+            bin_name = argv[2];
+        } else {
+            asm_name = "assembly.asm";
+            bin_name = "binary.bin";
+        }
+
+    FILE *asmfp = fopen(asm_name, "r");       // 처리할 어셈블리가 적힌 파일 오픈
+    FILE *binfp = fopen(bin_name, "w");         // 처리 결과 바이너리를 저장할 파일 오픈
 
     if (asmfp == NULL || binfp == NULL) {           // 두 파일 중 하나라도 열지 못할 시 비정상 종료
         printf("파일 읽기 실패\n");
