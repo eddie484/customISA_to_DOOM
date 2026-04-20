@@ -129,7 +129,6 @@ int main(int argc, char *argv[])
                     if (check_right_word_boundary(buf[cur_index + 1])) cur_state = 2;   // 한 글자 식별자의 경우, 바로 state 2로 이동.
                     else {                                                              // 두 글자 이상 식별자의 경우, 인덱스 증가와 state 1로 이동.
                         cur_state = 1;
-                        cur_index++; 
                     }
                 }
                 else if ('0' <= c && c <= '9') {
@@ -137,37 +136,33 @@ int main(int argc, char *argv[])
                     if (check_right_word_boundary(buf[cur_index + 1]))  cur_state = 4;   // 한 글자 상수의 경우, 바로 state 4로 이동.
                     else {                                                              // 두 글자 이상 상수의 경우, 인덱스 증가와 state 3로 이동.
                         cur_state = 3;
-                        cur_index++; 
                     }
                 }
                 else if (c == '(') {
                     cur_state = 5;
-                    cur_index++;
                 }
                 else if (c == ')') {
                     cur_state = 6;
-                    cur_index++;
                 }
                 else if (c == '{') {
                     cur_state = 7;
-                    cur_index++;
                 }
                 else if (c == '}') {
                     cur_state = 8;
-                    cur_index++;
                 }
                 else if (c == ';') {
                     cur_state = 9;
-                    cur_index++;
                 }
                 else if (c == ' ') {
                     memmove(buf, buf + 1, 1024 - 1);
+                    cur_index--;
                 } //
                 else if (c != '\r' && c != '\0') {
                     printf("Lexical error. Program exit. current state: %d, error: -%c-\n", cur_state, c);
                     return 1;
                 }
 
+                cur_index++;
                 
             } 
             
@@ -177,12 +172,12 @@ int main(int argc, char *argv[])
                 if (check_right_word_boundary(buf[cur_index + 1])) cur_state = 2;
                 else if (('0' <= c && c <= '9') || ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z') || c == '_') {
                     cur_state = 1;
-                    cur_index++;
                 }
                 else {
                     printf("Lexical error. Program exit. current state: %d, current index: %d, error: -%c-\n", cur_state, cur_index, c);
                     return 1;
                 }
+                    cur_index++;
 
 
             // state = 3. 상수 탐지 중.
@@ -190,19 +185,19 @@ int main(int argc, char *argv[])
                 if (check_right_word_boundary(buf[cur_index + 1])) cur_state = 4;
                 else if ('0' <= c && c <= '9') {
                     cur_state = 3;
-                    cur_index++;
                 }
                 else {
                     printf("Lexical error. Program exit. current state: %d, error: -%c-\n", cur_state, c);
                     return 1;
                 }
+                    cur_index++;
             }
 
             
             // state = 2. 식별자 탐지 완료, 키워드 구분 및 lexeme 리스트 확인.
             if (cur_state == 2) {
-                char get_str[cur_index + 2];
-                snprintf(get_str, cur_index + 2, "%s", buf);
+                char get_str[cur_index + 1];
+                snprintf(get_str, cur_index + 1, "%s", buf);
                 if (!strcmp(get_str, "int")) {
                     lexeme.token_number = KW_INT;
                     lexeme.token_value = 0;
@@ -221,24 +216,26 @@ int main(int argc, char *argv[])
                 }
                 //printf("%s", get_str);
 
-                printf("<%d, %d>\n", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, %s\n", lexeme.token_number, lexeme.token_value, get_str);
+                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
                 cur_state = 0;
-                memmove(buf, buf + cur_index + 1, 1024 - cur_index - 1);
+                memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
             }
             
             
             // state = 4. 상수 탐지 완료, lexeme 리스트 확인.
             if (cur_state == 4) {
-                char get_num[cur_index + 2];
-                snprintf(get_num, cur_index + 2, "%s", buf);
+                char get_num[cur_index + 1];
+                snprintf(get_num, cur_index + 1, "%s", buf);
 
                 lexeme.token_number = NUM_INT;
                 lexeme.token_value = lexval_manager(get_num);
 
-                printf("<%d, %d> ", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, %s\n", lexeme.token_number, lexeme.token_value, get_num);
+                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
                 cur_state = 0;
-                memmove(buf, buf + cur_index + 1, 1024 - cur_index - 1);
+                memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
             }
             
@@ -248,7 +245,8 @@ int main(int argc, char *argv[])
                 lexeme.token_number = OPEN_PAREN;
                 lexeme.token_value = 0;
 
-                printf("<%d, %d> ", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, (\n", lexeme.token_number, lexeme.token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -260,7 +258,8 @@ int main(int argc, char *argv[])
                 lexeme.token_number = CLOSE_PAREN;
                 lexeme.token_value = 0;
 
-                printf("<%d, %d> ", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, )\n", lexeme.token_number, lexeme.token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -272,7 +271,8 @@ int main(int argc, char *argv[])
                 lexeme.token_number = OPEN_BRACE;
                 lexeme.token_value = 0;
 
-                printf("<%d, %d> ", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, {\n", lexeme.token_number, lexeme.token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -284,7 +284,8 @@ int main(int argc, char *argv[])
                 lexeme.token_number = CLOSE_BRACE;
                 lexeme.token_value = 0;
 
-                printf("<%d, %d> ", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, }\n", lexeme.token_number, lexeme.token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -296,7 +297,8 @@ int main(int argc, char *argv[])
                 lexeme.token_number = PN_SEMI;
                 lexeme.token_value = 0;
 
-                printf("<%d, %d> ", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, ;\n", lexeme.token_number, lexeme.token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -318,5 +320,6 @@ int main(int argc, char *argv[])
         printf("라인 패스\n");
       
     }
-
+    printf("Lexing Finished.\n");
+    fclose(lexfp);
 }
