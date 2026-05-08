@@ -321,5 +321,9 @@ int main(int argc, char *argv[])
       
     }
     printf("Lexing Finished.\n");
+
+    fprintf(lexfp, "@@@\n");    // @@@ 라인을 추가해 렉싱 완료 표시.
+
+    fclose(prepfp);
     fclose(lexfp);
 }
