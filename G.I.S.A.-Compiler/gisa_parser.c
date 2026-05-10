@@ -36,31 +36,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-
-#define IDENT       0   // 식별자. [a-zA-Z_][a-zA-Z0-9_]*\b
-#define NUM_INT     1   // 상수 정수. [0-9]+\b
-
-#define KW_INT      2   // 키워드 int
-#define KW_VOID     3   // 키워드 void
-#define KW_RETURN   4   // 키워드 return
-
-#define OPEN_PAREN  5   // (
-#define CLOSE_PAREN 6   // )
-#define OPEN_BRACE  7   // {
-#define CLOSE_BRACE 8   // }
-
-#define PN_SEMI     9   // ;
-
-
-typedef struct {
-    int token_number;
-    int token_value;
-} Lexeme;
-
-typedef struct {
-    char lexeme_name[50];
-    int name_number;
-} Lexeme_value;
+#include "gisa_compiler.h"
 
 
 
@@ -80,12 +56,14 @@ void p_nt_exp();
 
 
 
-int get_nextSymbol(){
+void get_nextSymbol(){
     nextSymbol = token_type[symbolCount];
     printf("next symbol: %d\n", nextSymbol);
     symbolCount++;
+    //printf("SymbolCount = %d, cur_line = %d\n", symbolCount, cur_line);
     if (symbolCount > (cur_line + 1)) {
         printf("Parse Error: 제공된 lexeme보다 많은 symbol을 호출하고 있습니다.\n");
+        exit(1);
     }
 }
 
