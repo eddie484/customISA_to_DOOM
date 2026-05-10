@@ -1,33 +1,14 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdlib.h>
 
-#define IDENT       0   // 식별자. [a-zA-Z_][a-zA-Z0-9_]*\b
-#define NUM_INT     1   // 상수 정수. [0-9]+\b
-
-#define KW_INT      2   // 키워드 int
-#define KW_VOID     3   // 키워드 void
-#define KW_RETURN   4   // 키워드 return
-
-#define OPEN_PAREN  5   // (
-#define CLOSE_PAREN 6   // )
-#define OPEN_BRACE  7   // {
-#define CLOSE_BRACE 8   // }
-
-#define PN_SEMI     9   // ;
+#include "gisa_compiler.h"
 
 
-typedef struct {
-    int token_number;
-    int token_value;
-} Lexeme;
 
-typedef struct {
-    char lexeme_name[50];
-    int name_number;
-} Lexeme_value;
-
-
+Lexeme lexeme [100];
+int lexeme_count = 0;
 Lexeme_value lex_val [100];
 int lex_val_count = 0;
 
@@ -81,8 +62,12 @@ int check_right_word_boundary(char right) {     // ret 1이 \b, ret0은 \b 아�
 **********************************
 ******************************* */
 
-int main(int argc, char *argv[])
+Lexer_result lexer(char *prep_name, char *lex_name)
 {
+    Lexer_result lexer_result;
+
+
+    /*
     char *prep_name;
     char *lex_name;
 
@@ -94,13 +79,15 @@ int main(int argc, char *argv[])
             prep_name = "preprocess.prep";
             lex_name = "lexeme.lex";
         }
+    */
+
 
     FILE *prepfp = fopen(prep_name, "r");       // 처리할 전처리 코드가 적힌 파일 오픈
     FILE *lexfp = fopen(lex_name, "w");         // 처리 결과 lexeme를 저장할 파일 오픈
 
     if (prepfp == NULL || lexfp == NULL) {           // 두 파일 중 하나라도 열지 못할 시 비정상 종료
         printf("파일 읽기 실패\n");
-        return 1;
+        exit(1);
     }
 
 
@@ -119,7 +106,7 @@ int main(int argc, char *argv[])
         if (p != buf) memmove(buf, p, strlen(p) + 1);
 
         while (cur_index < 1024) {
-            Lexeme lexeme;
+            
             char c = buf[cur_index];
             //printf("이번 문자: %c, state: %d\n", c, cur_state);
 
@@ -157,9 +144,9 @@ int main(int argc, char *argv[])
                     memmove(buf, buf + 1, 1024 - 1);
                     cur_index--;
                 } //
-                else if (c != '\r' && c != '\0') {
+                else if (c != '\r' && c != '\n' && c != '\0') {
                     printf("Lexical error. Program exit. current state: %d, error: -%c-\n", cur_state, c);
-                    return 1;
+                    exit(1);
                 }
 
                 cur_index++;
@@ -175,7 +162,7 @@ int main(int argc, char *argv[])
                 }
                 else {
                     printf("Lexical error. Program exit. current state: %d, current index: %d, error: -%c-\n", cur_state, cur_index, c);
-                    return 1;
+                    exit(1);
                 }
                     cur_index++;
 
@@ -188,7 +175,7 @@ int main(int argc, char *argv[])
                 }
                 else {
                     printf("Lexical error. Program exit. current state: %d, error: -%c-\n", cur_state, c);
-                    return 1;
+                    exit(1);
                 }
                     cur_index++;
             }
@@ -199,25 +186,26 @@ int main(int argc, char *argv[])
                 char get_str[cur_index + 1];
                 snprintf(get_str, cur_index + 1, "%s", buf);
                 if (!strcmp(get_str, "int")) {
-                    lexeme.token_number = KW_INT;
-                    lexeme.token_value = 0;
+                    lexeme[lexeme_count].token_number = KW_INT;
+                    lexeme[lexeme_count].token_value = 0;
                     //printf("INT");
                 } else if (!strcmp(get_str, "void")) {
-                    lexeme.token_number = KW_VOID;
-                    lexeme.token_value = 0;
+                    lexeme[lexeme_count].token_number = KW_VOID;
+                    lexeme[lexeme_count].token_value = 0;
                     //printf("VOID");
                 } else if (!strcmp(get_str, "return")) {
-                    lexeme.token_number = KW_RETURN;
-                    lexeme.token_value = 0;
+                    lexeme[lexeme_count].token_number = KW_RETURN;
+                    lexeme[lexeme_count].token_value = 0;
                     //printf("RETURN");
                 } else {
-                    lexeme.token_number = IDENT;
-                    lexeme.token_value = lexval_manager (get_str);
+                    lexeme[lexeme_count].token_number = IDENT;
+                    lexeme[lexeme_count].token_value = lexval_manager (get_str);
                 }
                 //printf("%s", get_str);
 
-                printf("<%d, %d>, %s\n", lexeme.token_number, lexeme.token_value, get_str);
-                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, %s\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value, get_str);
+                fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                lexeme_count++;
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -229,11 +217,12 @@ int main(int argc, char *argv[])
                 char get_num[cur_index + 1];
                 snprintf(get_num, cur_index + 1, "%s", buf);
 
-                lexeme.token_number = NUM_INT;
-                lexeme.token_value = lexval_manager(get_num);
+                lexeme[lexeme_count].token_number = NUM_INT;
+                lexeme[lexeme_count].token_value = lexval_manager(get_num);
 
-                printf("<%d, %d>, %s\n", lexeme.token_number, lexeme.token_value, get_num);
-                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, %s\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value, get_num);
+                fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                lexeme_count++;
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -242,11 +231,12 @@ int main(int argc, char *argv[])
             
             // state = 5. ( 인 경우.
             if (cur_state == 5) {
-                lexeme.token_number = OPEN_PAREN;
-                lexeme.token_value = 0;
+                lexeme[lexeme_count].token_number = OPEN_PAREN;
+                lexeme[lexeme_count].token_value = 0;
 
-                printf("<%d, %d>, (\n", lexeme.token_number, lexeme.token_value);
-                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, (\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                lexeme_count++;
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -255,11 +245,12 @@ int main(int argc, char *argv[])
             
             // state = 6. ) 인 경우.
             if (cur_state == 6) {
-                lexeme.token_number = CLOSE_PAREN;
-                lexeme.token_value = 0;
+                lexeme[lexeme_count].token_number = CLOSE_PAREN;
+                lexeme[lexeme_count].token_value = 0;
 
-                printf("<%d, %d>, )\n", lexeme.token_number, lexeme.token_value);
-                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, )\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                lexeme_count++;
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -268,11 +259,12 @@ int main(int argc, char *argv[])
             
             // state = 7. { 인 경우.
             if (cur_state == 7) {
-                lexeme.token_number = OPEN_BRACE;
-                lexeme.token_value = 0;
+                lexeme[lexeme_count].token_number = OPEN_BRACE;
+                lexeme[lexeme_count].token_value = 0;
 
-                printf("<%d, %d>, {\n", lexeme.token_number, lexeme.token_value);
-                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, {\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                lexeme_count++;
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -281,11 +273,12 @@ int main(int argc, char *argv[])
             
             // state = 8. } 인 경우.
             if (cur_state == 8) {
-                lexeme.token_number = CLOSE_BRACE;
-                lexeme.token_value = 0;
+                lexeme[lexeme_count].token_number = CLOSE_BRACE;
+                lexeme[lexeme_count].token_value = 0;
 
-                printf("<%d, %d>, }\n", lexeme.token_number, lexeme.token_value);
-                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, }\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                lexeme_count++;
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
@@ -294,18 +287,19 @@ int main(int argc, char *argv[])
             
             // state = 9. ; 인 경우.
             if (cur_state == 9) {
-                lexeme.token_number = PN_SEMI;
-                lexeme.token_value = 0;
+                lexeme[lexeme_count].token_number = PN_SEMI;
+                lexeme[lexeme_count].token_value = 0;
 
-                printf("<%d, %d>, ;\n", lexeme.token_number, lexeme.token_value);
-                fprintf(lexfp, "<%d, %d>\n", lexeme.token_number, lexeme.token_value);
+                printf("<%d, %d>, ;\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                lexeme_count++;
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
             }
 
             
-            if (c == '\r') {
+            if (c == '\r' || c == '\n') {
                 //printf("엔터 만남! %d\n", cur_state);
                 break;
             } else if (c == ' ') {
@@ -326,4 +320,12 @@ int main(int argc, char *argv[])
 
     fclose(prepfp);
     fclose(lexfp);
+
+
+    lexer_result.lexeme_list = lexeme;
+    lexer_result.lexeme_count = lexeme_count;
+    lexer_result.value_table = lex_val;
+    lexer_result.value_count = lex_val_count;
+
+    return lexer_result;
 }

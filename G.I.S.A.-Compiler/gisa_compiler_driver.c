@@ -2,6 +2,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "gisa_compiler.h"
+
+
+
 int main(int argc, char *argv[]) {
     if (argc == 2 || argc == 3) {
         char *option;
@@ -65,11 +69,24 @@ int main(int argc, char *argv[]) {
 
 
         // ***** Lexing *****
-        printf("Start Lexing.\n");
+        printf("Start Lexing.\n\n");
 
-        //asdf;
+        Lexer_result lexer_result;      // Lexer의 결과로 나온 lexeme list와 value table을 저장하는 구조체.
+        lexer_result = lexer("test_files/PREPROCESSED_return_2.i", "test_files/lexeme.lex");
         
-        printf("Lexing is finished. Remove Preprocessed file.\n");
+        printf("\nLexing is finished. Remove Preprocessed file.\n");
+        
+        /*
+        printf("Lexing result test:\n");
+
+        for (int i = 0; i < lexer_result.lexeme_count; i++) {
+            printf("lexeme count %d: <%d, %d>\n", lexer_result.lexeme_count, lexer_result.lexeme_list[i].token_number, lexer_result.lexeme_list[i].token_value);
+        }
+
+        for (int i = 0; i < lexer_result.value_count; i++) {
+            printf("value table count %d: <%s, %d>\n", lexer_result.value_count, lexer_result.value_table[i].lexeme_name, lexer_result.value_table[i].name_number);
+        }
+        */
 
 
         char remove_preprocess_file_cmd[1024];
