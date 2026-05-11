@@ -35,8 +35,6 @@ typedef struct {
 } Lexer_result;
 
 
-extern Lexeme lexeme [100];
-extern Lexeme_value lex_val [100];
 
 
 int lexval_manager (char *name);
