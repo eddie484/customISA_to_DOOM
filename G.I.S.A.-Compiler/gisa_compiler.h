@@ -17,11 +17,11 @@
 #define PN_SEMI     9   // ;
 
 
-#define NT_PROGRAM  100;
-#define NT_FUNCTION 101;
-#define NT_PARAM    102;
-#define NT_CONTENT  103;
-#define NT_EXP      104;
+#define NT_PROGRAM  100
+#define NT_FUNCTION 101
+#define NT_PARAM    102
+#define NT_CONTENT  103
+#define NT_EXP      104
 
 
 #include <stdio.h>
