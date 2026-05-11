@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
         printf("Start Lexing.\n\n");
 
         Lexer_result lexer_result;      // Lexer의 결과로 나온 lexeme list와 value table을 저장하는 구조체.
-        lexer_result = lexer("test_files/PREPROCESSED_return_2.i", "test_files/lexeme.lex");
+        lexer_result = lexer("test_code/PREPROCESSED_return_2.i", "test_code/lexeme.lex");
         
         printf("\nLexing is finished. Remove Preprocessed file.\n");
         
@@ -103,11 +103,12 @@ int main(int argc, char *argv[]) {
 
 
         // ***** Parsing *****
-        printf("Start Parsing.\n");
+        printf("Start Parsing.\n\n");
 
-        //asdf;
+        Node parser_result;
+        parser_result = parser(lexer_result, "test_code/ast.parse");
         
-        printf("Parsing is finished.\n");
+        printf("\nParsing is finished.\n");
 
         
         if (strcmp(option, "--parse") == 0) {

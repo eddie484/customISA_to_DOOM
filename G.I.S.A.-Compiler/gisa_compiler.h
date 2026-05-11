@@ -34,11 +34,16 @@ typedef struct {
     int value_count;
 } Lexer_result;
 
-
+typedef struct Node {
+    Lexeme token;
+    struct Node * son;
+    struct Node * brother;
+} Node;
 
 
 int lexval_manager (char *name);
 int check_right_word_boundary(char right);
 Lexer_result lexer(char *prep_name, char *lex_name);
+Node parser(Lexer_result lex_input, char *parse_name);
 
 #endif
