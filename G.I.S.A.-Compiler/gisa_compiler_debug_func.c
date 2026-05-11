@@ -44,3 +44,28 @@ void bin_tree_printer(Node * tree_top){
     node_printer(tree_top, depth);
 
 }
+
+
+void node_file_printer(Node * node, int depth, FILE *parsefp){
+    for (int i = 0; i < depth; i++){
+        fprintf(parsefp, "\t");
+    }
+    fprintf(parsefp, "<%d, %d>\n", node->token.token_number, node->token.token_value);
+    
+    if (node->son != NULL) {
+        int new_depth = depth + 1;
+        node_file_printer(node->son, new_depth, parsefp);
+    }
+    
+    if (node->brother != NULL) {
+        node_file_printer(node->brother, depth, parsefp);
+    }
+}
+
+
+void bin_tree_file_printer(Node * tree_top, FILE *parsefp){
+
+    int depth = 0;
+    node_file_printer(tree_top, depth, parsefp);
+
+}

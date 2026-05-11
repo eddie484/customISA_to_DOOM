@@ -30,35 +30,42 @@
     FOLLOW(<param>) = {6}
     FOLLOW(<content>) = {8}
     FOLLOW(<exp>) = {9}
+
+    ---
+
+    *** removed token list ***
+    OPEN_PAREN
+    CLOSE_PAREN
+    OPEN_BRACE
+    CLOSE_BRACE
+    PN_SEMI
 */
 
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+
 
 #include "gisa_compiler.h"
 
 
 
 int symbolCount = 0;
-int nextSymbol = 0;
+Lexeme nextSymbol;
 
 int token_type[1024];          // 읽어온 lexeme들의 타입을 저장. 
 int token_value[1024];          // 읽어온 lexeme들의 값을 저장. 
 int cur_line = 0;
 
 
-void p_nt_program();
-void p_nt_function();
-void p_nt_param();
-void p_nt_content();
-void p_nt_exp();
+Node * p_nt_program();
+Node * p_nt_function();
+Node * p_nt_param();
+Node * p_nt_content();
+Node * p_nt_exp();
 
 
 
 void get_nextSymbol(Lexer_result lex_input){
-    nextSymbol = lex_input.lexeme_list[symbolCount].token_number;
-    printf("next symbol: %d\n", nextSymbol);
+    nextSymbol = lex_input.lexeme_list[symbolCount];
+    printf("next symbol: %d\n", nextSymbol.token_number);
     symbolCount++;
     //printf("SymbolCount = %d, token_count = %d\n", symbolCount, lex_input.lexeme_count);
     if (symbolCount > (lex_input.lexeme_count + 1)) {
@@ -72,129 +79,230 @@ void error(int predLex, int givenLex){
     exit(1);
 }
 
-void p_t_IDENT(Lexer_result lex_input){
-    if (nextSymbol == 0){
+Node * p_t_IDENT(Lexer_result lex_input){
+    if (nextSymbol.token_number == 0){
         printf("parsing: IDENT\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(0, nextSymbol);
+    else error(0, nextSymbol.token_number);
 }
 
-void p_t_NUM_INT(Lexer_result lex_input){
-    if (nextSymbol == 1){
+Node * p_t_NUM_INT(Lexer_result lex_input){
+    if (nextSymbol.token_number == 1){
         printf("parsing: NUM_INT\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(1,nextSymbol);
+    else error(1,nextSymbol.token_number);
 }
 
-void p_t_KW_INT(Lexer_result lex_input){
-    if (nextSymbol == 2){
+Node * p_t_KW_INT(Lexer_result lex_input){
+    if (nextSymbol.token_number == 2){
         printf("parsing: KW_INT\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(2, nextSymbol);
+    else error(2, nextSymbol.token_number);
 }
 
-void p_t_KW_VOID(Lexer_result lex_input){
-    if (nextSymbol == 3){
+Node * p_t_KW_VOID(Lexer_result lex_input){
+    if (nextSymbol.token_number == 3){
         printf("parsing: KW_VOID\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(3, nextSymbol);
+    else error(3, nextSymbol.token_number);
 }
 
-void p_t_KW_RETURN(Lexer_result lex_input){
-    if (nextSymbol == 4){
+Node * p_t_KW_RETURN(Lexer_result lex_input){
+    if (nextSymbol.token_number == 4){
         printf("parsing: KW_RETURN\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(4, nextSymbol);
+    else error(4, nextSymbol.token_number);
 }
 
-void p_t_OPEN_PAREN(Lexer_result lex_input){
-    if (nextSymbol == 5){
+Node * p_t_OPEN_PAREN(Lexer_result lex_input){
+    if (nextSymbol.token_number == 5){
         printf("parsing: OPEN_PAREN\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(5, nextSymbol);
+    else error(5, nextSymbol.token_number);
 }
 
-void p_t_CLOSE_PAREN(Lexer_result lex_input){
-    if (nextSymbol == 6){
+Node * p_t_CLOSE_PAREN(Lexer_result lex_input){
+    if (nextSymbol.token_number == 6){
         printf("parsing: CLOSE_PAREN\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(6, nextSymbol);
+    else error(6, nextSymbol.token_number);
 }
 
-void p_t_OPEN_BRACE(Lexer_result lex_input){
-    if (nextSymbol == 7){
+Node * p_t_OPEN_BRACE(Lexer_result lex_input){
+    if (nextSymbol.token_number == 7){
         printf("parsing: OPEN_BRACE\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(7, nextSymbol);
+    else error(7, nextSymbol.token_number);
 }
 
-void p_t_CLOSE_BRACE(Lexer_result lex_input){
-    if (nextSymbol == 8){
+Node * p_t_CLOSE_BRACE(Lexer_result lex_input){
+    if (nextSymbol.token_number == 8){
         printf("parsing: CLOSE_BRACE\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(8, nextSymbol);
+    else error(8, nextSymbol.token_number);
 }
 
-void p_t_PN_SEMI(Lexer_result lex_input){
-    if (nextSymbol == 9){
+Node * p_t_PN_SEMI(Lexer_result lex_input){
+    if (nextSymbol.token_number == 9){
         printf("parsing: PN_SEMI\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
         get_nextSymbol(lex_input);
+
+        return n;
     }
-    else error(9, nextSymbol);
+    else error(9, nextSymbol.token_number);
 }
 
 
-void p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
-    if (nextSymbol == 2) {
+Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
+    if (nextSymbol.token_number == 2) {
         printf("parsing: nt_program\n");
-        p_nt_function(lex_input);
-    }
+        Node * x1 = p_nt_function(lex_input);
+        
+        Node * n = malloc(sizeof(Node));
+        n->son = x1;
+        n->token.token_number = NT_PROGRAM;
+
+        return n;
+    } else exit(1);
 }
 
-void p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT "OPEN_PAREN" <param> "CLOSE_PAREN" "OPEN_BRACE" <content> "CLOSE_BRACE"
-    if (nextSymbol == 2) {
+Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT "OPEN_PAREN" <param> "CLOSE_PAREN" "OPEN_BRACE" <content> "CLOSE_BRACE"
+    if (nextSymbol.token_number == 2) {
         printf("parsing: nt_function\n");
-        p_t_KW_INT(lex_input);
-        p_t_IDENT(lex_input);
-        p_t_OPEN_PAREN(lex_input);
-        p_nt_param(lex_input);
-        p_t_CLOSE_PAREN(lex_input);
-        p_t_OPEN_BRACE(lex_input);
-        p_nt_content(lex_input);
-        p_t_CLOSE_BRACE(lex_input);
-    }
+        Node * x1 = p_t_KW_INT(lex_input);
+        Node * x2 = p_t_IDENT(lex_input);
+        Node * x3 = p_t_OPEN_PAREN(lex_input);
+        Node * x4 = p_nt_param(lex_input);
+        Node * x5 = p_t_CLOSE_PAREN(lex_input);
+        Node * x6 = p_t_OPEN_BRACE(lex_input);
+        Node * x7 = p_nt_content(lex_input);
+        Node * x8 = p_t_CLOSE_BRACE(lex_input);
+
+        x1->brother = x2;
+        x2->brother = x3;
+        x3->brother = x4;
+        x4->brother = x5;
+        x5->brother = x6;
+        x6->brother = x7;
+        x7->brother = x8;
+        
+        Node * n = malloc(sizeof(Node));
+        n->son = x1;
+        n->token.token_number = NT_FUNCTION;
+
+        return n;
+    } else exit(1);
 }
 
-void p_nt_param(Lexer_result lex_input){      // <param> ::= "KW_VOID"
-    if (nextSymbol == 3) {
+Node * p_nt_param(Lexer_result lex_input){      // <param> ::= "KW_VOID"
+    if (nextSymbol.token_number == 3) {
         printf("parsing: nt_param\n");
-        p_t_KW_VOID(lex_input);
-    }
+        Node * x1 = p_t_KW_VOID(lex_input);
+        
+        Node * n = malloc(sizeof(Node));
+        n->son = x1;
+        n->token.token_number = NT_PARAM;
+
+        return n;
+    } else exit(1);
 }
 
-void p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <exp> "PN_SEMI"
-    if (nextSymbol == 4) {
+Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <exp> "PN_SEMI"
+    if (nextSymbol.token_number == 4) {
         printf("parsing: nt_content\n");
-        p_t_KW_RETURN(lex_input);
-        p_nt_exp(lex_input);
-        p_t_PN_SEMI(lex_input);
-    }
+        Node * x1 = p_t_KW_RETURN(lex_input);
+        Node * x2 = p_nt_exp(lex_input);
+        Node * x3 = p_t_PN_SEMI(lex_input);
+
+        x1->brother = x2;
+        x2->brother = x3;
+        
+        Node * n = malloc(sizeof(Node));
+        n->son = x1;
+        n->token.token_number = NT_CONTENT;
+
+        return n;
+    } else exit(1);
 }
 
-void p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT
-    if (nextSymbol == 1) {
+Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT
+    if (nextSymbol.token_number == 1) {
         printf("parsing: nt_exp\n");
-        p_t_NUM_INT(lex_input);
-    }
+        Node * x1 = p_t_NUM_INT(lex_input);
+        
+        Node * n = malloc(sizeof(Node));
+        n->son = x1;
+        n->token.token_number = NT_EXP;
+
+        return n;
+    } else exit(1);
 }
 
 
@@ -210,9 +318,9 @@ void p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT
 *****************************************
 ************************************** */
 
-Node parser(Lexer_result lex_input, char *parse_name)
+Node * parser(Lexer_result lex_input, char *parse_name)
 {
-    Node ast_top;
+    Node * ast_top = malloc(sizeof(Node));
     /*
     char *lex_name;
     char *parse_name;
@@ -235,26 +343,24 @@ Node parser(Lexer_result lex_input, char *parse_name)
         exit(1);
     }
 
-    /*
-    printf("Lexing loaded result test:\n");
+    
+    //lexer_result_printer(lex_input);
 
-        for (int i = 0; i < lex_input.lexeme_count; i++) {
-            printf("lexeme count %d: <%d, %d>\n", lex_input.lexeme_count, lex_input.lexeme_list[i].token_number, lex_input.lexeme_list[i].token_value);
-        }
-
-        for (int i = 0; i < lex_input.value_count; i++) {
-            printf("value table count %d: <%s, %d>\n", lex_input.value_count, lex_input.value_table[i].lexeme_name, lex_input.value_table[i].name_number);
-        }
-    */
+    
 
     printf("\nLexeme 로딩 성공. Parsing 시작.\n\n");
 
     get_nextSymbol(lex_input);
-    p_nt_program(lex_input);
+    ast_top = p_nt_program(lex_input);
+
+
+    bin_tree_file_printer(ast_top, parsefp);
 
 
     printf("Parsing Finished.\n");
     fclose(parsefp);
+
+    bin_tree_printer(ast_top);
 
     return ast_top;
 }

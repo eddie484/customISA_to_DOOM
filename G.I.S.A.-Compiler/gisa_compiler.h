@@ -17,6 +17,18 @@
 #define PN_SEMI     9   // ;
 
 
+#define NT_PROGRAM  100;
+#define NT_FUNCTION 101;
+#define NT_PARAM    102;
+#define NT_CONTENT  103;
+#define NT_EXP      104;
+
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+
 typedef struct {
     int token_number;
     int token_value;
@@ -44,6 +56,10 @@ typedef struct Node {
 int lexval_manager (char *name);
 int check_right_word_boundary(char right);
 Lexer_result lexer(char *prep_name, char *lex_name);
-Node parser(Lexer_result lex_input, char *parse_name);
+Node * parser(Lexer_result lex_input, char *parse_name);
+
+void lexer_result_printer(Lexer_result lexer_result);
+void bin_tree_printer(Node * tree_top);
+void bin_tree_file_printer(Node * tree_top, FILE *parsefp);
 
 #endif
