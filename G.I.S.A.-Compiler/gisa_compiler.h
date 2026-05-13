@@ -24,6 +24,14 @@
 #define NT_EXP      104
 
 
+#define ASM_PROGRAM  200
+#define ASM_FUNCTION 201
+#define ASM_INSTR    202
+#define ASM_MOV      203
+#define ASM_RET      204
+#define ASM_REGISTER 205
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -57,6 +65,7 @@ int lexval_manager (char *name);
 int check_right_word_boundary(char right);
 Lexer_result lexer(char *prep_name, char *lex_name);
 Node * parser(Lexer_result lex_input, char *parse_name);
+Node * code_generator(Node * parse_input, char * codegentree_name);
 
 void lexer_result_printer(Lexer_result lexer_result);
 void bin_tree_printer(Node * tree_top);

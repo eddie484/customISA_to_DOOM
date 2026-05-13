@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
 #include "gisa_compiler.h"
 
 
@@ -76,17 +72,7 @@ int main(int argc, char *argv[]) {
         
         printf("\nLexing is finished. Remove Preprocessed file.\n");
         
-        /*
-        printf("Lexing result test:\n");
-
-        for (int i = 0; i < lexer_result.lexeme_count; i++) {
-            printf("lexeme count %d: <%d, %d>\n", lexer_result.lexeme_count, lexer_result.lexeme_list[i].token_number, lexer_result.lexeme_list[i].token_value);
-        }
-
-        for (int i = 0; i < lexer_result.value_count; i++) {
-            printf("value table count %d: <%s, %d>\n", lexer_result.value_count, lexer_result.value_table[i].lexeme_name, lexer_result.value_table[i].name_number);
-        }
-        */
+        //lexer_result_printer(lex_input);
 
 
         char remove_preprocess_file_cmd[1024];
@@ -105,7 +91,7 @@ int main(int argc, char *argv[]) {
         // ***** Parsing *****
         printf("Start Parsing.\n\n");
 
-        Node parser_result;
+        Node * parser_result;
         parser_result = parser(lexer_result, "test_code/ast.parse");
         
         printf("\nParsing is finished.\n");
@@ -121,7 +107,8 @@ int main(int argc, char *argv[]) {
         // ***** Code Generating *****
         printf("Start Code Generating.\n");
 
-        //asdf;
+        Node * codegen_result;
+        codegen_result = code_generator(parser_result, "test_code/asmtree.codegen");
         
         printf("Code Generating is finished.\n");
         
