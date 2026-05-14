@@ -150,7 +150,7 @@ Node * asm_nt_mov(Node * ast){
 
 Node * code_generator(Node * parse_input, char * codegentree_name)
 {
-    Node * asm_top = malloc(sizeof(Node));
+    Node * asm_top;
 
 
     FILE *codegenfp = fopen(codegentree_name, "w");         // 처리 결과 ast를 저장할 파일 오픈

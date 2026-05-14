@@ -98,6 +98,10 @@ int main(int argc, char *argv[]) {
 
         if (strcmp(option, "--lex") == 0) {
             printf("Option --lex: Lexing finished. Program exit.\n");
+
+            free(lexer_result.lexeme_list);
+            free(lexer_result.value_table);
+
             return 0;
         }
 
@@ -120,6 +124,11 @@ int main(int argc, char *argv[]) {
         
         if (strcmp(option, "--parse") == 0) {
             printf("Option --parse: Parsing finished. Program exit.\n");
+
+            free(lexer_result.lexeme_list);
+            free(lexer_result.value_table);
+            tree_malloc_cleaner(parser_result);
+
             return 0;
         }
 
@@ -142,6 +151,12 @@ int main(int argc, char *argv[]) {
         
         if (strcmp(option, "--codegen") == 0) {
             printf("Option --codegen: Code Generating finished. Program exit.\n");
+
+            free(lexer_result.lexeme_list);
+            free(lexer_result.value_table);
+            tree_malloc_cleaner(parser_result);
+            tree_malloc_cleaner(codegen_result);
+
             return 0;
         }
 
@@ -163,6 +178,12 @@ int main(int argc, char *argv[]) {
         
         if (strcmp(option, "-S") == 0) {
             printf("Option -S: Code Emission finished. Program exit.\n");
+
+            free(lexer_result.lexeme_list);
+            free(lexer_result.value_table);
+            tree_malloc_cleaner(parser_result);
+            tree_malloc_cleaner(codegen_result);
+
             return 0;
         }
 
@@ -185,6 +206,11 @@ int main(int argc, char *argv[]) {
         }
         
         printf("GISA compiler driver's every process is finished well. Program exit.\n");
+        
+        free(lexer_result.lexeme_list);
+        free(lexer_result.value_table);
+        tree_malloc_cleaner(parser_result);
+        tree_malloc_cleaner(codegen_result);
         
 
     } else {

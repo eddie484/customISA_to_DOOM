@@ -69,3 +69,16 @@ void bin_tree_file_printer(Node * tree_top, FILE *parsefp){
     node_file_printer(tree_top, depth, parsefp);
 
 }
+
+
+void tree_malloc_cleaner(Node * node) {
+    if (node->son != NULL) {
+        tree_malloc_cleaner(node->son);
+    }
+    
+    if (node->brother != NULL) {
+        tree_malloc_cleaner(node->brother);
+    }
+
+    free(node);
+}

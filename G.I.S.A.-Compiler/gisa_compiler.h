@@ -74,5 +74,6 @@ void code_emitter(Node * codegen_result, Lexer_result lexer_result, char * codeg
 void lexer_result_printer(Lexer_result lexer_result);
 void bin_tree_printer(Node * tree_top);
 void bin_tree_file_printer(Node * tree_top, FILE *parsefp);
+void tree_malloc_cleaner(Node * node);
 
 #endif

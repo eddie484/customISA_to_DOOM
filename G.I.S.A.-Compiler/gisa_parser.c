@@ -349,7 +349,7 @@ Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT
 
 Node * parser(Lexer_result lex_input, char *parse_name)
 {
-    Node * ast_top = malloc(sizeof(Node));
+    Node * ast_top;
     /*
     char *lex_name;
     char *parse_name;
