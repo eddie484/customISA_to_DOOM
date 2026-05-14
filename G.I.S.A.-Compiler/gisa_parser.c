@@ -92,6 +92,9 @@ Node * p_t_IDENT(Lexer_result lex_input){
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
 
+        n->son = NULL;
+        n->brother = NULL;
+
         get_nextSymbol(lex_input);
 
         return n;
@@ -105,6 +108,9 @@ Node * p_t_NUM_INT(Lexer_result lex_input){
 
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
+
+        n->son = NULL;
+        n->brother = NULL;
 
         get_nextSymbol(lex_input);
 
@@ -120,6 +126,9 @@ Node * p_t_KW_INT(Lexer_result lex_input){
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
 
+        n->son = NULL;
+        n->brother = NULL;
+
         get_nextSymbol(lex_input);
 
         return n;
@@ -133,6 +142,9 @@ Node * p_t_KW_VOID(Lexer_result lex_input){
 
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
+
+        n->son = NULL;
+        n->brother = NULL;
 
         get_nextSymbol(lex_input);
 
@@ -148,6 +160,9 @@ Node * p_t_KW_RETURN(Lexer_result lex_input){
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
 
+        n->son = NULL;
+        n->brother = NULL;
+
         get_nextSymbol(lex_input);
 
         return n;
@@ -161,6 +176,9 @@ Node * p_t_OPEN_PAREN(Lexer_result lex_input){
 
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
+
+        n->son = NULL;
+        n->brother = NULL;
 
         get_nextSymbol(lex_input);
 
@@ -176,6 +194,9 @@ Node * p_t_CLOSE_PAREN(Lexer_result lex_input){
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
 
+        n->son = NULL;
+        n->brother = NULL;
+
         get_nextSymbol(lex_input);
 
         return n;
@@ -189,6 +210,9 @@ Node * p_t_OPEN_BRACE(Lexer_result lex_input){
 
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
+
+        n->son = NULL;
+        n->brother = NULL;
 
         get_nextSymbol(lex_input);
 
@@ -204,6 +228,9 @@ Node * p_t_CLOSE_BRACE(Lexer_result lex_input){
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
 
+        n->son = NULL;
+        n->brother = NULL;
+
         get_nextSymbol(lex_input);
 
         return n;
@@ -217,6 +244,9 @@ Node * p_t_PN_SEMI(Lexer_result lex_input){
 
         Node * n = malloc(sizeof(Node));
         n->token = nextSymbol;
+
+        n->son = NULL;
+        n->brother = NULL;
 
         get_nextSymbol(lex_input);
 
@@ -234,6 +264,8 @@ Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
         Node * n = malloc(sizeof(Node));
         n->son = x1;
         n->token.token_number = NT_PROGRAM;
+
+        n->brother = NULL;
 
         return n;
     } else exit(1);
@@ -258,6 +290,8 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
         Node * n = malloc(sizeof(Node));
         n->son = x1;
         n->token.token_number = NT_FUNCTION;
+
+        n->brother = NULL;
 
         return n;
     } else exit(1);
@@ -284,6 +318,8 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         Node * n = malloc(sizeof(Node));
         n->son = x1;
         n->token.token_number = NT_CONTENT;
+
+        n->brother = NULL;
 
         return n;
     } else exit(1);
