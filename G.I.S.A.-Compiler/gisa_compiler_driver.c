@@ -46,10 +46,25 @@ int main(int argc, char *argv[]) {
 
         printf("option: \"%s\", full name: \"%s\", dir: \"%s\", file name: \"%s\".\n", option, name, file_dir, file_name);
 
-        if (strcmp(option, "--lex") != 0 && strcmp(option, "--parse") != 0 && strcmp(option, "--codegen") != 0 && strcmp(option, "-S") != 0 && strcmp(option, "--no-option") != 0) {
-            printf("잘못된 인자가 입력되었습니다.\n인자로는 \"파일명\" 혹은 \"옵션명 파일명\"만 사용 가능합니다.\n옵션: --lex, --parse, --codegen, -S\n");
+        if (strcmp(option, "--lex") != 0 && strcmp(option, "--parse") != 0 && strcmp(option, "--codegen") != 0 && strcmp(option, "-S") != 0 && strcmp(option, "--keep") != 0 && strcmp(option, "--no-option") != 0) {
+            printf("잘못된 인자가 입력되었습니다.\n인자로는 \"파일명\" 혹은 \"옵션명 파일명\"만 사용 가능합니다.\n옵션: --lex, --parse, --codegen, -S, --keep\n");
             return 1;
         }
+
+        // ***** 각 단계별 생성될 파일명 지정 ****
+        char preprocess_filename[256];
+        char lex_filename[256];
+        char parse_filename[256];
+        char asmtreegen_filename[256];
+        char asmemit_filename[256];
+        char binary_filename[256];
+
+        snprintf(preprocess_filename, sizeof(preprocess_filename), "%sa_PREPROCESSED_%s.i", file_dir, file_name);
+        snprintf(lex_filename, sizeof(lex_filename), "%sb_LEXEME_%s.lex", file_dir, file_name);
+        snprintf(parse_filename, sizeof(parse_filename), "%sc_AST_%s.parse", file_dir, file_name);
+        snprintf(asmtreegen_filename, sizeof(asmtreegen_filename), "%sd_ASMTREE_%s.codegen", file_dir, file_name);
+        snprintf(asmemit_filename, sizeof(asmemit_filename), "%se_ASSEMBLY_%s.asm", file_dir, file_name);
+        snprintf(binary_filename, sizeof(preprocess_filename), "%sf_BINART_%s.bin", file_dir, file_name);
 
 
         // ***** 전처리 진행 *****
@@ -57,7 +72,7 @@ int main(int argc, char *argv[]) {
 
         char preprocessing_cmd[1024];
 
-        snprintf(preprocessing_cmd, sizeof(preprocessing_cmd), "gcc -E -P %s -o %sPREPROCESSED_%s.i", name, file_dir, file_name);
+        snprintf(preprocessing_cmd, sizeof(preprocessing_cmd), "gcc -E -P %s -o %s", name, preprocess_filename);
         if (system(preprocessing_cmd) != 0) return 2;
 
         printf("Preprocessing is finished.\n");
@@ -68,17 +83,17 @@ int main(int argc, char *argv[]) {
         printf("Start Lexing.\n\n");
 
         Lexer_result lexer_result;      // Lexer의 결과로 나온 lexeme list와 value table을 저장하는 구조체.
-        lexer_result = lexer("test_code/PREPROCESSED_return_2.i", "test_code/lexeme.lex");
+        lexer_result = lexer(preprocess_filename, lex_filename);
         
         printf("\nLexing is finished. Remove Preprocessed file.\n");
         
         //lexer_result_printer(lex_input);
 
-
-        char remove_preprocess_file_cmd[1024];
-
-        snprintf(remove_preprocess_file_cmd, sizeof(remove_preprocess_file_cmd), "rm %sPREPROCESSED_%s.i", file_dir, file_name);
-        if (system(remove_preprocess_file_cmd) != 0) return 4;
+        if (strcmp(option, "--keep") != 0) {
+            char remove_preprocess_file_cmd[1024];
+            snprintf(remove_preprocess_file_cmd, sizeof(remove_preprocess_file_cmd), "rm %s", preprocess_filename);
+            if (system(remove_preprocess_file_cmd) != 0) return 4;
+        }
 
 
         if (strcmp(option, "--lex") == 0) {
@@ -92,9 +107,15 @@ int main(int argc, char *argv[]) {
         printf("Start Parsing.\n\n");
 
         Node * parser_result;
-        parser_result = parser(lexer_result, "test_code/ast.parse");
+        parser_result = parser(lexer_result, parse_filename);
         
         printf("\nParsing is finished.\n");
+
+        if (strcmp(option, "--keep") != 0) {
+            char remove_lex_file_cmd[1024];
+            snprintf(remove_lex_file_cmd, sizeof(remove_lex_file_cmd), "rm %s", lex_filename);
+            if (system(remove_lex_file_cmd) != 0) return 4;
+        }
 
         
         if (strcmp(option, "--parse") == 0) {
@@ -108,9 +129,15 @@ int main(int argc, char *argv[]) {
         printf("Start Code Generating.\n");
 
         Node * codegen_result;
-        codegen_result = code_generator(parser_result, "test_code/asmtree.codegen");
+        codegen_result = code_generator(parser_result, asmtreegen_filename);
         
         printf("Code Generating is finished.\n");
+
+        if (strcmp(option, "--keep") != 0) {
+            char remove_parse_file_cmd[1024];
+            snprintf(remove_parse_file_cmd, sizeof(remove_parse_file_cmd), "rm %s", parse_filename);
+            if (system(remove_parse_file_cmd) != 0) return 4;
+        }
         
         
         if (strcmp(option, "--codegen") == 0) {
@@ -123,9 +150,15 @@ int main(int argc, char *argv[]) {
         // ***** Code Emission *****
         printf("Start Code Emission.\n");
 
-        code_emitter(codegen_result, lexer_result, "test_code/assembly.asm");
+        code_emitter(codegen_result, lexer_result, asmemit_filename);
 
         printf("Code Emission is finished.\n");
+
+        if (strcmp(option, "--keep") != 0) {
+            char remove_codegen_file_cmd[1024];
+            snprintf(remove_codegen_file_cmd, sizeof(remove_codegen_file_cmd), "rm %s", asmtreegen_filename);
+            if (system(remove_codegen_file_cmd) != 0) return 4;
+        }
         
         
         if (strcmp(option, "-S") == 0) {
@@ -138,17 +171,18 @@ int main(int argc, char *argv[]) {
         printf("Start Assembling.\n");
 
         char assembling_cmd[1024];
-
-        snprintf(assembling_cmd, sizeof(assembling_cmd), "./gisa_assembler %sASSEMBLY_%s.s %s%s", file_dir, file_name, file_dir, file_name);
+        
+        snprintf(assembling_cmd, sizeof(assembling_cmd), "./gisa_assembler %s %s", asmemit_filename, binary_filename);
         if (system(assembling_cmd) != 0) return 8;
 
         
         printf("Assembling is finished. Remove Assembly file.\n");
 
-        char remove_assembly_file_cmd[1024];
-
-        snprintf(remove_assembly_file_cmd, sizeof(remove_assembly_file_cmd), "rm %sASSEMBLY_%s.s", file_dir, file_name);
-        if (system(remove_assembly_file_cmd) != 0) return 9;
+        if (strcmp(option, "--keep") != 0) {
+            char remove_assembly_file_cmd[1024];
+            snprintf(remove_assembly_file_cmd, sizeof(remove_assembly_file_cmd), "rm %s", asmemit_filename);
+            if (system(remove_assembly_file_cmd) != 0) return 4;
+        }
         
         printf("GISA compiler driver's every process is finished well. Program exit.\n");
         
