@@ -342,7 +342,14 @@ Lexer_result lexer(char *prep_name, char *lex_name)
     }
     printf("Lexing Finished.\n");
 
-    fprintf(lexfp, "@@@\n");    // @@@ 라인을 추가해 렉싱 완료 표시.
+    lexeme[lexeme_count].token_number = LEXING_EOF;
+    lexeme[lexeme_count].token_value = 0;
+
+    printf("<%d, %d>, ;\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+    
+    lexeme_count++;
+    //fprintf(lexfp, "@@@\n");    // @@@ 라인을 추가해 렉싱 완료 표시.
 
     fclose(prepfp);
     fclose(lexfp);

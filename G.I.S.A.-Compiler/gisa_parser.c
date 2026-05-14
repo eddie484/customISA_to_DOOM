@@ -80,8 +80,8 @@ void get_nextSymbol(Lexer_result lex_input){
     }
 }
 
-void error(int predLex, int givenLex){
-    printf("Parse Error: lexeme %d가 주어져야 할 차례지만, 제공된 lexeme는 %d입니다.\n", predLex, givenLex);//: %d번 lexeme <%d, %d>를 파싱하는 과정에서 에러 발생");
+void error(int predLex, Lexeme givenLex){
+    printf("Parse Error: token number %d인 lexeme가 주어져야 할 차례지만, 제공된 lexeme는 <%d, %d>입니다.\n", predLex, givenLex.token_number, givenLex.token_value);//: %d번 lexeme <%d, %d>를 파싱하는 과정에서 에러 발생");
     exit(1);
 }
 
@@ -99,7 +99,7 @@ Node * p_t_IDENT(Lexer_result lex_input){
 
         return n;
     }
-    else error(0, nextSymbol.token_number);
+    else error(0, nextSymbol);
 }
 
 Node * p_t_NUM_INT(Lexer_result lex_input){
@@ -116,7 +116,7 @@ Node * p_t_NUM_INT(Lexer_result lex_input){
 
         return n;
     }
-    else error(1,nextSymbol.token_number);
+    else error(1,nextSymbol);
 }
 
 Node * p_t_KW_INT(Lexer_result lex_input){
@@ -133,7 +133,7 @@ Node * p_t_KW_INT(Lexer_result lex_input){
 
         return n;
     }
-    else error(2, nextSymbol.token_number);
+    else error(2, nextSymbol);
 }
 
 Node * p_t_KW_VOID(Lexer_result lex_input){
@@ -150,7 +150,7 @@ Node * p_t_KW_VOID(Lexer_result lex_input){
 
         return n;
     }
-    else error(3, nextSymbol.token_number);
+    else error(3, nextSymbol);
 }
 
 Node * p_t_KW_RETURN(Lexer_result lex_input){
@@ -167,7 +167,7 @@ Node * p_t_KW_RETURN(Lexer_result lex_input){
 
         return n;
     }
-    else error(4, nextSymbol.token_number);
+    else error(4, nextSymbol);
 }
 
 Node * p_t_OPEN_PAREN(Lexer_result lex_input){
@@ -184,7 +184,7 @@ Node * p_t_OPEN_PAREN(Lexer_result lex_input){
 
         return n;
     }
-    else error(5, nextSymbol.token_number);
+    else error(5, nextSymbol);
 }
 
 Node * p_t_CLOSE_PAREN(Lexer_result lex_input){
@@ -201,7 +201,7 @@ Node * p_t_CLOSE_PAREN(Lexer_result lex_input){
 
         return n;
     }
-    else error(6, nextSymbol.token_number);
+    else error(6, nextSymbol);
 }
 
 Node * p_t_OPEN_BRACE(Lexer_result lex_input){
@@ -218,7 +218,7 @@ Node * p_t_OPEN_BRACE(Lexer_result lex_input){
 
         return n;
     }
-    else error(7, nextSymbol.token_number);
+    else error(7, nextSymbol);
 }
 
 Node * p_t_CLOSE_BRACE(Lexer_result lex_input){
@@ -235,7 +235,7 @@ Node * p_t_CLOSE_BRACE(Lexer_result lex_input){
 
         return n;
     }
-    else error(8, nextSymbol.token_number);
+    else error(8, nextSymbol);
 }
 
 Node * p_t_PN_SEMI(Lexer_result lex_input){
@@ -252,7 +252,7 @@ Node * p_t_PN_SEMI(Lexer_result lex_input){
 
         return n;
     }
-    else error(9, nextSymbol.token_number);
+    else error(9, nextSymbol);
 }
 
 
@@ -268,7 +268,7 @@ Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
         n->brother = NULL;
 
         return n;
-    } else exit(1);
+    } else error(2, nextSymbol);
 }
 
 Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT "OPEN_PAREN" <param> "CLOSE_PAREN" "OPEN_BRACE" <content> "CLOSE_BRACE"
@@ -294,7 +294,7 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
         n->brother = NULL;
 
         return n;
-    } else exit(1);
+    } else error(2, nextSymbol);
 }
 
 Node * p_nt_param(Lexer_result lex_input){      // <param> ::= "KW_VOID"
@@ -303,7 +303,7 @@ Node * p_nt_param(Lexer_result lex_input){      // <param> ::= "KW_VOID"
         Node * x1 = p_t_KW_VOID(lex_input);
         
         return x1;
-    } else exit(1);
+    } else error(3, nextSymbol);
 }
 
 Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <exp> "PN_SEMI"
@@ -322,7 +322,7 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         n->brother = NULL;
 
         return n;
-    } else exit(1);
+    } else error(4, nextSymbol);
 }
 
 Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT
@@ -331,7 +331,7 @@ Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT
         Node * x1 = p_t_NUM_INT(lex_input);
         
         return x1;
-    } else exit(1);
+    } else error(1, nextSymbol);
 }
 
 
@@ -381,6 +381,11 @@ Node * parser(Lexer_result lex_input, char *parse_name)
 
     get_nextSymbol(lex_input);
     ast_top = p_nt_program(lex_input);
+
+    if (nextSymbol.token_number != 999) {
+        printf("Parse Error: parsing이 마무리되지 않은 lexeme가 남은 채 parsing이 종료되었습니다. 현재 처리되어야 할 토큰: <%d, %d>\n", nextSymbol.token_number, nextSymbol.token_value);
+        exit(0);
+    }
 
 
     bin_tree_file_printer(ast_top, parsefp);

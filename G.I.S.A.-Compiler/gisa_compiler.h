@@ -32,6 +32,9 @@
 #define ASM_REGISTER 205
 
 
+#define LEXING_EOF   999
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
