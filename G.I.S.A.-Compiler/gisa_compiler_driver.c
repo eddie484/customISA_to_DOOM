@@ -123,8 +123,8 @@ int main(int argc, char *argv[]) {
         // ***** Code Emission *****
         printf("Start Code Emission.\n");
 
-        //asdf;
-        
+        code_emitter(codegen_result, lexer_result, "test_code/assembly.asm");
+
         printf("Code Emission is finished.\n");
         
         

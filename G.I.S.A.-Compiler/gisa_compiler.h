@@ -66,6 +66,7 @@ int check_right_word_boundary(char right);
 Lexer_result lexer(char *prep_name, char *lex_name);
 Node * parser(Lexer_result lex_input, char *parse_name);
 Node * code_generator(Node * parse_input, char * codegentree_name);
+void code_emitter(Node * codegen_result, Lexer_result lexer_result, char * codegentree_name);
 
 void lexer_result_printer(Lexer_result lexer_result);
 void bin_tree_printer(Node * tree_top);

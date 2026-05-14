@@ -121,9 +121,9 @@ Node * asm_nt_mov(Node * ast){
         Node * x1 = malloc(sizeof(Node));
         Node * x2 = malloc(sizeof(Node));
 
-        x1->token = ast->brother->token;
-        x2->token.token_number = ASM_REGISTER;
-        x2->token.token_value = 0;
+        x1->token.token_number = ASM_REGISTER;
+        x1->token.token_value = 0;
+        x2->token = ast->brother->token;
 
         x1->brother = x2;
 
