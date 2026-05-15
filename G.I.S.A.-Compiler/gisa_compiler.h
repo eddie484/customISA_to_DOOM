@@ -16,6 +16,10 @@
 
 #define PN_SEMI     9   // ;
 
+#define TILDE       10  // ~
+#define HYPHEN      11  // -
+#define TWO_HYPHEN  12  // --
+
 
 #define NT_PROGRAM  100
 #define NT_FUNCTION 101

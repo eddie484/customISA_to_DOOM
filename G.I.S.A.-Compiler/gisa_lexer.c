@@ -1,3 +1,26 @@
+/*
+    IDENT       0   // 식별자. [a-zA-Z_][a-zA-Z0-9_]*\b
+    NUM_INT     1   // 상수 정수. [0-9]+\b
+
+    KW_INT      2   // 키워드 int
+    KW_VOID     3   // 키워드 void
+    KW_RETURN   4   // 키워드 return
+
+    OPEN_PAREN  5   // (
+    CLOSE_PAREN 6   // )
+    OPEN_BRACE  7   // {
+    CLOSE_BRACE 8   // }
+
+    PN_SEMI     9   // ;
+
+    TILDE       10  // ~
+    HYPHEN      11  // -
+    TWO_HYPHEN  12  // --
+
+*/
+
+
+
 #include <ctype.h>
 
 #include "gisa_compiler.h"
@@ -129,7 +152,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
         while (cur_index < 1024) {
             
             char c = buf[cur_index];
-            //printf("이번 문자: %c, state: %d\n", c, cur_state);
+            //printf("이번 문자: %c, 다음 문자: %c, 다다음 문자: %c, state: %d\n", buf[cur_index], buf[cur_index + 1], buf[cur_index + 2], cur_state);
 
             // state = 0. Idle.
             if (cur_state == 0) {  
@@ -160,6 +183,12 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 }
                 else if (c == ';') {
                     cur_state = 9;
+                }
+                else if (c == '~') {
+                    cur_state = 10;
+                }
+                else if (c == '-') {
+                    cur_state = 11;
                 }
                 else if (c == ' ') {
                     memmove(buf, buf + 1, 1024 - 1);
@@ -318,6 +347,48 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
             }
+            
+            
+            // state = 10. ~ 인 경우.
+            if (cur_state == 10) {
+                lexeme[lexeme_count].token_number = TILDE;
+                lexeme[lexeme_count].token_value = 0;
+
+                printf("<%d, %d>, ~\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                lexeme_count++;
+                cur_state = 0;
+                memmove(buf, buf + cur_index, 1024 - cur_index);
+                cur_index = 0;
+            }
+            
+            
+            // state = 11. -로 시작하는 경우.
+            if (cur_state == 11) {
+                if (buf[cur_index] != '-') {    // -인 경우
+                    lexeme[lexeme_count].token_number = HYPHEN;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, -\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else {                            // --인 경우
+                    lexeme[lexeme_count].token_number = TWO_HYPHEN;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, --\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+                }
+            }
 
             
             if (c == '\r' || c == '\n') {
@@ -345,7 +416,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
     lexeme[lexeme_count].token_number = LEXING_EOF;
     lexeme[lexeme_count].token_value = 0;
 
-    printf("<%d, %d>, ;\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+    printf("<%d, %d>, END OF FILE.\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
     fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
     
     lexeme_count++;
