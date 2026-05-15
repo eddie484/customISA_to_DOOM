@@ -43,7 +43,8 @@
     *** ast rules ***
     <program> ::= <function>
     <function> ::= "KW_INT" IDENT "KW_VOID" <content>
-    <content> ::= "KW_RETURN" NUM_INT
+    <content> ::= "KW_RETURN" <exp>
+    <exp> ::= NUM_INT
 
 */
 
@@ -264,6 +265,7 @@ Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
         Node * n = malloc(sizeof(Node));
         n->son = x1;
         n->token.token_number = NT_PROGRAM;
+        n->token.token_value = 0;
 
         n->brother = NULL;
 
@@ -290,6 +292,7 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
         Node * n = malloc(sizeof(Node));
         n->son = x1;
         n->token.token_number = NT_FUNCTION;
+        n->token.token_value = 0;
 
         n->brother = NULL;
 
@@ -318,6 +321,7 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         Node * n = malloc(sizeof(Node));
         n->son = x1;
         n->token.token_number = NT_CONTENT;
+        n->token.token_value = 0;
 
         n->brother = NULL;
 
@@ -330,7 +334,14 @@ Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT
         printf("parsing: nt_exp\n");
         Node * x1 = p_t_NUM_INT(lex_input);
         
-        return x1;
+        Node * n = malloc(sizeof(Node));
+        n->son = x1;
+        n->token.token_number = NT_EXP;
+        n->token.token_value = 0;
+
+        n->brother = NULL;
+
+        return n;
     } else error(1, nextSymbol);
 }
 

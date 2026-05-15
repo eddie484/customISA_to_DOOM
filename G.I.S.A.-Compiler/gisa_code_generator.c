@@ -6,7 +6,7 @@ Node * asm_nt_program(Node * ast);
 Node * asm_nt_function(Node * ast);
 Node * asm_nt_instr(Node * ast);
 Node * asm_nt_instr_loop(Node * ast);
-Node * asm_nt_mov(Node * ast);
+Node * asm_nt_return(Node * ast);
 
 
 Node * asm_terminal(Node * ast){
@@ -94,7 +94,7 @@ Node * asm_nt_instr_loop(Node * ast){
     Node * n;
 
         if (ast->token.token_number == KW_RETURN){
-            n = asm_nt_mov(ast);
+            n = asm_nt_return(ast);
             Node * n1 = malloc(sizeof(Node));
             n1->token.token_number = ASM_RET;
             n->brother = n1;
@@ -115,7 +115,7 @@ Node * asm_nt_instr_loop(Node * ast){
     return n;
 }
 
-Node * asm_nt_mov(Node * ast){
+Node * asm_nt_return(Node * ast){
     if (ast->token.token_number == KW_RETURN) {
         printf("Processing: asm_nt_mov\n");
         Node * x1 = malloc(sizeof(Node));
@@ -123,7 +123,7 @@ Node * asm_nt_mov(Node * ast){
 
         x1->token.token_number = ASM_REGISTER;
         x1->token.token_value = 0;
-        x2->token = ast->brother->token;
+        x2->token = ast->brother->son->token;
 
         x1->brother = x2;
 
