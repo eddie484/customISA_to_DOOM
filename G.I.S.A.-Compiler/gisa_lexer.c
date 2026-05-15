@@ -41,26 +41,28 @@ int lex_val_count = 0;
 
 int lexval_manager (char *name) {
     int count = 0;
-    while(count < lex_val_count){
+
+    while(count < lex_val_count){   // 이미 저장된 value인지 확인
         if (strcmp(name, lex_val[count].lexeme_name) == 0){
-            return lex_val[count].name_number;
+            return lex_val[count].name_number;  // 발견하면 해당 value의 number를 return 한다.
         } else {
             count++;
         }
     }
     
+    // 확인 결과 저장되지 않은 value일 경우, 저장한다.
     strcpy(lex_val[lex_val_count].lexeme_name, name);
     lex_val[lex_val_count].name_number = lex_val_count;
 
     printf("새로운 Lexeme Value 저장. Lexeme Value: %s, Value Number: %d.\n", lex_val[lex_val_count].lexeme_name, lex_val[lex_val_count].name_number);
     lex_val_count++;
 
-    if (lex_val_count > lex_val_limit) {
+    if (lex_val_count >= lex_val_limit) {
         lex_val_limit = lex_val_limit * 2;
         lex_val = realloc(lex_val, sizeof(Lexeme_value) * lex_val_limit);
     }
 
-    return lex_val[lex_val_count - 1].name_number;
+    return lex_val[lex_val_count - 1].name_number;  // 저장 후 저장된 number를 return 한다.
     
 }
 
@@ -228,11 +230,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     exit(1);
                 }
                     cur_index++;
-            }
 
-            
+
             // state = 2. 식별자 탐지 완료, 키워드 구분 및 lexeme 리스트 확인.
-            if (cur_state == 2) {
+            } else if (cur_state == 2) {
                 char get_str[cur_index + 1];
                 snprintf(get_str, cur_index + 1, "%s", buf);
                 if (!strcmp(get_str, "int")) {
@@ -259,11 +260,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
-            }
-            
-            
+
+
             // state = 4. 상수 탐지 완료, lexeme 리스트 확인.
-            if (cur_state == 4) {
+            } else if (cur_state == 4) {
                 char get_num[cur_index + 1];
                 snprintf(get_num, cur_index + 1, "%s", buf);
 
@@ -276,11 +276,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
-            }
-            
-            
+
+                
             // state = 5. ( 인 경우.
-            if (cur_state == 5) {
+            } else if (cur_state == 5) {
                 lexeme[lexeme_count].token_number = OPEN_PAREN;
                 lexeme[lexeme_count].token_value = 0;
 
@@ -290,11 +289,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
-            } 
-            
-            
+
+
             // state = 6. ) 인 경우.
-            if (cur_state == 6) {
+            } else if (cur_state == 6) {
                 lexeme[lexeme_count].token_number = CLOSE_PAREN;
                 lexeme[lexeme_count].token_value = 0;
 
@@ -304,11 +302,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
-            } 
-            
-            
+
+
             // state = 7. { 인 경우.
-            if (cur_state == 7) {
+            } else if (cur_state == 7) {
                 lexeme[lexeme_count].token_number = OPEN_BRACE;
                 lexeme[lexeme_count].token_value = 0;
 
@@ -318,11 +315,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
-            } 
-            
-            
+
+
             // state = 8. } 인 경우.
-            if (cur_state == 8) {
+            } else if (cur_state == 8) {
                 lexeme[lexeme_count].token_number = CLOSE_BRACE;
                 lexeme[lexeme_count].token_value = 0;
 
@@ -332,11 +328,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
-            } 
             
             
             // state = 9. ; 인 경우.
-            if (cur_state == 9) {
+            } else if (cur_state == 9) {
                 lexeme[lexeme_count].token_number = PN_SEMI;
                 lexeme[lexeme_count].token_value = 0;
 
@@ -346,11 +341,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
-            }
-            
-            
+
+
             // state = 10. ~ 인 경우.
-            if (cur_state == 10) {
+            } else if (cur_state == 10) {
                 lexeme[lexeme_count].token_number = TILDE;
                 lexeme[lexeme_count].token_value = 0;
 
@@ -360,11 +354,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 cur_state = 0;
                 memmove(buf, buf + cur_index, 1024 - cur_index);
                 cur_index = 0;
-            }
-            
-            
+
+
             // state = 11. -로 시작하는 경우.
-            if (cur_state == 11) {
+            } else if (cur_state == 11) {
                 if (buf[cur_index] != '-') {    // -인 경우
                     lexeme[lexeme_count].token_number = HYPHEN;
                     lexeme[lexeme_count].token_value = 0;
@@ -390,6 +383,11 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 }
             }
 
+            if (lexeme_count >= lexeme_limit) {
+                lexeme_limit = lexeme_limit * 2;
+                lexeme = realloc(lexeme, sizeof(Lexeme) * lexeme_limit);
+            }
+
             
             if (c == '\r' || c == '\n') {
                 //printf("엔터 만남! %d\n", cur_state);
@@ -398,12 +396,6 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 //printf("스페이스바 만남!\n");
                 continue;
             } else if (c == '\0') break;
-
-            if (lexeme_count > lexeme_limit) {
-                lexeme_limit = lexeme_limit * 2;
-                lexeme = realloc(lexeme, sizeof(Lexeme) * lexeme_limit);
-            }
-
         }
 
 
@@ -412,6 +404,13 @@ Lexer_result lexer(char *prep_name, char *lex_name)
       
     }
     printf("Lexing Finished.\n");
+
+    
+
+    if (lexeme_count >= lexeme_limit) {
+        lexeme_limit = lexeme_limit + 1;
+        lexeme = realloc(lexeme, sizeof(Lexeme) * lexeme_limit);
+    }
 
     lexeme[lexeme_count].token_number = LEXING_EOF;
     lexeme[lexeme_count].token_value = 0;
