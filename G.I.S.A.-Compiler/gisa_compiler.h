@@ -2,41 +2,42 @@
 #define COMMON_H
 
 
-#define IDENT       0   // 식별자. [a-zA-Z_][a-zA-Z0-9_]*\b
-#define NUM_INT     1   // 상수 정수. [0-9]+\b
+#define IDENT           0   // 식별자. [a-zA-Z_][a-zA-Z0-9_]*\b
+#define NUM_INT         1   // 상수 정수. [0-9]+\b
 
-#define KW_INT      2   // 키워드 int
-#define KW_VOID     3   // 키워드 void
-#define KW_RETURN   4   // 키워드 return
+#define KW_INT          2   // 키워드 int
+#define KW_VOID         3   // 키워드 void
+#define KW_RETURN       4   // 키워드 return
 
-#define OPEN_PAREN  5   // (
-#define CLOSE_PAREN 6   // )
-#define OPEN_BRACE  7   // {
-#define CLOSE_BRACE 8   // }
+#define OPEN_PAREN      5   // (
+#define CLOSE_PAREN     6   // )
+#define OPEN_BRACE      7   // {
+#define CLOSE_BRACE     8   // }
 
-#define PN_SEMI     9   // ;
+#define PN_SEMI         9   // ;
 
-#define TILDE       10  // ~
-#define HYPHEN      11  // -
-#define TWO_HYPHEN  12  // --
-
-
-#define NT_PROGRAM  100
-#define NT_FUNCTION 101
-#define NT_PARAM    102
-#define NT_CONTENT  103
-#define NT_EXP      104
+#define OP_TILDE        10  // ~
+#define OP_MINUS        11  // -
+#define OP_DECREMENT    12  // --
 
 
-#define ASM_PROGRAM  200
-#define ASM_FUNCTION 201
-#define ASM_INSTR    202
-#define ASM_MOV      203
-#define ASM_RET      204
-#define ASM_REGISTER 205
+#define NT_PROGRAM      100
+#define NT_FUNCTION     101
+#define NT_PARAM        102
+#define NT_CONTENT      103
+#define NT_EXP          104
+#define NT_UNARY_OP     105
 
 
-#define LEXING_EOF   999
+#define ASM_PROGRAM     200
+#define ASM_FUNCTION    201
+#define ASM_INSTR       202
+#define ASM_MOV         203
+#define ASM_RET         204
+#define ASM_REGISTER    205
+
+
+#define LEXING_EOF      999
 
 
 #include <stdio.h>

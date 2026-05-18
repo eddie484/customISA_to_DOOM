@@ -13,9 +13,9 @@
 
     PN_SEMI     9   // ;
 
-    TILDE       10  // ~
-    HYPHEN      11  // -
-    TWO_HYPHEN  12  // --
+    OP_TILDE       10  // ~
+    OP_MINUS      11  // -
+    OP_DECREMENT  12  // --
 
 */
 
@@ -345,7 +345,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
 
             // state = 10. ~ 인 경우.
             } else if (cur_state == 10) {
-                lexeme[lexeme_count].token_number = TILDE;
+                lexeme[lexeme_count].token_number = OP_TILDE;
                 lexeme[lexeme_count].token_value = 0;
 
                 printf("<%d, %d>, ~\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
@@ -359,7 +359,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
             // state = 11. -로 시작하는 경우.
             } else if (cur_state == 11) {
                 if (buf[cur_index] != '-') {    // -인 경우
-                    lexeme[lexeme_count].token_number = HYPHEN;
+                    lexeme[lexeme_count].token_number = OP_MINUS;
                     lexeme[lexeme_count].token_value = 0;
 
                     printf("<%d, %d>, -\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
@@ -370,7 +370,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     cur_index = 0;
 
                 } else {                            // --인 경우
-                    lexeme[lexeme_count].token_number = TWO_HYPHEN;
+                    lexeme[lexeme_count].token_number = OP_DECREMENT;
                     lexeme[lexeme_count].token_value = 0;
 
                     printf("<%d, %d>, --\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
