@@ -337,6 +337,11 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
 
         n->brother = NULL;
 
+        free(x3);
+        free(x5);
+        free(x6);
+        free(x8);
+
         return n;
     } else error(2, nextSymbol);
 }
@@ -365,6 +370,7 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         n->token.token_value = 0;
 
         n->brother = NULL;
+        free(x3);
 
         return n;
     } else error(4, nextSymbol);
@@ -403,6 +409,9 @@ Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT | <unary_op
         Node * x1 = p_t_OPEN_PAREN(lex_input);
         Node * x2 = p_nt_exp(lex_input);
         Node * x3 = p_t_CLOSE_PAREN(lex_input);
+        
+        free(x1);
+        free(x3);
 
         return x2;
     } else error(1, nextSymbol);
