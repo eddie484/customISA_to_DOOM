@@ -3,19 +3,22 @@
     <function> ::= "int" IDENT "(" <param> ")" "{" <content> "}"
     <param> ::= "void"
     <content> ::= "return" <exp> ";"
-    <exp> ::= NUM_INT
+    <exp> ::= NUM_INT | <unary_op> <exp> | "(" <exp> ")"
+    <unary_op> ::= "~" | "-"
 
     <program> ::= <function>
     <function> ::= "KW_INT" IDENT "OPEN_PAREN" <param> "CLOSE_PAREN" "OPEN_BRACE" <content> "CLOSE_BRACE"
     <param> ::= "KW_VOID"
     <content> ::= "KW_RETURN" <exp> "PN_SEMI"
-    <exp> ::= NUM_INT
+    <exp> ::= NUM_INT | <unary_op> <exp> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
+    <unary_op> ::= "OP_TILDE" | "OP_MINUS"
 
     <program> ::= <function>
     <function> ::= 2 0 5 <param> 6 7 <content> 8
     <param> ::= 3
     <content> ::= 4 <exp> 9
-    <exp> ::= 1
+    <exp> ::= 1 | <unary_op> <exp> | 5 <exp> 6
+    <unary_op> ::= 10 | 11
 
     ---
 
@@ -23,13 +26,15 @@
     FIRST(<function>) = {2}
     FIRST(<param>) = {3}
     FIRST(<content>) = {4}
-    FIRST(<exp>) = {1}
+    FIRST(<exp>) = {1, 5, 10, 11}
+    FIRST(<unary_op>) = {10, 11}
 
     FOLLOW(<program>) = {$}
     FOLLOW(<function>) = {$}
     FOLLOW(<param>) = {6}
     FOLLOW(<content>) = {8}
-    FOLLOW(<exp>) = {9}
+    FOLLOW(<exp>) = {6, 9}
+    FOLLOW(<unary_op>) = {1, 5, 10, 11}
 
     ---
 
@@ -44,7 +49,8 @@
     <program> ::= <function>
     <function> ::= "KW_INT" IDENT "KW_VOID" <content>
     <content> ::= "KW_RETURN" <exp>
-    <exp> ::= NUM_INT
+    <exp> ::= NUM_INT | <unary_op> <exp>
+    <unary_op> ::= "OP_TILDE" | "OP_MINUS"
 
 */
 
@@ -62,11 +68,12 @@ int token_value[1024];          // 읽어온 lexeme들의 값을 저장.
 int cur_line = 0;
 
 
-Node * p_nt_program();
-Node * p_nt_function();
-Node * p_nt_param();
-Node * p_nt_content();
-Node * p_nt_exp();
+Node * p_nt_program(Lexer_result lex_input);
+Node * p_nt_function(Lexer_result lex_input);
+Node * p_nt_param(Lexer_result lex_input);
+Node * p_nt_content(Lexer_result lex_input);
+Node * p_nt_exp(Lexer_result lex_input);
+Node * p_nt_unary_op(Lexer_result lex_input);
 
 
 
@@ -256,6 +263,40 @@ Node * p_t_PN_SEMI(Lexer_result lex_input){
     else error(9, nextSymbol);
 }
 
+Node * p_t_OP_TILDE(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_TILDE){
+        printf("parsing: OP_TILDE\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
+        n->son = NULL;
+        n->brother = NULL;
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(10, nextSymbol);
+}
+
+Node * p_t_OP_MINUS(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_MINUS){
+        printf("parsing: OP_MINUS\n");
+
+        Node * n = malloc(sizeof(Node));
+        n->token = nextSymbol;
+
+        n->son = NULL;
+        n->brother = NULL;
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
 
 Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
     if (nextSymbol.token_number == 2) {
@@ -329,7 +370,7 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
     } else error(4, nextSymbol);
 }
 
-Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT
+Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT | <unary_op> <exp> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
     if (nextSymbol.token_number == 1) {
         printf("parsing: nt_exp\n");
         Node * x1 = p_t_NUM_INT(lex_input);
@@ -342,7 +383,43 @@ Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT
         n->brother = NULL;
 
         return n;
+    } else if (nextSymbol.token_number == 10 || nextSymbol.token_number == 11) {
+        printf("parsing: nt_exp\n");
+        Node * x1 = p_nt_unary_op(lex_input);
+        Node * x2 = p_nt_exp(lex_input);
+
+        x1->brother = x2;
+        
+        Node * n = malloc(sizeof(Node));
+        n->son = x1;
+        n->token.token_number = NT_EXP;
+        n->token.token_value = 0;
+
+        n->brother = NULL;
+
+        return n;
+    } else if (nextSymbol.token_number == 5) {
+        printf("parsing: nt_exp\n");
+        Node * x1 = p_t_OPEN_PAREN(lex_input);
+        Node * x2 = p_nt_exp(lex_input);
+        Node * x3 = p_t_CLOSE_PAREN(lex_input);
+
+        return x2;
     } else error(1, nextSymbol);
+}
+
+Node * p_nt_unary_op(Lexer_result lex_input){      // <unary_op> ::= "OP_TILDE" | "OP_MINUS"
+    if (nextSymbol.token_number == 10) {
+        printf("parsing: nt_unary_op\n");
+        Node * x1 = p_t_OP_TILDE(lex_input);
+
+        return x1;
+    } else if (nextSymbol.token_number == 11) {
+        printf("parsing: nt_unary_op\n");
+        Node * x1 = p_t_OP_MINUS(lex_input);
+
+        return x1;
+    } else error(3, nextSymbol);
 }
 
 
