@@ -44,6 +44,9 @@
 #define ASM_MOV         203
 #define ASM_RET         204
 #define ASM_REGISTER    205
+#define ASM_LINE        206
+#define ASM_LINE_SET    207
+#define ASM_JUMP        208
 
 
 #define LEXING_EOF      999
