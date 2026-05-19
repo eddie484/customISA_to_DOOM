@@ -46,8 +46,8 @@ int main(int argc, char *argv[]) {
 
         printf("option: \"%s\", full name: \"%s\", dir: \"%s\", file name: \"%s\".\n", option, name, file_dir, file_name);
 
-        if (strcmp(option, "--lex") != 0 && strcmp(option, "--parse") != 0 && strcmp(option, "--codegen") != 0 && strcmp(option, "-S") != 0 && strcmp(option, "--keep") != 0 && strcmp(option, "--no-option") != 0) {
-            printf("잘못된 인자가 입력되었습니다.\n인자로는 \"파일명\" 혹은 \"옵션명 파일명\"만 사용 가능합니다.\n옵션: --lex, --parse, --codegen, -S, --keep\n");
+        if (strcmp(option, "--lex") != 0 && strcmp(option, "--parse") != 0 && strcmp(option, "--tag") != 0 && strcmp(option, "--codegen") != 0 && strcmp(option, "-S") != 0 && strcmp(option, "--keep") != 0 && strcmp(option, "--no-option") != 0) {
+            printf("잘못된 인자가 입력되었습니다.\n인자로는 \"파일명\" 혹은 \"옵션명 파일명\"만 사용 가능합니다.\n옵션: --lex, --parse, --tag --codegen, -S, --keep\n");
             return 1;
         }
 
@@ -55,6 +55,7 @@ int main(int argc, char *argv[]) {
         char preprocess_filename[256];
         char lex_filename[256];
         char parse_filename[256];
+        char tag_filename[256];
         char asmtreegen_filename[256];
         char asmemit_filename[256];
         char binary_filename[256];
@@ -62,9 +63,10 @@ int main(int argc, char *argv[]) {
         snprintf(preprocess_filename, sizeof(preprocess_filename), "%sa_PREPROCESSED_%s.i", file_dir, file_name);
         snprintf(lex_filename, sizeof(lex_filename), "%sb_LEXEME_%s.lex", file_dir, file_name);
         snprintf(parse_filename, sizeof(parse_filename), "%sc_AST_%s.parse", file_dir, file_name);
-        snprintf(asmtreegen_filename, sizeof(asmtreegen_filename), "%sd_ASMTREE_%s.codegen", file_dir, file_name);
-        snprintf(asmemit_filename, sizeof(asmemit_filename), "%se_ASSEMBLY_%s.asm", file_dir, file_name);
-        snprintf(binary_filename, sizeof(preprocess_filename), "%sf_BINART_%s.bin", file_dir, file_name);
+        snprintf(tag_filename, sizeof(tag_filename), "%sd_TAG_%s.tag", file_dir, file_name);
+        snprintf(asmtreegen_filename, sizeof(asmtreegen_filename), "%se_ASMTREE_%s.codegen", file_dir, file_name);
+        snprintf(asmemit_filename, sizeof(asmemit_filename), "%sf_ASSEMBLY_%s.asm", file_dir, file_name);
+        snprintf(binary_filename, sizeof(preprocess_filename), "%sg_BINART_%s.bin", file_dir, file_name);
 
 
         // ***** 전처리 진행 *****
@@ -134,18 +136,47 @@ int main(int argc, char *argv[]) {
 
 
 
-        // ***** Code Generating *****
-        printf("Start Code Generating.\n");
+        // ***** TAG Generating *****
+        printf("Start TAG generating.\n\n");
 
-        Node * codegen_result;
-        codegen_result = code_generator(parser_result, asmtreegen_filename);
+        Node * tag_result;
+        tag_result = tag_generator(parser_result, tag_filename);
         
-        printf("Code Generating is finished.\n");
+        printf("TAG Generating is finished.\n");
 
         if (strcmp(option, "--keep") != 0) {
             char remove_parse_file_cmd[1024];
             snprintf(remove_parse_file_cmd, sizeof(remove_parse_file_cmd), "rm %s", parse_filename);
             if (system(remove_parse_file_cmd) != 0) return 4;
+        }
+
+        
+        if (strcmp(option, "--tag") == 0) {
+            printf("Option --tag: Parsing finished. Program exit.\n");
+
+            free(lexer_result.lexeme_list);
+            free(lexer_result.value_table);
+            tree_malloc_cleaner(parser_result);
+            tree_malloc_cleaner(tag_result);
+
+
+            return 0;
+        }
+
+
+
+        // ***** Code Generating *****
+        printf("Start Code Generating.\n\n");
+
+        Node * codegen_result;
+        codegen_result = code_generator(tag_result, asmtreegen_filename);
+        
+        printf("Code Generating is finished.\n");
+
+        if (strcmp(option, "--keep") != 0) {
+            char remove_tag_file_cmd[1024];
+            snprintf(remove_tag_file_cmd, sizeof(remove_tag_file_cmd), "rm %s", tag_filename);
+            if (system(remove_tag_file_cmd) != 0) return 4;
         }
         
         
@@ -155,6 +186,7 @@ int main(int argc, char *argv[]) {
             free(lexer_result.lexeme_list);
             free(lexer_result.value_table);
             tree_malloc_cleaner(parser_result);
+            tree_malloc_cleaner(tag_result);
             tree_malloc_cleaner(codegen_result);
 
             return 0;
@@ -182,6 +214,7 @@ int main(int argc, char *argv[]) {
             free(lexer_result.lexeme_list);
             free(lexer_result.value_table);
             tree_malloc_cleaner(parser_result);
+            tree_malloc_cleaner(tag_result);
             tree_malloc_cleaner(codegen_result);
 
             return 0;
@@ -210,6 +243,7 @@ int main(int argc, char *argv[]) {
         free(lexer_result.lexeme_list);
         free(lexer_result.value_table);
         tree_malloc_cleaner(parser_result);
+        tree_malloc_cleaner(tag_result);
         tree_malloc_cleaner(codegen_result);
         
 

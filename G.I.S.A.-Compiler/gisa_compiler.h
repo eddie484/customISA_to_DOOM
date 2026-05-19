@@ -29,6 +29,15 @@
 #define NT_UNARY_OP     105
 
 
+#define TAG_PROGRAM     300
+#define TAG_FUNCTION    301
+#define TAG_INSTR       302
+#define TAG_LINE        303
+#define TAG_LINE_SET    304
+#define TAG_TEMP        305
+#define TAG_MOV         306
+
+
 #define ASM_PROGRAM     200
 #define ASM_FUNCTION    201
 #define ASM_INSTR       202
@@ -73,6 +82,7 @@ int lexval_manager (char *name);
 int check_right_word_boundary(char right);
 Lexer_result lexer(char *prep_name, char *lex_name);
 Node * parser(Lexer_result lex_input, char *parse_name);
+Node * tag_generator(Node * parse_input, char * tagtree_name);
 Node * code_generator(Node * parse_input, char * codegentree_name);
 void code_emitter(Node * codegen_result, Lexer_result lexer_result, char * codegentree_name);
 
