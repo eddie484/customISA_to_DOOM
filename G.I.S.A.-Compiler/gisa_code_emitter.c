@@ -41,7 +41,7 @@ void asm_printer(Node * node, Lexer_result lexer_result, FILE * codeemitfp){
                 case ASM_ADD: {
                     if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
                         printf("\tADD R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
-                        fprintf(codeemitfp, "\tADD R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tADD R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
                     } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value, lexer_result);
@@ -57,7 +57,7 @@ void asm_printer(Node * node, Lexer_result lexer_result, FILE * codeemitfp){
                 case ASM_SUB: {
                     if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
                         printf("\tSUB R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
-                        fprintf(codeemitfp, "\tMOV R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tSUB R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
                     } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value, lexer_result);
@@ -78,7 +78,7 @@ void asm_printer(Node * node, Lexer_result lexer_result, FILE * codeemitfp){
                     } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value, lexer_result);
                         printf("\tNOTI R%d #%s\n", node->son->brother->token.token_value, int_value);
-                        fprintf(codeemitfp, "\ttNOTI R%d #%s\n", node->son->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tNOTI R%d #%s\n", node->son->brother->token.token_value, int_value);
 
                     } else {
                         printf("NOT의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
@@ -90,7 +90,7 @@ void asm_printer(Node * node, Lexer_result lexer_result, FILE * codeemitfp){
                     if (1) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value, lexer_result);
                         printf("\tLDR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
-                        fprintf(codeemitfp, "\tMOV R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tLDR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
 
                     } else {
                         printf("LDR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
@@ -102,7 +102,7 @@ void asm_printer(Node * node, Lexer_result lexer_result, FILE * codeemitfp){
                     if (1) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value, lexer_result);
                         printf("\tSTR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
-                        fprintf(codeemitfp, "\tSTR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tSTR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
 
                     } else {
                         printf("STR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
