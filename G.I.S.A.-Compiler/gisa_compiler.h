@@ -136,6 +136,8 @@ void lexer_result_printer(Lexer_result lexer_result);
 void bin_tree_printer(Node * tree_top);
 void bin_tree_file_printer(Node * tree_top, FILE *parsefp);
 void tree_malloc_cleaner(Node * node);
+Node * node_maker(Node *  n_son, Node *  n_brother, int n_num, int n_val);
+Node * line_maker(int line_type, int p1_num, int p1_val, int p2_num, int p2_val, int p3_num, int p3_val);
 
 
 extern int temp_count;

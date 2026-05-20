@@ -93,15 +93,24 @@ void error(int predLex, Lexeme givenLex){
     exit(1);
 }
 
+/*Node * p_terminal(Lexer_result lex_input, int term_num){
+    if (nextSymbol.token_number == term_num){
+        printf("parsing: %d\n", term_num);
+
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(0, nextSymbol);
+}*/
+
 Node * p_t_IDENT(Lexer_result lex_input){
     if (nextSymbol.token_number == IDENT){
         printf("parsing: IDENT\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -114,11 +123,7 @@ Node * p_t_NUM_INT(Lexer_result lex_input){
     if (nextSymbol.token_number == NUM_INT){
         printf("parsing: NUM_INT\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -131,11 +136,7 @@ Node * p_t_KW_INT(Lexer_result lex_input){
     if (nextSymbol.token_number == KW_INT){
         printf("parsing: KW_INT\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -148,11 +149,7 @@ Node * p_t_KW_VOID(Lexer_result lex_input){
     if (nextSymbol.token_number == KW_VOID){
         printf("parsing: KW_VOID\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -165,11 +162,7 @@ Node * p_t_KW_RETURN(Lexer_result lex_input){
     if (nextSymbol.token_number == KW_RETURN){
         printf("parsing: KW_RETURN\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -182,11 +175,7 @@ Node * p_t_OPEN_PAREN(Lexer_result lex_input){
     if (nextSymbol.token_number == OPEN_PAREN){
         printf("parsing: OPEN_PAREN\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -199,11 +188,7 @@ Node * p_t_CLOSE_PAREN(Lexer_result lex_input){
     if (nextSymbol.token_number == CLOSE_PAREN){
         printf("parsing: CLOSE_PAREN\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -216,11 +201,7 @@ Node * p_t_OPEN_BRACE(Lexer_result lex_input){
     if (nextSymbol.token_number == OPEN_BRACE){
         printf("parsing: OPEN_BRACE\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -233,11 +214,7 @@ Node * p_t_CLOSE_BRACE(Lexer_result lex_input){
     if (nextSymbol.token_number == CLOSE_BRACE){
         printf("parsing: CLOSE_BRACE\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -250,11 +227,7 @@ Node * p_t_PN_SEMI(Lexer_result lex_input){
     if (nextSymbol.token_number == PN_SEMI){
         printf("parsing: PN_SEMI\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -267,11 +240,7 @@ Node * p_t_OP_TILDE(Lexer_result lex_input){
     if (nextSymbol.token_number == OP_TILDE){
         printf("parsing: OP_TILDE\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -284,11 +253,7 @@ Node * p_t_OP_MINUS(Lexer_result lex_input){
     if (nextSymbol.token_number == OP_MINUS){
         printf("parsing: OP_MINUS\n");
 
-        Node * n = malloc(sizeof(Node));
-        n->token = nextSymbol;
-
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -303,12 +268,7 @@ Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
         printf("parsing: nt_program\n");
         Node * x1 = p_nt_function(lex_input);
         
-        Node * n = malloc(sizeof(Node));
-        n->son = x1;
-        n->token.token_number = NT_PROGRAM;
-        n->token.token_value = 0;
-
-        n->brother = NULL;
+        Node * n = node_maker(x1, NULL, NT_PROGRAM, 0);
 
         return n;
     } else error(2, nextSymbol);
@@ -330,12 +290,7 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
         x2->brother = x4;
         x4->brother = x7;
         
-        Node * n = malloc(sizeof(Node));
-        n->son = x1;
-        n->token.token_number = NT_FUNCTION;
-        n->token.token_value = 0;
-
-        n->brother = NULL;
+        Node * n = node_maker(x1, NULL, NT_FUNCTION, 0);
 
         free(x3);
         free(x5);
@@ -364,12 +319,8 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
 
         x1->brother = x2;
         
-        Node * n = malloc(sizeof(Node));
-        n->son = x1;
-        n->token.token_number = NT_CONTENT;
-        n->token.token_value = 0;
+        Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
 
-        n->brother = NULL;
         free(x3);
 
         return n;
@@ -381,12 +332,7 @@ Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT | <unary_op
         printf("parsing: nt_exp\n");
         Node * x1 = p_t_NUM_INT(lex_input);
         
-        Node * n = malloc(sizeof(Node));
-        n->son = x1;
-        n->token.token_number = NT_EXP;
-        n->token.token_value = 0;
-
-        n->brother = NULL;
+        Node * n = node_maker(x1, NULL, NT_EXP, 0);
 
         return n;
     } else if (nextSymbol.token_number == 10 || nextSymbol.token_number == 11) {
@@ -396,12 +342,7 @@ Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT | <unary_op
 
         x1->brother = x2;
         
-        Node * n = malloc(sizeof(Node));
-        n->son = x1;
-        n->token.token_number = NT_EXP;
-        n->token.token_value = 0;
-
-        n->brother = NULL;
+        Node * n = node_maker(x1, NULL, NT_EXP, 0);
 
         return n;
     } else if (nextSymbol.token_number == 5) {

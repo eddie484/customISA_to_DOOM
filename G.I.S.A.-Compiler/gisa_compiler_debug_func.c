@@ -82,3 +82,58 @@ void tree_malloc_cleaner(Node * node) {
 
     free(node);
 }
+
+
+Node * node_maker(Node * n_son, Node * n_brother, int n_num, int n_val) {
+    Node * n = malloc(sizeof(Node));
+    
+    n->son = n_son;        
+    n->brother = n_brother;
+    n->token.token_number = n_num;
+    n->token.token_value = n_val;
+
+    return n;
+}
+
+
+Node * line_maker(int line_type, int p1_num, int p1_val, int p2_num, int p2_val, int p3_num, int p3_val) {
+    Node * n = malloc(sizeof(Node));
+
+    Node * x1 = malloc(sizeof(Node));
+    Node * x2 = malloc(sizeof(Node));
+    Node * x3 = malloc(sizeof(Node));
+    Node * x4 = malloc(sizeof(Node));
+
+    x1->son = NULL;     
+    x1->brother = x2;
+    x1->token.token_number = line_type;
+    x1->token.token_value = 0;
+
+    x2->son = NULL;     
+    x2->brother = x3;
+    x2->token.token_number = p1_num;
+    x2->token.token_value = p1_val;
+
+    x3->son = NULL;     
+    x3->brother = x4;
+    x3->token.token_number = p2_num;
+    x3->token.token_value = p2_val;
+
+    x4->son = NULL;     
+    x4->brother = NULL;
+    x4->token.token_number = p3_num;
+    x4->token.token_value = p3_val;
+        
+
+    n->son = x1;        
+    n->brother = NULL;
+    n->token.token_value = 0;
+
+    if ((line_type >= 200 && line_type < 300) || (line_type >= 400 && line_type < 500)) {
+        n->token.token_number = ASM_LINE;
+    } else {
+        n->token.token_number = TAG_LINE;
+    }
+
+    return n;
+}

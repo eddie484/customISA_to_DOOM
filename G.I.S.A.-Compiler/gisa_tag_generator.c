@@ -35,8 +35,6 @@
 #include "gisa_compiler.h"
 
 
-Node line[100];
-int line_count = 0;
 int temp_count = 1;     // 0은 처음 입력값이므로 1부터 임시변수 시작.
 
 Node * tag_terminal(Node * ast);
@@ -49,11 +47,8 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in);
 Node * tag_terminal(Node * ast){
     if (ast->token.token_number >= 0 && ast->token.token_number <= 9) {
         printf("Processing: terminal <%d, %d>\n", ast->token.token_number, ast->token.token_value);
-        Node * n = malloc(sizeof(Node));
-        n->token = ast->token;
 
-        n->son = NULL;
-        n->brother = NULL;
+        Node * n = node_maker(NULL, NULL, ast->token.token_number, ast->token.token_value);
 
         return n;
     } else {
@@ -67,12 +62,7 @@ Node * tag_nt_program(Node * ast){
         printf("Processing: tag_nt_program\n");
         Node * x1 = tag_nt_function(ast->son);
 
-        Node * n = malloc(sizeof(Node));
-        n->son = x1;
-        n->token.token_number = TAG_PROGRAM;
-
-        n->brother = NULL;
-        n->token.token_value = 0;
+        Node * n = node_maker(x1, NULL, TAG_PROGRAM, 0);
 
         return n;
     } else {
@@ -93,12 +83,7 @@ Node * tag_nt_function(Node * ast){
         x2->brother = x3;
         x3->brother = x4;
 
-        Node * n = malloc(sizeof(Node));
-        n->son = x1;
-        n->token.token_number = TAG_FUNCTION;
-
-        n->brother = NULL;
-        n->token.token_value = 0;
+        Node * n = node_maker(x1, NULL, TAG_FUNCTION, 0);
 
         return n;
     } else {
@@ -112,12 +97,7 @@ Node * tag_nt_instr(Node * ast){
         printf("Processing: tag_nt_instr\n");
         Node * x1 = tag_nt_instr_interpreting(ast->son, 0);
 
-        Node * n = malloc(sizeof(Node));
-        n->son = x1;
-        n->token.token_number = TAG_INSTR;
-
-        n->brother = NULL;
-        n->token.token_value = 0;
+        Node * n = node_maker(x1, NULL, TAG_INSTR, 0);
 
         return n;
     } else {
@@ -128,53 +108,15 @@ Node * tag_nt_instr(Node * ast){
 
 
 Node * tag_nt_instr_interpreting(Node * ast, int temp_in){
-    printf("line count: %d\n", line_count);
     if (ast->token.token_number == KW_RETURN) {
         printf("enter KW_RETURN\n");
         Node * n1 = tag_nt_instr_interpreting(ast->brother, temp_in);
-        
-            Node * n2 = malloc(sizeof(Node));
-            Node * x1 = malloc(sizeof(Node));
-            Node * x2 = malloc(sizeof(Node));
-            Node * x3 = malloc(sizeof(Node));
-            Node * x4 = malloc(sizeof(Node));
+        Node * n2 = line_maker(KW_RETURN, TAG_TEMP, 0, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
 
-            n2->son = x1;        // line start
-            n2->brother = NULL;
-            n2->token.token_number = TAG_LINE;
-            n2->token.token_value = 0;
-
-            x1->son = NULL;     // 연산자
-            x1->brother = x2;
-            x1->token.token_number = KW_RETURN;
-            x1->token.token_value = 0;
-
-            x2->son = NULL;     // rD
-            x2->brother = x3;
-            x2->token.token_number = TAG_TEMP;
-            x2->token.token_value = 0;
-
-            x3->son = NULL;     // rA
-            x3->brother = x4;
-            x3->token.token_number = TAG_TEMP;
-            x3->token.token_value = 0;
-            
-            n2->token.token_value = x2->token.token_value;
-
-            x4->son = NULL;     // rB
-            x4->brother = NULL;
-            x4->token.token_number = TAG_TEMP;
-            x4->token.token_value = n1->token.token_value;
-            
-            n2->token.token_value = x2->token.token_value;
-
+        n2->token.token_value = n2->son->brother->token.token_value;
         n1->brother = n2;
 
-        Node * n = malloc(sizeof(Node));
-        n->son = n1;
-        n->brother = NULL;
-        n->token.token_number = TAG_LINE_SET;
-        n->token.token_value = n2->token.token_value;
+        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
         return n;
 
@@ -186,11 +128,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in){
 
             n1->brother = n2;
 
-            Node * n = malloc(sizeof(Node));
-            n->son = n1;
-            n->brother = NULL;
-            n->token.token_number = TAG_LINE_SET;
-            n->token.token_value = n2->token.token_value;
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
             return n;
         } else if (ast->son->token.token_number == NUM_INT) {
@@ -201,114 +139,27 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in){
 
     } else if (ast->token.token_number == NUM_INT) {
         printf("enter NUM_INT\n");
-        Node * n = malloc(sizeof(Node));
-        Node * x1 = malloc(sizeof(Node));
-        Node * x2 = malloc(sizeof(Node));
-        Node * x3 = malloc(sizeof(Node));
-        Node * x4 = malloc(sizeof(Node));
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_count++, TAG_TEMP, 0, NUM_INT, ast->token.token_value);
+                
+        n->token.token_value = n->son->brother->token.token_value;
 
-        n->son = x1;        // line start
-        n->brother = NULL;
-        n->token.token_number = TAG_LINE;
-        n->token.token_value = 0;
-
-        x1->son = NULL;     // 연산자
-        x1->brother = x2;
-        x1->token.token_number = TAG_MOV;
-        x1->token.token_value = 0;
-
-        x2->son = NULL;     // rD
-        x2->brother = x3;
-        x2->token.token_number = TAG_TEMP;
-        x2->token.token_value = temp_count++;
-
-        x3->son = NULL;     // rA
-        x3->brother = x4;
-        x3->token.token_number = TAG_TEMP;
-        x3->token.token_value = 0;
-
-        x4->son = NULL;     // rB
-        x4->brother = NULL;
-        x4->token.token_number = NUM_INT;
-        x4->token.token_value = ast->token.token_value;
-        
-        n->token.token_value = x2->token.token_value;
-
-        printf("\tINSTR: %d temp.%d %d\n", x1->token.token_number, x2->token.token_value, x4->token.token_value);
+        printf("\tINSTR: %d temp.%d %d\n", n->son->token.token_number, n->son->brother->token.token_value, n->son->brother->brother->brother->token.token_value);
 
         return n;
 
     } else if (ast->token.token_number == OP_TILDE) {
         printf("enter OP_TILDE\n");
-        Node * n = malloc(sizeof(Node));
-        Node * x1 = malloc(sizeof(Node));
-        Node * x2 = malloc(sizeof(Node));
-        Node * x3 = malloc(sizeof(Node));
-        Node * x4 = malloc(sizeof(Node));
-
-        n->son = x1;        // line start
-        n->brother = NULL;
-        n->token.token_number = TAG_LINE;
-        n->token.token_value = 0;
-
-        x1->son = NULL;     // 연산자
-        x1->brother = x2;
-        x1->token.token_number = OP_TILDE;
-        x1->token.token_value = 0;
-
-        x2->son = NULL;     // rD
-        x2->brother = x3;
-        x2->token.token_number = TAG_TEMP;
-        x2->token.token_value = temp_count++;
-
-        x3->son = NULL;     // rA
-        x3->brother = x4;
-        x3->token.token_number = TAG_TEMP;
-        x3->token.token_value = 0;
-
-        x4->son = NULL;     // rB
-        x4->brother = NULL;
-        x4->token.token_number = TAG_TEMP;
-        x4->token.token_value = temp_in;
+        Node * n = line_maker(OP_TILDE, TAG_TEMP, temp_count++, TAG_TEMP, 0, TAG_TEMP, temp_in);
         
-        n->token.token_value = x2->token.token_value;
+        n->token.token_value = n->son->brother->token.token_value;
 
         return n;
 
     } else if (ast->token.token_number == OP_MINUS) {
         printf("enter OP_MINUS\n");
-        Node * n = malloc(sizeof(Node));
-        Node * x1 = malloc(sizeof(Node));
-        Node * x2 = malloc(sizeof(Node));
-        Node * x3 = malloc(sizeof(Node));
-        Node * x4 = malloc(sizeof(Node));
-
-        n->son = x1;        // line start
-        n->brother = NULL;
-        n->token.token_number = TAG_LINE;
-        n->token.token_value = 0;
-
-        x1->son = NULL;     // 연산자
-        x1->brother = x2;
-        x1->token.token_number = OP_MINUS;
-        x1->token.token_value = 0;
-
-        x2->son = NULL;     // rD
-        x2->brother = x3;
-        x2->token.token_number = TAG_TEMP;
-        x2->token.token_value = temp_count++;
-
-        x3->son = NULL;     // rA
-        x3->brother = x4;
-        x3->token.token_number = NUM_INT;
-        x3->token.token_value = 0;
-
-        x4->son = NULL;     // rB
-        x4->brother = NULL;
-        x4->token.token_number = TAG_TEMP;
-        x4->token.token_value = temp_in;
+        Node * n = line_maker(OP_MINUS, TAG_TEMP, temp_count++, TAG_TEMP, 0, TAG_TEMP, temp_in);
         
-        n->token.token_value = x2->token.token_value;
+        n->token.token_value = n->son->brother->token.token_value;
 
         return n;
 
