@@ -121,7 +121,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
         
         return n;
     } else if (tag->token.token_number == TAG_LINE){
-        if (tag->son->token.token_number == KW_RETURN){
+        if (tag->son->token.token_number == KW_RETURN){/*
             Node * n1 = malloc(sizeof(Node));
             Node * n2 = malloc(sizeof(Node));
 
@@ -183,7 +183,110 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             n2_x4->son = NULL;
             n2_x4->brother = NULL;
             n2_x4->token.token_number = ASM_REGISTER;
-            n2_x4->token.token_value = 15;
+            n2_x4->token.token_value = 15;*/
+
+            Node * n = malloc(sizeof(Node));
+            Node * x1 = malloc(sizeof(Node));
+            Node * x2 = malloc(sizeof(Node));
+            Node * x3 = malloc(sizeof(Node));
+            Node * x4 = malloc(sizeof(Node));
+
+            x1->son = NULL;
+            x1->brother = x2;
+            x1->token.token_number = ASM_RET;
+            x1->token.token_value = 0;
+
+            x2->son = NULL;
+            x2->brother = x3;
+            x2->token.token_number = TAG_TEMP;
+            x2->token.token_value = 0;
+
+            x3->son = NULL;
+            x3->brother = x4;
+            x3->token.token_number = TAG_TEMP;
+            x3->token.token_value = 0;
+
+            x4->son = NULL;
+            x4->brother = NULL;
+            x4->token.token_number = TAG_TEMP;
+            x4->token.token_value = tag->son->brother->brother->brother->token.token_value;
+
+
+            n->son = x1;
+            n->token.token_number = ASM_LINE;
+            n->token.token_value = 0;
+
+            if (tag->brother != NULL) {
+                Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
+                n->brother = n1;
+            } else {
+                n->brother = NULL;
+            }
+
+            return n;
+        } else if (tag->son->token.token_number == OP_MINUS &&tag->son->brother->brother->token.token_number == NUM_INT) {
+            Node * n1 = malloc(sizeof(Node));
+            Node * n2 = malloc(sizeof(Node));
+
+            Node * n1_x1 = malloc(sizeof(Node));
+            Node * n1_x2 = malloc(sizeof(Node));
+            Node * n1_x3 = malloc(sizeof(Node));
+            Node * n1_x4 = malloc(sizeof(Node));
+            
+            Node * n2_x1 = malloc(sizeof(Node));
+            Node * n2_x2 = malloc(sizeof(Node));
+            Node * n2_x3 = malloc(sizeof(Node));
+            Node * n2_x4 = malloc(sizeof(Node));
+
+            n1->son = n1_x1;
+            n1->brother = n2;
+            n1->token.token_number = ASM_LINE;
+            n1->token.token_value = 0;
+
+            n2->son = n2_x1;
+            n2->brother = NULL;
+            n2->token.token_number = ASM_LINE;
+            n2->token.token_value = 0;
+
+            n1_x1->son = NULL;
+            n1_x1->brother = n1_x2;
+            n1_x1->token.token_number = ASM_MOV;
+            n1_x1->token.token_value = 0;
+
+            n1_x2->son = NULL;
+            n1_x2->brother = n1_x3;
+            n1_x2->token.token_number = ASM_REGISTER;
+            n1_x2->token.token_value = 2;
+
+            n1_x3->son = NULL;
+            n1_x3->brother = n1_x4;
+            n1_x3->token.token_number = TAG_TEMP;
+            n1_x3->token.token_value = 0;
+
+            n1_x4->son = NULL;
+            n1_x4->brother = NULL;
+            n1_x4->token.token_number = NUM_INT;
+            char str[12] = "0";
+            n1_x4->token.token_value = lexval_manager (str);
+
+            n2_x1->son = NULL;
+            n2_x1->brother = n2_x2;
+            n2_x1->token.token_number = ASM_SUB;
+            n2_x1->token.token_value = 0;
+            
+            n2_x2->son = NULL;
+            n2_x2->brother = n2_x3;
+            n2_x2->token = tag->son->brother->token;
+            
+            n2_x3->son = NULL;
+            n2_x3->brother = n2_x4;
+            n2_x3->token.token_number = ASM_REGISTER;
+            n2_x3->token.token_value = 2;
+            
+            n2_x4->son = NULL;
+            n2_x4->brother = NULL;
+            n2_x4->token = tag->son->brother->brother->brother->token;
+
 
             Node * n = malloc(sizeof(Node));
             n->son = n1;
@@ -306,7 +409,10 @@ void asm_pass2_testing1(Node * node) {
             x4->son = NULL;
             x4->brother = NULL;
             x4->token.token_number = NUM_INT;
-            x4->token.token_value = -(4 * node->son->brother->token.token_value);
+            int n = -(4 * node->son->brother->token.token_value);
+            char str[12];
+            snprintf(str, sizeof(str), "%d", n);
+            x4->token.token_value = lexval_manager (str);
 
             store_rD->son = x1;
             store_rD->brother = node->brother;
@@ -344,7 +450,10 @@ void asm_pass2_testing1(Node * node) {
             x4->son = NULL;
             x4->brother = NULL;
             x4->token.token_number = NUM_INT;
-            x4->token.token_value = -(4 * node->son->brother->brother->token.token_value);
+            int n = -(4 * node->son->brother->brother->token.token_value);
+            char str[12];
+            snprintf(str, sizeof(str), "%d", n);
+            x4->token.token_value = lexval_manager (str);
 
             original_line_node->son = node->son;
             original_line_node->brother = node->brother;
@@ -386,7 +495,10 @@ void asm_pass2_testing1(Node * node) {
             x4->son = NULL;
             x4->brother = NULL;
             x4->token.token_number = NUM_INT;
-            x4->token.token_value = -(4 * node->son->brother->brother->brother->token.token_value);
+            int n = -(4 * node->son->brother->brother->brother->token.token_value);
+            char str[12];
+            snprintf(str, sizeof(str), "%d", n);
+            x4->token.token_value = lexval_manager (str);
 
             original_line_node->son = node->son;
             original_line_node->brother = node->brother;
@@ -428,7 +540,7 @@ void asm_pass3_testing1(Node * node) {
 
     if (node->token.token_number == ASM_FUNCTION) {
         Node * prologue = malloc(sizeof(Node));
-        Node * epilogue = malloc(sizeof(Node));
+        //Node * epilogue = malloc(sizeof(Node));
 
         Node * p1 = malloc(sizeof(Node));
         Node * p1x1 = malloc(sizeof(Node));
@@ -448,7 +560,7 @@ void asm_pass3_testing1(Node * node) {
         Node * p3x3 = malloc(sizeof(Node));
         Node * p3x4 = malloc(sizeof(Node));
 
-        Node * e1 = malloc(sizeof(Node));
+        /*Node * e1 = malloc(sizeof(Node));
         Node * e1x1 = malloc(sizeof(Node));
         Node * e1x2 = malloc(sizeof(Node));
         Node * e1x3 = malloc(sizeof(Node));
@@ -458,7 +570,7 @@ void asm_pass3_testing1(Node * node) {
         Node * e2x1 = malloc(sizeof(Node));
         Node * e2x2 = malloc(sizeof(Node));
         Node * e2x3 = malloc(sizeof(Node));
-        Node * e2x4 = malloc(sizeof(Node));
+        Node * e2x4 = malloc(sizeof(Node));*/
 
         // STR R13 R14 -(temp_count * 4 + 1)
         p1x1->son = NULL;
@@ -479,7 +591,10 @@ void asm_pass3_testing1(Node * node) {
         p1x4->son = NULL;
         p1x4->brother = NULL;
         p1x4->token.token_number = NUM_INT;
-        p1x4->token.token_value = -((temp_count + 1) * 4);
+        int n = -((temp_count + 1) * 4);
+        char str[12];
+        snprintf(str, sizeof(str), "%d", n);
+        p1x4->token.token_value = lexval_manager (str);
 
         p1->son = p1x1;
         p1->brother = p2;
@@ -515,7 +630,7 @@ void asm_pass3_testing1(Node * node) {
         // SUB R14 R13 -(temp_count * 4 + 1)
         p3x1->son = NULL;
         p3x1->brother = p3x2;
-        p3x1->token.token_number = ASM_SUB;
+        p3x1->token.token_number = ASM_ADD;
         p3x1->token.token_value = 0;
 
         p3x2->son = NULL;
@@ -531,7 +646,10 @@ void asm_pass3_testing1(Node * node) {
         p3x4->son = NULL;
         p3x4->brother = NULL;
         p3x4->token.token_number = NUM_INT;
-        p3x4->token.token_value = -((temp_count + 1) * 4);
+        n = -((temp_count + 1) * 4);
+        str[12];
+        snprintf(str, sizeof(str), "%d", n);
+        p3x4->token.token_value = lexval_manager (str);
 
         p3->son = p3x1;
         p3->brother = NULL;
@@ -540,7 +658,7 @@ void asm_pass3_testing1(Node * node) {
 
 
 
-        // MOV R14 R13
+        /*// MOV R14 R13
         e1x1->son = NULL;
         e1x1->brother = e1x2;
         e1x1->token.token_number = ASM_MOV;
@@ -585,12 +703,15 @@ void asm_pass3_testing1(Node * node) {
         e2x4->son = NULL;
         e2x4->brother = NULL;
         e2x4->token.token_number = NUM_INT;
-        e2x4->token.token_value = -((temp_count + 1) * 4);
+        n = -((temp_count + 1) * 4);
+        str[12];
+        snprintf(str, sizeof(str), "%d", n);
+        e2x4->token.token_value = lexval_manager (str);
 
         e2->son = e2x1;
         e2->brother = NULL;
         e2->token.token_number = ASM_LINE;
-        e2->token.token_value = 0;
+        e2->token.token_value = 0;*/
         
 
 
@@ -601,13 +722,13 @@ void asm_pass3_testing1(Node * node) {
         prologue->token.token_number = ASM_PROLOGUE;
         prologue->token.token_value = 0;
 
-        epilogue->son = e1;
+        /*epilogue->son = e1;
         epilogue->brother = NULL;
         epilogue->token.token_number = ASM_EPILOGUE;
-        epilogue->token.token_value = 0;
+        epilogue->token.token_value = 0;*/
 
         node->son->brother->brother->brother = prologue;
-        node->son->brother->brother->brother->brother->brother = epilogue;
+        //node->son->brother->brother->brother->brother->brother = epilogue;
     }
 
 }

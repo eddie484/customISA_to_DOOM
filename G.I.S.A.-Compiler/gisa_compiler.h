@@ -52,6 +52,10 @@
 #define ASM_MOV         400
 #define ASM_ADD         401
 #define ASM_SUB         402
+#define ASM_NOT         436
+#define ASM_LDR         440
+#define ASM_STR         445
+
 #define ASM_MOVH        403
 #define ASM_CMP         404
 #define ASM_MUL         405
@@ -70,14 +74,11 @@
 #define ASM_AND         433
 #define ASM_OR          434
 #define ASM_XOR         435
-#define ASM_NOT         436
 #define ASM_BCHK        437
-#define ASM_LDR         440
 #define ASM_LDRB        441
 #define ASM_LDRSB       442
 #define ASM_LDRH        443
 #define ASM_LDRSH       444
-#define ASM_STR         445
 #define ASM_STRB        446
 #define ASM_STRH        447
 #define ASM_B           450
