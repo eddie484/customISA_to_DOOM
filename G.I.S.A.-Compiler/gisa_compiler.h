@@ -47,11 +47,21 @@
 #define ASM_LINE        206
 #define ASM_LINE_SET    207
 #define ASM_JUMP        208
+#define ASM_STACK       209
+#define ASM_LDR         210
+#define ASM_STR         211
 
 
 #define LEXING_EOF      999
-
-
+/*
+reg 0=ret_val
+reg 1=rD
+reg 2=rA
+reg 3=rB
+reg 13=stack_start_addr (더 큰 주소, 위쪽)
+reg 14=stack_end_addr
+reg 15=ret_pc
+*/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>

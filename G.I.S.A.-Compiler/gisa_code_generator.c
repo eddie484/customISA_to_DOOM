@@ -1,15 +1,29 @@
 #include "gisa_compiler.h"
 
 
-Node * asm_terminal(Node * tag);
-Node * asm_nt_program(Node * tag);
-Node * asm_nt_function(Node * tag);
-Node * asm_nt_instr(Node * tag);
-Node * asm_nt_instr_loop(Node * tag);
-Node * asm_nt_return(Node * tag);
+Node * asm_pass1_terminal(Node * tag);
+Node * asm_pass1_nt_program(Node * tag);
+Node * asm_pass1_nt_function(Node * tag);
+Node * asm_pass1_nt_instr(Node * tag);
+Node * asm_pass1_nt_instr_loop(Node * tag);
+Node * asm_pass1_nt_return(Node * tag);
+
+void asm_pass2_testing1(Node * node);
 
 
-Node * asm_terminal(Node * tag){
+
+
+/* ***********************************
+**************************************
+**************************************
+***********                ***********
+***********    PASS ONE    ***********
+***********                ***********
+**************************************
+**************************************
+*********************************** */
+
+Node * asm_pass1_terminal(Node * tag){
     if (tag->token.token_number >= 0 && tag->token.token_number <= 9) {
         printf("Processing: terminal <%d, %d>\n", tag->token.token_number, tag->token.token_value);
         Node * n = malloc(sizeof(Node));
@@ -20,15 +34,15 @@ Node * asm_terminal(Node * tag){
 
         return n;
     } else {
-        printf("TAG to asm tree 과정에서 오류 발생: terminal node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
+        printf("TAG to asm tree pass1 과정에서 오류 발생: terminal node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
         exit(1);
     }
 }
 
-Node * asm_nt_program(Node * tag){
+Node * asm_pass1_nt_program(Node * tag){
     if (tag->token.token_number == TAG_PROGRAM) {
-        printf("Processing: asm_nt_program\n");
-        Node * x1 = asm_nt_function(tag->son);
+        printf("Processing: asm_pass1_nt_program\n");
+        Node * x1 = asm_pass1_nt_function(tag->son);
 
         Node * n = malloc(sizeof(Node));
         n->son = x1;
@@ -39,18 +53,18 @@ Node * asm_nt_program(Node * tag){
 
         return n;
     } else {
-        printf("TAG to asm tree 과정에서 오류 발생: TAG_PROGRAM node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
+        printf("TAG to asm tree pass1 과정에서 오류 발생: TAG_PROGRAM node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
         exit(1);
     }
 }
 
-Node * asm_nt_function(Node * tag){
+Node * asm_pass1_nt_function(Node * tag){
     if (tag->token.token_number == TAG_FUNCTION) {
-        printf("Processing: asm_nt_function\n");
-        Node * x1 = asm_terminal(tag->son);
-        Node * x2 = asm_terminal(tag->son->brother);
-        Node * x3 = asm_terminal(tag->son->brother->brother);
-        Node * x4 = asm_nt_instr(tag->son->brother->brother->brother);
+        printf("Processing: asm_pass1_nt_function\n");
+        Node * x1 = asm_pass1_terminal(tag->son);
+        Node * x2 = asm_pass1_terminal(tag->son->brother);
+        Node * x3 = asm_pass1_terminal(tag->son->brother->brother);
+        Node * x4 = asm_pass1_nt_instr(tag->son->brother->brother->brother);
 
         x1->brother = x2;
         x2->brother = x3;
@@ -65,15 +79,15 @@ Node * asm_nt_function(Node * tag){
 
         return n;
     } else {
-        printf("TAG to asm tree 과정에서 오류 발생: NT_FUNCTION node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
+        printf("TAG to asm tree pass1 과정에서 오류 발생: NT_FUNCTION node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
         exit(1);
     }
 }
 
-Node * asm_nt_instr(Node * tag){
+Node * asm_pass1_nt_instr(Node * tag){
     if (tag->token.token_number == TAG_INSTR) {
-        printf("Processing: asm_nt_instr\n");
-        Node * x1 = asm_nt_instr_loop(tag->son);
+        printf("Processing: asm_pass1_nt_instr\n");
+        Node * x1 = asm_pass1_nt_instr_loop(tag->son);
 
         Node * n = malloc(sizeof(Node));
         n->son = x1;
@@ -84,22 +98,22 @@ Node * asm_nt_instr(Node * tag){
 
         return n;
     } else {
-        printf("TAG to asm tree 과정에서 오류 발생: NT_CONTENT node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
+        printf("TAG to asm tree pass1 과정에서 오류 발생: NT_CONTENT node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
         exit(1);
     }
 }
 
-Node * asm_nt_instr_loop(Node * tag){
+Node * asm_pass1_nt_instr_loop(Node * tag){
     if (tag->token.token_number == TAG_LINE_SET) {
         Node * n = malloc(sizeof(Node));
-        Node * x1 = asm_nt_instr_loop(tag->son);
+        Node * x1 = asm_pass1_nt_instr_loop(tag->son);
 
         n->son = x1;
         n->token.token_number = ASM_LINE_SET;
         n->token.token_value = tag->token.token_value;
 
         if (tag->brother != NULL) {
-            Node * n1 = asm_nt_instr_loop(tag->brother);
+            Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
             n->brother = n1;
         } else {
             n->brother = NULL;
@@ -177,7 +191,7 @@ Node * asm_nt_instr_loop(Node * tag){
             n->token.token_value = tag->token.token_value;
 
             if (tag->brother != NULL) {
-                Node * n1 = asm_nt_instr_loop(tag->brother);
+                Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
                 n->brother = n1;
             } else {
                 n->brother = NULL;
@@ -212,7 +226,7 @@ Node * asm_nt_instr_loop(Node * tag){
             n->token.token_value = tag->token.token_value;
 
             if (tag->brother != NULL) {
-                Node * n1 = asm_nt_instr_loop(tag->brother);
+                Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
                 n->brother = n1;
             } else {
                 n->brother = NULL;
@@ -224,69 +238,160 @@ Node * asm_nt_instr_loop(Node * tag){
 }
 
 
-/*
-Node * asm_nt_instr_loop(Node * tag){
-    printf("Processing: asm_nt_instr_loop\n");
-    Node * n;
 
-        if (tag->token.token_number == KW_RETURN){
-            n = asm_nt_return(tag);
-            Node * n1 = malloc(sizeof(Node));
-            n1->token.token_number = ASM_RET;
-            n->brother = n1;
 
-            n1->son = NULL;
-            n1->brother = NULL;
-            n1->token.token_value = 0;
+/* ***********************************
+**************************************
+**************************************
+***********                ***********
+***********    PASS TWO    ***********
+***********                ***********
+**************************************
+**************************************
+*********************************** */
 
-            if (tag->brother->brother != NULL) {
-                Node * x1 = asm_nt_instr_loop(tag->brother->brother);
-                n->brother->brother = x1;
-            }
-        } else {
-            printf("TAG to asm tree 과정에서 오류 발생: Instruction node들을 처리해야 하지만, instr에 해당하지 않는 노드가 입력되었습니다. 입력 노드: %d\n", tag->token.token_number);
-            exit(1);
-        }
+void asm_pass2_testing1(Node * node) {
+    if (node->son != NULL) {
+        asm_pass2_testing1(node->son);
+    }
     
-    return n;
+    if (node->brother != NULL) {
+        asm_pass2_testing1(node->brother);
+    }
+
+    if (node->token.token_number == ASM_LINE) {
+        // rD가 임시 레지스터일 경우
+        if (node->son->brother->token.token_number == TAG_TEMP && node->son->brother->token.token_value != 0) { // rD
+            Node * store_rD = malloc(sizeof(Node));
+            Node * x1 = malloc(sizeof(Node));
+            Node * x2 = malloc(sizeof(Node));
+            Node * x3 = malloc(sizeof(Node));
+            Node * x4 = malloc(sizeof(Node));
+
+            x1->son = NULL;
+            x1->brother = x2;
+            x1->token.token_number = ASM_STR;
+            x1->token.token_value = 0;
+
+            x2->son = NULL;
+            x2->brother = x3;
+            x2->token.token_number = ASM_REGISTER;
+            x2->token.token_value = 1;
+
+            x3->son = NULL;
+            x3->brother = x4;
+            x3->token.token_number = ASM_REGISTER;
+            x3->token.token_value = 13;
+
+            x4->son = NULL;
+            x4->brother = NULL;
+            x4->token.token_number = NUM_INT;
+            x4->token.token_value = -(4 * node->son->brother->token.token_value);
+
+            store_rD->son = x1;
+            store_rD->brother = node->brother;
+            store_rD->token.token_number = ASM_LINE;
+            store_rD->token.token_value = 0;
+
+            node->son->brother->token.token_number = ASM_REGISTER;
+            node->son->brother->token.token_value = 1;
+            node->brother = store_rD;
+        }
+
+        // rA가 임시변수일 경우
+        if (node->son->brother->brother->token.token_number == TAG_TEMP && node->son->brother->brother->token.token_value != 0) { // rA
+            Node * original_line_node = malloc(sizeof(Node));
+            Node * x1 = malloc(sizeof(Node));
+            Node * x2 = malloc(sizeof(Node));
+            Node * x3 = malloc(sizeof(Node));
+            Node * x4 = malloc(sizeof(Node));
+
+            x1->son = NULL;
+            x1->brother = x2;
+            x1->token.token_number = ASM_LDR;
+            x1->token.token_value = 0;
+
+            x2->son = NULL;
+            x2->brother = x3;
+            x2->token.token_number = ASM_REGISTER;
+            x2->token.token_value = 2;
+
+            x3->son = NULL;
+            x3->brother = x4;
+            x3->token.token_number = ASM_REGISTER;
+            x3->token.token_value = 13;
+
+            x4->son = NULL;
+            x4->brother = NULL;
+            x4->token.token_number = NUM_INT;
+            x4->token.token_value = -(4 * node->son->brother->brother->token.token_value);
+
+            original_line_node->son = node->son;
+            original_line_node->brother = node->brother;
+            original_line_node->token.token_number = node->token.token_number;
+            original_line_node->token.token_value = node->token.token_value;
+
+            node->son = x1;
+            node->brother = original_line_node;
+            node->token.token_number = ASM_LINE;
+            node->token.token_value = 0;
+
+            original_line_node->son->brother->brother->token.token_number = ASM_REGISTER;
+            original_line_node->son->brother->brother->token.token_value = 2;
+        }
+
+        // rB가 임시변수일 경우
+        if (node->son->brother->brother->brother->token.token_number == TAG_TEMP && node->son->brother->brother->brother->token.token_value != 0) { // rB
+            Node * original_line_node = malloc(sizeof(Node));
+            Node * x1 = malloc(sizeof(Node));
+            Node * x2 = malloc(sizeof(Node));
+            Node * x3 = malloc(sizeof(Node));
+            Node * x4 = malloc(sizeof(Node));
+
+            x1->son = NULL;
+            x1->brother = x2;
+            x1->token.token_number = ASM_LDR;
+            x1->token.token_value = 0;
+
+            x2->son = NULL;
+            x2->brother = x3;
+            x2->token.token_number = ASM_REGISTER;
+            x2->token.token_value = 3;
+
+            x3->son = NULL;
+            x3->brother = x4;
+            x3->token.token_number = ASM_REGISTER;
+            x3->token.token_value = 13;
+
+            x4->son = NULL;
+            x4->brother = NULL;
+            x4->token.token_number = NUM_INT;
+            x4->token.token_value = -(4 * node->son->brother->brother->brother->token.token_value);
+
+            original_line_node->son = node->son;
+            original_line_node->brother = node->brother;
+            original_line_node->token.token_number = node->token.token_number;
+            original_line_node->token.token_value = node->token.token_value;
+
+            node->son = x1;
+            node->brother = original_line_node;
+            node->token.token_number = ASM_LINE;
+            node->token.token_value = 0;
+
+            original_line_node->son->brother->brother->brother->token.token_number = ASM_REGISTER;
+            original_line_node->son->brother->brother->brother->token.token_value = 3;
+        }
+    }
 }
 
-Node * asm_nt_return(Node * tag){
-    if (tag->token.token_number == KW_RETURN) {
-        printf("Processing: asm_nt_mov\n");
-        Node * x1 = malloc(sizeof(Node));
-        Node * x2 = malloc(sizeof(Node));
-
-        x1->token.token_number = ASM_REGISTER;
-        x1->token.token_value = 0;
-        x2->token = tag->brother->son->token;
-
-        x1->brother = x2;
-
-
-        Node * n = malloc(sizeof(Node));
-        n->son = x1;
-        n->token.token_number = ASM_MOV;
-
-        x1->son = NULL;
-        x2->son = NULL;
-        x2->brother = NULL;
-
-        n->brother = NULL;
-        n->token.token_value = 0;
-
-        return n;
-    } else {
-        printf("TAG to asm tree 과정에서 오류 발생: KW_RETURN node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
-        exit(1);
-    }
-}*/
 
 
 
 Node * code_generator(Node * parse_input, char * codegentree_name)
 {
-    Node * asm_top;
+    Node * asm_pass1_top;
+    Node * asm_pass2_top;
+    Node * asm_pass3_top;
 
 
     FILE *codegenfp = fopen(codegentree_name, "w");         // 처리 결과 tag를 저장할 파일 오픈
@@ -297,11 +402,20 @@ Node * code_generator(Node * parse_input, char * codegentree_name)
     }
 
 
-    asm_top = asm_nt_program(parse_input);
-    bin_tree_printer(asm_top);
-    bin_tree_file_printer(asm_top, codegenfp);
+    asm_pass1_top = asm_pass1_nt_program(parse_input);
+    bin_tree_printer(asm_pass1_top);
+
+    asm_pass2_testing1(asm_pass1_top);
+    bin_tree_printer(asm_pass1_top);
+
+    //asm_pass2_top = asm_pass2_nt_program(asm_pass1_top);
+    //bin_tree_printer(asm_pass2_top);
+
+    //asm_pass3_top = asm_pass3_nt_program(asm_pass2_top);
+    //bin_tree_printer(asm_pass3_top);
+    bin_tree_file_printer(asm_pass1_top, codegenfp);
 
     printf("Code Generating Finished.\n");
     fclose(codegenfp);
-    return asm_top;
+    return asm_pass1_top;
 }
