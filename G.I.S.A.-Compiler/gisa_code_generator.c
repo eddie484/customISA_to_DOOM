@@ -436,30 +436,161 @@ void asm_pass3_testing1(Node * node) {
         Node * p1x3 = malloc(sizeof(Node));
         Node * p1x4 = malloc(sizeof(Node));
 
+        Node * p2 = malloc(sizeof(Node));
+        Node * p2x1 = malloc(sizeof(Node));
+        Node * p2x2 = malloc(sizeof(Node));
+        Node * p2x3 = malloc(sizeof(Node));
+        Node * p2x4 = malloc(sizeof(Node));
+
+        Node * p3 = malloc(sizeof(Node));
+        Node * p3x1 = malloc(sizeof(Node));
+        Node * p3x2 = malloc(sizeof(Node));
+        Node * p3x3 = malloc(sizeof(Node));
+        Node * p3x4 = malloc(sizeof(Node));
+
+        Node * e1 = malloc(sizeof(Node));
+        Node * e1x1 = malloc(sizeof(Node));
+        Node * e1x2 = malloc(sizeof(Node));
+        Node * e1x3 = malloc(sizeof(Node));
+        Node * e1x4 = malloc(sizeof(Node));
+
+        Node * e2 = malloc(sizeof(Node));
+        Node * e2x1 = malloc(sizeof(Node));
+        Node * e2x2 = malloc(sizeof(Node));
+        Node * e2x3 = malloc(sizeof(Node));
+        Node * e2x4 = malloc(sizeof(Node));
+
+        // STR R13 R14 -(temp_count * 4 + 1)
         p1x1->son = NULL;
         p1x1->brother = p1x2;
-        p1x1->token.token_number = ASM_SUB;
+        p1x1->token.token_number = ASM_STR;
         p1x1->token.token_value = 0;
 
         p1x2->son = NULL;
         p1x2->brother = p1x3;
         p1x2->token.token_number = ASM_REGISTER;
-        p1x2->token.token_value = 14;
+        p1x2->token.token_value = 13;
 
         p1x3->son = NULL;
         p1x3->brother = p1x4;
         p1x3->token.token_number = ASM_REGISTER;
-        p1x3->token.token_value = 13;
+        p1x3->token.token_value = 14;
 
         p1x4->son = NULL;
         p1x4->brother = NULL;
         p1x4->token.token_number = NUM_INT;
-        p1x4->token.token_value = -(temp_count * 4);
+        p1x4->token.token_value = -((temp_count + 1) * 4);
 
         p1->son = p1x1;
-        p1->brother = NULL;
+        p1->brother = p2;
         p1->token.token_number = ASM_LINE;
         p1->token.token_value = 0;
+        
+        // MOV R13 R14
+        p2x1->son = NULL;
+        p2x1->brother = p2x2;
+        p2x1->token.token_number = ASM_MOV;
+        p2x1->token.token_value = 0;
+
+        p2x2->son = NULL;
+        p2x2->brother = p2x3;
+        p2x2->token.token_number = ASM_REGISTER;
+        p2x2->token.token_value = 13;
+
+        p2x3->son = NULL;
+        p2x3->brother = p2x4;
+        p2x3->token.token_number = TAG_TEMP;
+        p2x3->token.token_value = 0;
+
+        p2x4->son = NULL;
+        p2x4->brother = NULL;
+        p2x4->token.token_number = ASM_REGISTER;
+        p2x4->token.token_value = 14;
+
+        p2->son = p2x1;
+        p2->brother = p3;
+        p2->token.token_number = ASM_LINE;
+        p2->token.token_value = 0;
+        
+        // SUB R14 R13 -(temp_count * 4 + 1)
+        p3x1->son = NULL;
+        p3x1->brother = p3x2;
+        p3x1->token.token_number = ASM_SUB;
+        p3x1->token.token_value = 0;
+
+        p3x2->son = NULL;
+        p3x2->brother = p3x3;
+        p3x2->token.token_number = ASM_REGISTER;
+        p3x2->token.token_value = 14;
+
+        p3x3->son = NULL;
+        p3x3->brother = p3x4;
+        p3x3->token.token_number = ASM_REGISTER;
+        p3x3->token.token_value = 13;
+
+        p3x4->son = NULL;
+        p3x4->brother = NULL;
+        p3x4->token.token_number = NUM_INT;
+        p3x4->token.token_value = -((temp_count + 1) * 4);
+
+        p3->son = p3x1;
+        p3->brother = NULL;
+        p3->token.token_number = ASM_LINE;
+        p3->token.token_value = 0;
+
+
+
+        // MOV R14 R13
+        e1x1->son = NULL;
+        e1x1->brother = e1x2;
+        e1x1->token.token_number = ASM_MOV;
+        e1x1->token.token_value = 0;
+
+        e1x2->son = NULL;
+        e1x2->brother = e1x3;
+        e1x2->token.token_number = ASM_REGISTER;
+        e1x2->token.token_value = 14;
+
+        e1x3->son = NULL;
+        e1x3->brother = e1x4;
+        e1x3->token.token_number = TAG_TEMP;
+        e1x3->token.token_value = 0;
+
+        e1x4->son = NULL;
+        e1x4->brother = NULL;
+        e1x4->token.token_number = ASM_REGISTER;
+        e1x4->token.token_value = 13;
+
+        e1->son = e1x1;
+        e1->brother = e2;
+        e1->token.token_number = ASM_LINE;
+        e1->token.token_value = 0;
+
+        // LDR R13 R14 -(temp_count * 4 + 1)
+        e2x1->son = NULL;
+        e2x1->brother = e2x2;
+        e2x1->token.token_number = ASM_LDR;
+        e2x1->token.token_value = 0;
+
+        e2x2->son = NULL;
+        e2x2->brother = e2x3;
+        e2x2->token.token_number = ASM_REGISTER;
+        e2x2->token.token_value = 13;
+
+        e2x3->son = NULL;
+        e2x3->brother = e2x4;
+        e2x3->token.token_number = ASM_REGISTER;
+        e2x3->token.token_value = 14;
+
+        e2x4->son = NULL;
+        e2x4->brother = NULL;
+        e2x4->token.token_number = NUM_INT;
+        e2x4->token.token_value = -((temp_count + 1) * 4);
+
+        e2->son = e2x1;
+        e2->brother = NULL;
+        e2->token.token_number = ASM_LINE;
+        e2->token.token_value = 0;
         
 
 
@@ -470,7 +601,7 @@ void asm_pass3_testing1(Node * node) {
         prologue->token.token_number = ASM_PROLOGUE;
         prologue->token.token_value = 0;
 
-        epilogue->son = NULL;
+        epilogue->son = e1;
         epilogue->brother = NULL;
         epilogue->token.token_number = ASM_EPILOGUE;
         epilogue->token.token_value = 0;
