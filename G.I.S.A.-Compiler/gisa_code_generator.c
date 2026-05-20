@@ -167,7 +167,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
             n2_x1->son = NULL;
             n2_x1->brother = n2_x2;
-            n2_x1->token.token_number = ASM_JUMP;
+            n2_x1->token.token_number = ASM_JMP;
             n2_x1->token.token_value = 0;
 
             n2_x2->son = NULL;
@@ -207,7 +207,27 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             
             x1->son = NULL;
             x1->brother = x2;
-            x1->token = tag->son->token;
+
+            switch (tag->son->token.token_number) {
+                case TAG_MOV:
+                    x1->token.token_number = ASM_MOV;
+                    x1->token.token_value = 0;
+                    break;
+                    
+                case OP_TILDE:
+                    x1->token.token_number = ASM_NOT;
+                    x1->token.token_value = 0;
+                    break;
+                    
+                case OP_MINUS:
+                    x1->token.token_number = ASM_SUB;
+                    x1->token.token_value = 0;
+                    break;
+                    
+                default:
+                    x1->token = tag->son->token;
+                    break;
+            }
             
             x2->son = NULL;
             x2->brother = x3;
