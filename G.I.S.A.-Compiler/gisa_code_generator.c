@@ -407,6 +407,83 @@ void asm_pass2_testing1(Node * node) {
 
 
 
+/* ***********************************
+**************************************
+**************************************
+***********                ***********
+***********    PASS TWO    ***********
+***********                ***********
+**************************************
+**************************************
+*********************************** */
+
+void asm_pass3_testing1(Node * node) {
+    if (node->son != NULL) {
+        asm_pass3_testing1(node->son);
+    }
+    
+    if (node->brother != NULL) {
+        asm_pass3_testing1(node->brother);
+    }
+
+    if (node->token.token_number == ASM_FUNCTION) {
+        Node * prologue = malloc(sizeof(Node));
+        Node * epilogue = malloc(sizeof(Node));
+
+        Node * p1 = malloc(sizeof(Node));
+        Node * p1x1 = malloc(sizeof(Node));
+        Node * p1x2 = malloc(sizeof(Node));
+        Node * p1x3 = malloc(sizeof(Node));
+        Node * p1x4 = malloc(sizeof(Node));
+
+        p1x1->son = NULL;
+        p1x1->brother = p1x2;
+        p1x1->token.token_number = ASM_SUB;
+        p1x1->token.token_value = 0;
+
+        p1x2->son = NULL;
+        p1x2->brother = p1x3;
+        p1x2->token.token_number = ASM_REGISTER;
+        p1x2->token.token_value = 14;
+
+        p1x3->son = NULL;
+        p1x3->brother = p1x4;
+        p1x3->token.token_number = ASM_REGISTER;
+        p1x3->token.token_value = 13;
+
+        p1x4->son = NULL;
+        p1x4->brother = NULL;
+        p1x4->token.token_number = NUM_INT;
+        p1x4->token.token_value = -(temp_count * 4);
+
+        p1->son = p1x1;
+        p1->brother = NULL;
+        p1->token.token_number = ASM_LINE;
+        p1->token.token_value = 0;
+        
+
+
+
+
+        prologue->son = p1;
+        prologue->brother = node->son->brother->brother->brother;
+        prologue->token.token_number = ASM_PROLOGUE;
+        prologue->token.token_value = 0;
+
+        epilogue->son = NULL;
+        epilogue->brother = NULL;
+        epilogue->token.token_number = ASM_EPILOGUE;
+        epilogue->token.token_value = 0;
+
+        node->son->brother->brother->brother = prologue;
+        node->son->brother->brother->brother->brother->brother = epilogue;
+    }
+
+}
+
+
+
+
 Node * code_generator(Node * parse_input, char * codegentree_name)
 {
     Node * asm_pass1_top;
@@ -426,6 +503,9 @@ Node * code_generator(Node * parse_input, char * codegentree_name)
     bin_tree_printer(asm_pass1_top);
 
     asm_pass2_testing1(asm_pass1_top);
+    bin_tree_printer(asm_pass1_top);
+
+    asm_pass3_testing1(asm_pass1_top);
     bin_tree_printer(asm_pass1_top);
 
     //asm_pass2_top = asm_pass2_nt_program(asm_pass1_top);

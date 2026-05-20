@@ -46,6 +46,8 @@
 #define ASM_LINE        205
 #define ASM_LINE_SET    206
 #define ASM_STACK       207
+#define ASM_PROLOGUE    208
+#define ASM_EPILOGUE    209
 
 #define ASM_MOV         400
 #define ASM_ADD         401
@@ -133,5 +135,8 @@ void lexer_result_printer(Lexer_result lexer_result);
 void bin_tree_printer(Node * tree_top);
 void bin_tree_file_printer(Node * tree_top, FILE *parsefp);
 void tree_malloc_cleaner(Node * node);
+
+
+extern int temp_count;
 
 #endif
