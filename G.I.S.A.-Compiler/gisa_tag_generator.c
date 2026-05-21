@@ -170,57 +170,19 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
         return n;
 
-    } else if (ast->token.token_number == OP_TILDE) {
-        printf("enter OP_TILDE\n");
-        Node * n = line_maker(OP_TILDE, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+    // 단항 연산자일 경우 (OP_TILDE, OP_NEG)
+    } else if (ast->token.token_number == OP_TILDE || ast->token.token_number == OP_NEG) {
+        printf("enter OP_%d\n", ast->token.token_number);
+        Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
         
         n->token.token_value = n->son->brother->token.token_value;
 
         return n;
 
-    } else if (ast->token.token_number == OP_NEG) {
-        printf("enter OP_NEG\n");
-        Node * n = line_maker(OP_NEG, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
-        
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
-    } else if (ast->token.token_number == OP_ADD) {
-        printf("enter OP_ADD\n");
-        Node * n = line_maker(OP_ADD, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
-        
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
-    } else if (ast->token.token_number == OP_SUB) {
-        printf("enter OP_SUB\n");
-        Node * n = line_maker(OP_SUB, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
-        
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
-    } else if (ast->token.token_number == OP_MUL) {
-        printf("enter OP_MUL\n");
-        Node * n = line_maker(OP_MUL, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
-        
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
-    } else if (ast->token.token_number == OP_DIV) {
-        printf("enter OP_DIV\n");
-        Node * n = line_maker(OP_DIV, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
-        
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
-    } else if (ast->token.token_number == OP_MOD) {
-        printf("enter OP_MOD\n");
-        Node * n = line_maker(OP_MOD, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+    // 이항 연산자일 경우 (OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD)
+    } else if (ast->token.token_number == OP_ADD || ast->token.token_number == OP_SUB || ast->token.token_number == OP_MUL || ast->token.token_number == OP_DIV || ast->token.token_number == OP_MOD) {
+        printf("enter OP_%d\n", ast->token.token_number);
+        Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
         
         n->token.token_value = n->son->brother->token.token_value;
 
