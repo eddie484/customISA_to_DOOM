@@ -438,9 +438,7 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
 
         }
         
-        Node * n = node_maker(left, NULL, NT_EXP, 0);
-
-        return n;
+        return left;
     } else error(1, nextSymbol);
 }
 
