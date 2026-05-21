@@ -24,6 +24,15 @@
 
 
     AST
+    [[<binary_op> (exp)]]
+
+    TAG
+    t1 = [[exp]]
+    t2 = [[exp]]
+    t = <unary_op> t1 t2
+
+
+    AST
     [[KW_RETURN (exp)]]
 
     TAG
@@ -41,7 +50,7 @@ Node * tag_terminal(Node * ast);
 Node * tag_nt_program(Node * ast);
 Node * tag_nt_function(Node * ast);
 Node * tag_nt_instr(Node * ast);
-Node * tag_nt_instr_interpreting(Node * ast, int temp_in);
+Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB);
 
 
 Node * tag_terminal(Node * ast){
@@ -95,7 +104,7 @@ Node * tag_nt_function(Node * ast){
 Node * tag_nt_instr(Node * ast){
     if (ast->token.token_number == NT_CONTENT) {
         printf("Processing: tag_nt_instr\n");
-        Node * x1 = tag_nt_instr_interpreting(ast->son, 0);
+        Node * x1 = tag_nt_instr_interpreting(ast->son, 0, 0);
 
         Node * n = node_maker(x1, NULL, TAG_INSTR, 0);
 
@@ -107,10 +116,10 @@ Node * tag_nt_instr(Node * ast){
 }
 
 
-Node * tag_nt_instr_interpreting(Node * ast, int temp_in){
+Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     if (ast->token.token_number == KW_RETURN) {
         printf("enter KW_RETURN\n");
-        Node * n1 = tag_nt_instr_interpreting(ast->brother, temp_in);
+        Node * n1 = tag_nt_instr_interpreting(ast->brother, temp_in_rA, temp_in_rB);
         Node * n2 = line_maker(KW_RETURN, TAG_TEMP, 0, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
 
         n2->token.token_value = n2->son->brother->token.token_value;
@@ -123,19 +132,33 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in){
     } else if (ast->token.token_number == NT_EXP) {
         printf("enter NT_EXP\n");
         if (ast->son->token.token_number == OP_TILDE || ast->son->token.token_number == OP_NEG) {
-            Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in);
-            Node * n2 = tag_nt_instr_interpreting(ast->son, n1->token.token_value);
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
+            Node * n2 = tag_nt_instr_interpreting(ast->son, 0, n1->token.token_value);
 
             n1->brother = n2;
 
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
             return n;
+        } else if (ast->son->token.token_number == OP_ADD || ast->son->token.token_number == OP_SUB || ast->son->token.token_number == OP_MUL || ast->son->token.token_number == OP_DIV || ast->son->token.token_number == OP_MOD) {
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
+            Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
+            Node * n3 = tag_nt_instr_interpreting(ast->son, n1->token.token_value, n2->token.token_value);
+
+            n1->brother = n2;
+            n2->brother = n3;
+
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n3->token.token_value);
+
+            return n;
         } else if (ast->son->token.token_number == NUM_INT) {
-            Node * n1 = tag_nt_instr_interpreting(ast->son, temp_in);
+            Node * n1 = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);
 
             return n1;
-        } else {return NULL;}//에러처리
+        } else {
+            printf("EXP로 허용되지 않는 토큰 입력: <%d, %d>\n", ast->son->token.token_number, ast->son->token.token_value);
+            return NULL;
+        }//에러처리
 
     } else if (ast->token.token_number == NUM_INT) {
         printf("enter NUM_INT\n");
@@ -149,7 +172,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in){
 
     } else if (ast->token.token_number == OP_TILDE) {
         printf("enter OP_TILDE\n");
-        Node * n = line_maker(OP_TILDE, TAG_TEMP, temp_count++, TAG_TEMP, 0, TAG_TEMP, temp_in);
+        Node * n = line_maker(OP_TILDE, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
         
         n->token.token_value = n->son->brother->token.token_value;
 
@@ -157,7 +180,47 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in){
 
     } else if (ast->token.token_number == OP_NEG) {
         printf("enter OP_NEG\n");
-        Node * n = line_maker(OP_NEG, TAG_TEMP, temp_count++, TAG_TEMP, 0, TAG_TEMP, temp_in);
+        Node * n = line_maker(OP_NEG, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+        
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    } else if (ast->token.token_number == OP_ADD) {
+        printf("enter OP_ADD\n");
+        Node * n = line_maker(OP_ADD, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+        
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    } else if (ast->token.token_number == OP_SUB) {
+        printf("enter OP_SUB\n");
+        Node * n = line_maker(OP_SUB, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+        
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    } else if (ast->token.token_number == OP_MUL) {
+        printf("enter OP_MUL\n");
+        Node * n = line_maker(OP_MUL, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+        
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    } else if (ast->token.token_number == OP_DIV) {
+        printf("enter OP_DIV\n");
+        Node * n = line_maker(OP_DIV, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+        
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    } else if (ast->token.token_number == OP_MOD) {
+        printf("enter OP_MOD\n");
+        Node * n = line_maker(OP_MOD, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
         
         n->token.token_value = n->son->brother->token.token_value;
 
