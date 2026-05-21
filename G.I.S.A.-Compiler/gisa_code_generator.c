@@ -108,7 +108,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             }
 
             return n;
-        } else if (tag->son->token.token_number == OP_MINUS && tag->son->brother->brother->token.token_number == TAG_TEMP && tag->son->brother->brother->token.token_value == 0) {
+        } else if (tag->son->token.token_number == OP_NEG && tag->son->brother->brother->token.token_number == TAG_TEMP && tag->son->brother->brother->token.token_value == 0) {
             char str[12] = "0";
             Node * n1 = line_maker(ASM_MOV, ASM_REGISTER, 2, TAG_TEMP, 0, NUM_INT, lexval_manager (str));
             Node * n2 = line_maker(ASM_SUB, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value);
@@ -146,7 +146,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
                     x1->token.token_value = 0;
                     break;
                     
-                case OP_MINUS:
+                case OP_NEG:
                     x1->token.token_number = ASM_SUB;
                     x1->token.token_value = 0;
                     break;
@@ -290,7 +290,6 @@ void asm_pass3_prologue_maker(Node * node) {
 
         // ADD R14 R13 -(temp_count * 4 + 1)
         n = -((temp_count + 1) * 4);
-        str[12];
         snprintf(str, sizeof(str), "%d", n);
         Node * p3 = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
         

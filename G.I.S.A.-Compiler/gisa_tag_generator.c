@@ -122,7 +122,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in){
 
     } else if (ast->token.token_number == NT_EXP) {
         printf("enter NT_EXP\n");
-        if (ast->son->token.token_number == OP_TILDE || ast->son->token.token_number == OP_MINUS) {
+        if (ast->son->token.token_number == OP_TILDE || ast->son->token.token_number == OP_NEG) {
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in);
             Node * n2 = tag_nt_instr_interpreting(ast->son, n1->token.token_value);
 
@@ -155,9 +155,9 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in){
 
         return n;
 
-    } else if (ast->token.token_number == OP_MINUS) {
-        printf("enter OP_MINUS\n");
-        Node * n = line_maker(OP_MINUS, TAG_TEMP, temp_count++, TAG_TEMP, 0, TAG_TEMP, temp_in);
+    } else if (ast->token.token_number == OP_NEG) {
+        printf("enter OP_NEG\n");
+        Node * n = line_maker(OP_NEG, TAG_TEMP, temp_count++, TAG_TEMP, 0, TAG_TEMP, temp_in);
         
         n->token.token_value = n->son->brother->token.token_value;
 

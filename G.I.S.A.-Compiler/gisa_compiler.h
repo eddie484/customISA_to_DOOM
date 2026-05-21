@@ -18,7 +18,14 @@
 
 #define OP_TILDE        10  // ~
 #define OP_MINUS        11  // -
-#define OP_DECREMENT    12  // --
+#define OP_NEG          12  // -
+#define OP_DECREMENT    13  // --
+
+#define OP_ADD          14  // +
+#define OP_SUB          15  // -
+#define OP_MUL          16  // *
+#define OP_DIV          17  // /
+#define OP_MOD          18  // %
 
 
 #define NT_PROGRAM      100
@@ -27,6 +34,7 @@
 #define NT_CONTENT      103
 #define NT_EXP          104
 #define NT_UNARY_OP     105
+#define NT_BINARY_OP    106
 
 
 #define TAG_PROGRAM     300

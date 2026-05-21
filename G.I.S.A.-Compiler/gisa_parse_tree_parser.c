@@ -3,22 +3,28 @@
     <function> ::= "int" IDENT "(" <param> ")" "{" <content> "}"
     <param> ::= "void"
     <content> ::= "return" <exp> ";"
-    <exp> ::= NUM_INT | <unary_op> <exp> | "(" <exp> ")"
+    <exp> ::= <factor> | <exp> <binary_op> <exp>
+    <factor> ::= NUM_INT | <unary_op> <factor> | "(" <exp> ")"
     <unary_op> ::= "~" | "-"
+    <binary_op> ::= "+" | "-" | "*" | "/" | "%"
 
     <program> ::= <function>
     <function> ::= "KW_INT" IDENT "OPEN_PAREN" <param> "CLOSE_PAREN" "OPEN_BRACE" <content> "CLOSE_BRACE"
     <param> ::= "KW_VOID"
     <content> ::= "KW_RETURN" <exp> "PN_SEMI"
-    <exp> ::= NUM_INT | <unary_op> <exp> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
-    <unary_op> ::= "OP_TILDE" | "OP_MINUS"
+    <exp> ::= <factor> | <exp> <binary_op> <exp>
+    <factor> ::= NUM_INT | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
+    <unary_op> ::= "OP_TILDE" | "OP_NEG"
+    <binary_op> ::= "OP_ADD" | "OP_SUB" | "OP_MUL" | "OP_DIV" | "OP_MOD"
 
     <program> ::= <function>
     <function> ::= 2 0 5 <param> 6 7 <content> 8
     <param> ::= 3
     <content> ::= 4 <exp> 9
-    <exp> ::= 1 | <unary_op> <exp> | 5 <exp> 6
+    <exp> ::= <factor> | <exp> <binary_op> <exp>
+    <factor> ::= 1 | <unary_op> <factor> | 5 <exp> 6
     <unary_op> ::= 10 | 11
+    <binary_op> ::= 14 | 15 | 16 | 17 | 18
 
     ---
 
@@ -27,14 +33,18 @@
     FIRST(<param>) = {3}
     FIRST(<content>) = {4}
     FIRST(<exp>) = {1, 5, 10, 11}
+    FIRST(<factor>) = {1, 5, 10, 11}
     FIRST(<unary_op>) = {10, 11}
+    FIRST(<binary_op>) = {14, 15, 16, 17, 18}
 
     FOLLOW(<program>) = {$}
     FOLLOW(<function>) = {$}
     FOLLOW(<param>) = {6}
     FOLLOW(<content>) = {8}
-    FOLLOW(<exp>) = {6, 9}
+    FOLLOW(<exp>) = {6, 9, 14, 15, 16, 17, 18}
+    FOLLOW(<factor>) = {6, 9, 14, 15, 16, 17, 18}
     FOLLOW(<unary_op>) = {1, 5, 10, 11}
+    FOLLOW(<binary_op>) = {1, 5, 10, 11}
 
     ---
 
@@ -50,7 +60,7 @@
     <function> ::= "KW_INT" IDENT "KW_VOID" <content>
     <content> ::= "KW_RETURN" <exp>
     <exp> ::= NUM_INT | <unary_op> <exp>
-    <unary_op> ::= "OP_TILDE" | "OP_MINUS"
+    <unary_op> ::= "OP_TILDE" | "OP_NEG"
 
 */
 
@@ -67,14 +77,45 @@ int token_type[1024];          // 읽어온 lexeme들의 타입을 저장.
 int token_value[1024];          // 읽어온 lexeme들의 값을 저장. 
 int cur_line = 0;
 
-
+int get_priority(int opcode);
 Node * p_nt_program(Lexer_result lex_input);
 Node * p_nt_function(Lexer_result lex_input);
 Node * p_nt_param(Lexer_result lex_input);
 Node * p_nt_content(Lexer_result lex_input);
-Node * p_nt_exp(Lexer_result lex_input);
+Node * p_nt_exp(Lexer_result lex_input, int min_priority);
+Node * p_nt_factor(Lexer_result lex_input);
 Node * p_nt_unary_op(Lexer_result lex_input);
+Node * p_nt_binary_op(Lexer_result lex_input);
 
+
+
+int get_priority(int opcode) {
+    switch (opcode) {
+        case OP_ADD: {
+            return 50;
+        }
+
+        case OP_MINUS: {
+            return 50;
+        }
+
+        case OP_MUL: {
+            return 100;
+        }
+
+        case OP_DIV: {
+            return 100;
+        }
+
+        case OP_MOD: {
+            return 100;
+        }
+
+        default: {
+            return 0;
+        }
+    }
+}
 
 
 void get_nextSymbol(Lexer_result lex_input){
@@ -236,11 +277,76 @@ Node * p_t_OP_TILDE(Lexer_result lex_input){
     else error(10, nextSymbol);
 }
 
-Node * p_t_OP_MINUS(Lexer_result lex_input){
+Node * p_t_OP_NEG(Lexer_result lex_input){
     if (nextSymbol.token_number == OP_MINUS){
-        printf("parsing: OP_MINUS\n");
+        printf("parsing: OP_NEG\n");
 
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
+        Node * n = node_maker(NULL, NULL, OP_NEG, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
+Node * p_t_OP_ADD(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_ADD){
+        printf("parsing: OP_ADD\n");
+
+        Node * n = node_maker(NULL, NULL, OP_ADD, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
+Node * p_t_OP_SUB(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_MINUS){
+        printf("parsing: OP_SUB\n");
+
+        Node * n = node_maker(NULL, NULL, OP_SUB, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
+Node * p_t_OP_MUL(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_MUL){
+        printf("parsing: OP_MUL\n");
+
+        Node * n = node_maker(NULL, NULL, OP_MUL, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
+Node * p_t_OP_DIV(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_DIV){
+        printf("parsing: OP_DIV\n");
+
+        Node * n = node_maker(NULL, NULL, OP_DIV, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
+Node * p_t_OP_MOD(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_MOD){
+        printf("parsing: OP_MOD\n");
+
+        Node * n = node_maker(NULL, NULL, OP_MOD, nextSymbol.token_value);
 
         get_nextSymbol(lex_input);
 
@@ -251,7 +357,7 @@ Node * p_t_OP_MINUS(Lexer_result lex_input){
 
 
 Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
-    if (nextSymbol.token_number == 2) {
+    if (nextSymbol.token_number == KW_INT) {
         printf("parsing: nt_program\n");
         Node * x1 = p_nt_function(lex_input);
         
@@ -262,7 +368,7 @@ Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
 }
 
 Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT "OPEN_PAREN" <param> "CLOSE_PAREN" "OPEN_BRACE" <content> "CLOSE_BRACE"
-    if (nextSymbol.token_number == 2) {
+    if (nextSymbol.token_number == KW_INT) {
         printf("parsing: nt_function\n");
         Node * x1 = p_t_KW_INT(lex_input);
         Node * x2 = p_t_IDENT(lex_input);
@@ -288,7 +394,7 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
 }
 
 Node * p_nt_param(Lexer_result lex_input){      // <param> ::= "KW_VOID"
-    if (nextSymbol.token_number == 3) {
+    if (nextSymbol.token_number == KW_VOID) {
         printf("parsing: nt_param\n");
         Node * x1 = p_t_KW_VOID(lex_input);
         
@@ -299,10 +405,10 @@ Node * p_nt_param(Lexer_result lex_input){      // <param> ::= "KW_VOID"
 }
 
 Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <exp> "PN_SEMI"
-    if (nextSymbol.token_number == 4) {
+    if (nextSymbol.token_number == KW_RETURN) {
         printf("parsing: nt_content\n");
         Node * x1 = p_t_KW_RETURN(lex_input);
-        Node * x2 = p_nt_exp(lex_input);
+        Node * x2 = p_nt_exp(lex_input, 0);
         Node * x3 = p_t_PN_SEMI(lex_input);
 
         x1->brother = x2;
@@ -314,28 +420,52 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
     } else error(4, nextSymbol);
 }
 
-Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT | <unary_op> <exp> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
-    if (nextSymbol.token_number == 1) {
+Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <factor> | <exp> <binary_op> <exp>
+    if (nextSymbol.token_number == NUM_INT || nextSymbol.token_number == OPEN_PAREN || nextSymbol.token_number == OP_TILDE || nextSymbol.token_number == OP_MINUS) {
+        printf("parsing: nt_exp\n");
+        Node * left = p_nt_factor(lex_input);
+        
+        while ((nextSymbol.token_number == OP_ADD || nextSymbol.token_number == OP_MINUS || nextSymbol.token_number == OP_MUL || nextSymbol.token_number == OP_DIV || nextSymbol.token_number == OP_MOD) && (get_priority(nextSymbol.token_number) >= min_priority)) {
+            int op_priority = get_priority(nextSymbol.token_number);
+            Node * operator = p_nt_binary_op(lex_input);
+            Node * right = p_nt_exp(lex_input, (op_priority + 1));
+
+            left->brother = operator;
+            operator->brother = right;
+
+            Node * new_left = node_maker(left, NULL, NT_EXP, 0);
+            left = new_left;
+
+        }
+        
+        Node * n = node_maker(left, NULL, NT_EXP, 0);
+
+        return n;
+    } else error(1, nextSymbol);
+}
+
+Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
+    if (nextSymbol.token_number == NUM_INT) {
         printf("parsing: nt_exp\n");
         Node * x1 = p_t_NUM_INT(lex_input);
         
         Node * n = node_maker(x1, NULL, NT_EXP, 0);
 
         return n;
-    } else if (nextSymbol.token_number == 10 || nextSymbol.token_number == 11) {
+    } else if (nextSymbol.token_number == OP_TILDE || nextSymbol.token_number == OP_MINUS) {
         printf("parsing: nt_exp\n");
         Node * x1 = p_nt_unary_op(lex_input);
-        Node * x2 = p_nt_exp(lex_input);
+        Node * x2 = p_nt_factor(lex_input);
 
         x1->brother = x2;
 
         Node * n = node_maker(x1, NULL, NT_EXP, 0);
 
         return n;
-    } else if (nextSymbol.token_number == 5) {
+    } else if (nextSymbol.token_number == OPEN_PAREN) {
         printf("parsing: nt_exp\n");
         Node * x1 = p_t_OPEN_PAREN(lex_input);
-        Node * x2 = p_nt_exp(lex_input);
+        Node * x2 = p_nt_exp(lex_input, 0);
         Node * x3 = p_t_CLOSE_PAREN(lex_input);
 
         x1->brother = x2;
@@ -347,19 +477,58 @@ Node * p_nt_exp(Lexer_result lex_input){        // <exp> ::= NUM_INT | <unary_op
     } else error(1, nextSymbol);
 }
 
-Node * p_nt_unary_op(Lexer_result lex_input){      // <unary_op> ::= "OP_TILDE" | "OP_MINUS"
-    if (nextSymbol.token_number == 10) {
+Node * p_nt_unary_op(Lexer_result lex_input){      // <unary_op> ::= "OP_TILDE" | "OP_NEG"
+    if (nextSymbol.token_number == OP_TILDE) {
         printf("parsing: nt_unary_op\n");
         Node * x1 = p_t_OP_TILDE(lex_input);
         
         Node * n = node_maker(x1, NULL, NT_UNARY_OP, 0);
 
         return n;
-    } else if (nextSymbol.token_number == 11) {
+    } else if (nextSymbol.token_number == OP_MINUS) {
         printf("parsing: nt_unary_op\n");
-        Node * x1 = p_t_OP_MINUS(lex_input);
+        Node * x1 = p_t_OP_NEG(lex_input);
         
         Node * n = node_maker(x1, NULL, NT_UNARY_OP, 0);
+
+        return n;
+    } else error(3, nextSymbol);
+}
+
+Node * p_nt_binary_op(Lexer_result lex_input){      // <binary_op> ::= "OP_ADD" | "OP_SUB" | "OP_MUL" | "OP_DIV" | "OP_MOD"
+    if (nextSymbol.token_number == OP_ADD) {
+        printf("parsing: nt_binary_op\n");
+        Node * x1 = p_t_OP_ADD(lex_input);
+        
+        Node * n = node_maker(x1, NULL, NT_BINARY_OP, 0);
+
+        return n;
+    } else if (nextSymbol.token_number == OP_MINUS) {
+        printf("parsing: nt_binary_op\n");
+        Node * x1 = p_t_OP_SUB(lex_input);
+        
+        Node * n = node_maker(x1, NULL, NT_BINARY_OP, 0);
+
+        return n;
+    }else if (nextSymbol.token_number == OP_MUL) {
+        printf("parsing: nt_binary_op\n");
+        Node * x1 = p_t_OP_MUL(lex_input);
+        
+        Node * n = node_maker(x1, NULL, NT_BINARY_OP, 0);
+
+        return n;
+    }else if (nextSymbol.token_number == OP_DIV) {
+        printf("parsing: nt_binary_op\n");
+        Node * x1 = p_t_OP_DIV(lex_input);
+        
+        Node * n = node_maker(x1, NULL, NT_BINARY_OP, 0);
+
+        return n;
+    }else if (nextSymbol.token_number == OP_MOD) {
+        printf("parsing: nt_binary_op\n");
+        Node * x1 = p_t_OP_MOD(lex_input);
+        
+        Node * n = node_maker(x1, NULL, NT_BINARY_OP, 0);
 
         return n;
     } else error(3, nextSymbol);
