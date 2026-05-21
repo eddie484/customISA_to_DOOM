@@ -59,7 +59,7 @@
     <program> ::= <function>
     <function> ::= "KW_INT" IDENT "KW_VOID" <content>
     <content> ::= "KW_RETURN" <exp>
-    <exp> ::= NUM_INT | <unary_op> <exp>
+    <exp> ::= NUM_INT | <unary_op> <exp> | <binary_op> <exp> <exp>
     <unary_op> ::= "OP_TILDE" | "OP_NEG"
 
 */
@@ -543,7 +543,7 @@ Node * p_nt_binary_op(Lexer_result lex_input){      // <binary_op> ::= "OP_ADD" 
 
 Node * parser(Lexer_result lex_input, char *parse_name)
 {
-    SymbolCount = 0;
+    symbolCount = 0;
     Node * ast_top;
     /*
     char *lex_name;
