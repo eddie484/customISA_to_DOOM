@@ -138,43 +138,57 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             switch (tag->son->token.token_number) {
                 case TAG_MOV:
                     x1->token.token_number = ASM_MOV;
-                    x1->token.token_value = 0;
                     break;
                     
                 case OP_TILDE:
                     x1->token.token_number = ASM_NOT;
-                    x1->token.token_value = 0;
                     break;
                     
                 case OP_ADD:
                     x1->token.token_number = ASM_ADD;
-                    x1->token.token_value = 0;
                     break;
                     
                 case OP_SUB:
                     x1->token.token_number = ASM_SUB;
-                    x1->token.token_value = 0;
                     break;
                     
                 case OP_MUL:
                     x1->token.token_number = ASM_MUL;
-                    x1->token.token_value = 0;
                     break;
                     
                 case OP_DIV:
                     x1->token.token_number = ASM_DIV;
-                    x1->token.token_value = 0;
                     break;
                     
                 case OP_MOD:
                     x1->token.token_number = ASM_MOD;
-                    x1->token.token_value = 0;
+                    break;
+                    
+                case OP_AND:
+                    x1->token.token_number = ASM_AND;
+                    break;
+                    
+                case OP_OR:
+                    x1->token.token_number = ASM_OR;
+                    break;
+                    
+                case OP_XOR:
+                    x1->token.token_number = ASM_XOR;
+                    break;
+                    
+                case OP_SHL:
+                    x1->token.token_number = ASM_SHL;
+                    break;
+                    
+                case OP_LSR:
+                    x1->token.token_number = ASM_LSR;
                     break;
                     
                 default:
                     x1->token = tag->son->token;
                     break;
             }
+            x1->token.token_value = 0;
 
             if (tag->brother != NULL) {
                 Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
