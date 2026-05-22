@@ -6,7 +6,7 @@
     <exp> ::= <factor> | <exp> <binary_op> <exp>
     <factor> ::= NUM_INT | <unary_op> <factor> | "(" <exp> ")"
     <unary_op> ::= "~" | "-"
-    <binary_op> ::= "+" | "-" | "*" | "/" | "%"
+    <binary_op> ::= "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^" | "<<" | ">>""
 
     <program> ::= <function>
     <function> ::= "KW_INT" IDENT "OPEN_PAREN" <param> "CLOSE_PAREN" "OPEN_BRACE" <content> "CLOSE_BRACE"
@@ -15,7 +15,7 @@
     <exp> ::= <factor> | <exp> <binary_op> <exp>
     <factor> ::= NUM_INT | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
     <unary_op> ::= "OP_TILDE" | "OP_NEG"
-    <binary_op> ::= "OP_ADD" | "OP_SUB" | "OP_MUL" | "OP_DIV" | "OP_MOD"
+    <binary_op> ::= "OP_ADD" | "OP_SUB" | "OP_MUL" | "OP_DIV" | "OP_MOD" | "OP_AND" | "OP_OR" | "OP_XOR" | "OP_SHL" | "OP_LSR"
 
     <program> ::= <function>
     <function> ::= 2 0 5 <param> 6 7 <content> 8
@@ -24,7 +24,7 @@
     <exp> ::= <factor> | <exp> <binary_op> <exp>
     <factor> ::= 1 | <unary_op> <factor> | 5 <exp> 6
     <unary_op> ::= 10 | 11
-    <binary_op> ::= 14 | 15 | 16 | 17 | 18
+    <binary_op> ::= 14 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23
 
     ---
 
@@ -35,14 +35,14 @@
     FIRST(<exp>) = {1, 5, 10, 11}
     FIRST(<factor>) = {1, 5, 10, 11}
     FIRST(<unary_op>) = {10, 11}
-    FIRST(<binary_op>) = {14, 15, 16, 17, 18}
+    FIRST(<binary_op>) = {14, 15, 16, 17, 18, 19, 20, 21, 22, 23}
 
     FOLLOW(<program>) = {$}
     FOLLOW(<function>) = {$}
     FOLLOW(<param>) = {6}
     FOLLOW(<content>) = {8}
-    FOLLOW(<exp>) = {6, 9, 14, 15, 16, 17, 18}
-    FOLLOW(<factor>) = {6, 9, 14, 15, 16, 17, 18}
+    FOLLOW(<exp>) = {6, 9, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}
+    FOLLOW(<factor>) = {6, 9, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23}
     FOLLOW(<unary_op>) = {1, 5, 10, 11}
     FOLLOW(<binary_op>) = {1, 5, 10, 11}
 
@@ -93,11 +93,11 @@ Node * p_nt_binary_op(Lexer_result lex_input);
 int get_priority(int opcode) {
     switch (opcode) {
         case OP_ADD: {
-            return 50;
+            return 90;
         }
 
         case OP_MINUS: {
-            return 50;
+            return 90;
         }
 
         case OP_MUL: {
@@ -110,6 +110,26 @@ int get_priority(int opcode) {
 
         case OP_MOD: {
             return 100;
+        }
+
+        case OP_AND: {
+            return 50;
+        }
+
+        case OP_OR: {
+            return 30;
+        }
+
+        case OP_XOR: {
+            return 40;
+        }
+
+        case OP_SHL: {
+            return 80;
+        }
+
+        case OP_LSR: {
+            return 80;
         }
 
         default: {
@@ -369,6 +389,71 @@ Node * p_t_OP_MOD(Lexer_result lex_input){
     else error(11, nextSymbol);
 }
 
+Node * p_t_OP_AND(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_AND){
+        printf("parsing: OP_AND\n");
+
+        Node * n = node_maker(NULL, NULL, OP_AND, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
+Node * p_t_OP_OR(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_OR){
+        printf("parsing: OP_OR\n");
+
+        Node * n = node_maker(NULL, NULL, OP_OR, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
+Node * p_t_OP_XOR(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_XOR){
+        printf("parsing: OP_XOR\n");
+
+        Node * n = node_maker(NULL, NULL, OP_XOR, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
+Node * p_t_OP_SHL(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_SHL){
+        printf("parsing: OP_SHL\n");
+
+        Node * n = node_maker(NULL, NULL, OP_SHL, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
+Node * p_t_OP_LSR(Lexer_result lex_input){
+    if (nextSymbol.token_number == OP_LSR){
+        printf("parsing: OP_LSR\n");
+
+        Node * n = node_maker(NULL, NULL, OP_LSR, nextSymbol.token_value);
+
+        get_nextSymbol(lex_input);
+
+        return n;
+    }
+    else error(11, nextSymbol);
+}
+
 
 Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
     if (nextSymbol.token_number == KW_INT) {
@@ -439,7 +524,7 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
         printf("parsing: nt_exp\n");
         Node * left = p_nt_factor(lex_input);
         
-        while ((nextSymbol.token_number == OP_ADD || nextSymbol.token_number == OP_MINUS || nextSymbol.token_number == OP_MUL || nextSymbol.token_number == OP_DIV || nextSymbol.token_number == OP_MOD) && (get_priority(nextSymbol.token_number) >= min_priority)) {
+        while ((nextSymbol.token_number == OP_ADD || nextSymbol.token_number == OP_MINUS || nextSymbol.token_number == OP_MUL || nextSymbol.token_number == OP_DIV || nextSymbol.token_number == OP_MOD || nextSymbol.token_number == OP_AND || nextSymbol.token_number == OP_OR || nextSymbol.token_number == OP_XOR || nextSymbol.token_number == OP_SHL || nextSymbol.token_number == OP_LSR) && (get_priority(nextSymbol.token_number) >= min_priority)) {
             int op_priority = get_priority(nextSymbol.token_number);
             Node * operator = p_nt_binary_op(lex_input);
             Node * right = p_nt_exp(lex_input, (op_priority + 1));
@@ -500,32 +585,62 @@ Node * p_nt_unary_op(Lexer_result lex_input){      // <unary_op> ::= "OP_TILDE" 
 }
 
 Node * p_nt_binary_op(Lexer_result lex_input){      // <binary_op> ::= "OP_ADD" | "OP_SUB" | "OP_MUL" | "OP_DIV" | "OP_MOD"
-    if (nextSymbol.token_number == OP_ADD) {
-        printf("parsing: nt_binary_op\n");
-        Node * x1 = p_t_OP_ADD(lex_input);
+    printf("parsing: nt_binary_op\n");
+    Node * x1;
+
+    switch (nextSymbol.token_number) {
+        case OP_ADD: {
+            x1 = p_t_OP_ADD(lex_input);
+            return x1;
+        }
         
-        return x1;
-    } else if (nextSymbol.token_number == OP_MINUS) {
-        printf("parsing: nt_binary_op\n");
-        Node * x1 = p_t_OP_SUB(lex_input);
+        case OP_MINUS: {
+            x1 = p_t_OP_SUB(lex_input);
+            return x1;
+        }
         
-        return x1;
-    }else if (nextSymbol.token_number == OP_MUL) {
-        printf("parsing: nt_binary_op\n");
-        Node * x1 = p_t_OP_MUL(lex_input);
+        case OP_MUL: {
+            x1 = p_t_OP_MUL(lex_input);
+            return x1;
+        }
         
-        return x1;
-    }else if (nextSymbol.token_number == OP_DIV) {
-        printf("parsing: nt_binary_op\n");
-        Node * x1 = p_t_OP_DIV(lex_input);
+        case OP_DIV: {
+            x1 = p_t_OP_DIV(lex_input);
+            return x1;
+        }
         
-        return x1;
-    }else if (nextSymbol.token_number == OP_MOD) {
-        printf("parsing: nt_binary_op\n");
-        Node * x1 = p_t_OP_MOD(lex_input);
+        case OP_MOD: {
+            x1 = p_t_OP_MOD(lex_input);
+            return x1;
+        }
         
-        return x1;
-    } else error(3, nextSymbol);
+        case OP_AND: {
+            x1 = p_t_OP_AND(lex_input);
+            return x1;
+        }
+        
+        case OP_OR: {
+            x1 = p_t_OP_OR(lex_input);
+            return x1;
+        }
+        
+        case OP_XOR: {
+            x1 = p_t_OP_XOR(lex_input);
+            return x1;
+        }
+        
+        case OP_SHL: {
+            x1 = p_t_OP_SHL(lex_input);
+            return x1;
+        }
+        
+        case OP_LSR: {
+            x1 = p_t_OP_LSR(lex_input);
+            return x1;
+        }
+
+        default: error(3, nextSymbol);
+    }
 }
 
 
