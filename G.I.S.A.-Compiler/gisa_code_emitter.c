@@ -119,6 +119,91 @@ void asm_printer(Node * node, FILE * codeemitfp){
                     break;
                 }
 
+
+                case ASM_AND: {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                        printf("\tAND R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tAND R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                        printf("\tANDI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tANDI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+
+                    } else {
+                        printf("AND의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+                case ASM_OR: {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                        printf("\tOR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tOR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                        printf("\tORI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tORI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+
+                    } else {
+                        printf("OR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+
+                case ASM_XOR: {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                        printf("\tXOR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tXOR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                        printf("\tXORI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tXORI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+
+                    } else {
+                        printf("XOR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+
+                case ASM_SHL: {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                        printf("\tSHL R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tSHL R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                        printf("\tSHLI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tSHLI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+
+                    } else {
+                        printf("SHL의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+
+                case ASM_LSR: {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                        printf("\tLSR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tLSR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                        printf("\tLSRI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tLSRI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+
+                    } else {
+                        printf("LSR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+
                 case ASM_NOT: {
                     if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
                         printf("\tNOT R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
