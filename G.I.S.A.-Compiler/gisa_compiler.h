@@ -33,12 +33,15 @@
 #define OP_SHL          22  // <<
 #define OP_LSR          23  // >>, 추후 signed/unsigned 타입 추가시 LSR, ASR 구분할 것.
 
-#define OP_LOGIC_AND    24  // &&
-#define OP_LOGIC_OR     25  // ||
-#define OP_LT           26  // <
-#define OP_GT           27  // >
-#define OP_LE           28  // <=
-#define OP_GE           29  // >=
+#define OP_LOGIC_NOT    24  // !
+#define OP_LOGIC_AND    25  // &&
+#define OP_LOGIC_OR     26  // ||
+#define OP_EQ           27  // ==
+#define OP_NE           28  // !=
+#define OP_LT           29  // <
+#define OP_GT           30  // >
+#define OP_LE           31  // <=
+#define OP_GE           32  // >=
 
 
 #define NT_PROGRAM      100
