@@ -27,18 +27,18 @@
 #define OP_DIV          17  // /
 #define OP_MOD          18  // %
 
-#define OP_AND          14  // &
-#define OP_OR           15  // |
-#define OP_XOR          16  // ^
-#define OP_SHL          17  // <<
-#define OP_LSR          18  // >>, 추후 signed/unsigned 타입 추가시 LSR, ASR 구분할 것.
+#define OP_AND          19  // &
+#define OP_OR           20  // |
+#define OP_XOR          21  // ^
+#define OP_SHL          22  // <<
+#define OP_LSR          23  // >>, 추후 signed/unsigned 타입 추가시 LSR, ASR 구분할 것.
 
-#define OP_LOGIC_AND    14  // &&
-#define OP_LOGIC_OR     15  // ||
-#define OP_LT           17  // <
-#define OP_GT           18  // >
-#define OP_LE           17  // <=
-#define OP_GE           18  // >=
+#define OP_LOGIC_AND    24  // &&
+#define OP_LOGIC_OR     25  // ||
+#define OP_LT           26  // <
+#define OP_GT           27  // >
+#define OP_LE           28  // <=
+#define OP_GE           29  // >=
 
 
 #define NT_PROGRAM      100
