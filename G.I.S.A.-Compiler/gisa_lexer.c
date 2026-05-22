@@ -13,9 +13,20 @@
 
     PN_SEMI     9   // ;
 
-    OP_TILDE       10  // ~
-    OP_MINUS      11  // -
-    OP_DECREMENT  12  // --
+    OP_TILDE        10  // ~
+    OP_MINUS        11  // -
+    OP_DECREMENT    12  // --
+
+    OP_ADD          14  // +
+    OP_MUL          16  // *
+    OP_DIV          17  // /
+    OP_MOD          18  // %
+
+    OP_AND          14  // &
+    OP_OR           15  // |
+    OP_XOR          16  // ^
+    OP_SHL          17  // <<
+    OP_LSR          18  // >>
 
 */
 
@@ -204,6 +215,21 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 }
                 else if (c == '%') {
                     cur_state = 15;
+                }
+                else if (c == '&') {
+                    cur_state = 16;
+                }
+                else if (c == '|') {
+                    cur_state = 17;
+                }
+                else if (c == '^') {
+                    cur_state = 18;
+                }
+                else if (c == '<') {
+                    cur_state = 19;
+                }
+                else if (c == '>') {
+                    cur_state = 20;
                 }
                 else if (c == ' ') {
                     memmove(buf, buf + 1, 1024 - 1);
@@ -448,6 +474,149 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 cur_index = 0;
 
 
+            // state = 16. &로 시작하는 경우.
+            } else if (cur_state == 16) {
+                if (buf[cur_index] == '&') {    // &&인 경우
+                    lexeme[lexeme_count].token_number = OP_LOGIC_AND;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, &&\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else {                            // &인 경우
+                    lexeme[lexeme_count].token_number = OP_AND;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, &\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+                }
+
+
+            // state = 17. |로 시작하는 경우.
+            } else if (cur_state == 17) {
+                if (buf[cur_index] == '|') {    // ||인 경우
+                    lexeme[lexeme_count].token_number = OP_LOGIC_OR;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, ||\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else {                            // |인 경우
+                    lexeme[lexeme_count].token_number = OP_OR;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, |\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+                }
+
+
+            // state = 18. ^ 인 경우.
+            } else if (cur_state == 18) {
+                lexeme[lexeme_count].token_number = OP_XOR;
+                lexeme[lexeme_count].token_value = 0;
+
+                printf("<%d, %d>, ^\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                lexeme_count++;
+                cur_state = 0;
+                memmove(buf, buf + cur_index, 1024 - cur_index);
+                cur_index = 0;
+
+
+            // state = 19. <로 시작하는 경우.
+            } else if (cur_state == 19) {
+                if (buf[cur_index] == '<') {    // <<인 경우
+                    lexeme[lexeme_count].token_number = OP_SHL;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, <<\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else if (buf[cur_index] == '=') {    // <=인 경우
+                    lexeme[lexeme_count].token_number = OP_LE;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, <=\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else {                            // <인 경우
+                    lexeme[lexeme_count].token_number = OP_LT;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, <\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+                }
+
+
+            // state = 20. >로 시작하는 경우.
+            } else if (cur_state == 20) {
+                if (buf[cur_index] == '>') {    // >>인 경우
+                    lexeme[lexeme_count].token_number = OP_LSR;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, >>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else if (buf[cur_index] == '=') {    // >=인 경우
+                    lexeme[lexeme_count].token_number = OP_GE;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, >=\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else {                            // >인 경우
+                    lexeme[lexeme_count].token_number = OP_GT;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, >\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+                }
             } 
 
             if (lexeme_count >= lexeme_limit) {
