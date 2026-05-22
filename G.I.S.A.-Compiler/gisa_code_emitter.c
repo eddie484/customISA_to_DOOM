@@ -70,6 +70,54 @@ void asm_printer(Node * node, Lexer_result lexer_result, FILE * codeemitfp){
                     break;
                 }
 
+                case ASM_MUL: {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                        printf("\tMUL R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tMUL R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value, lexer_result);
+                        printf("\tMULI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tMULI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+
+                    } else {
+                        printf("MUL의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+                case ASM_DIV: {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                        printf("\tDIV R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tDIV R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value, lexer_result);
+                        printf("\tDIVI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tDIVI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+
+                    } else {
+                        printf("DIV의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+                case ASM_MOD: {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                        printf("\tMOD R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tMOD R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value, lexer_result);
+                        printf("\tMODI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tMODI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+
+                    } else {
+                        printf("MOD의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
                 case ASM_NOT: {
                     if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
                         printf("\tNOT R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
