@@ -510,7 +510,7 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
         printf("parsing: nt_exp\n");
         Node * left = p_nt_factor(lex_input);
         
-        while ((nextSymbol.token_number == OP_ADD || nextSymbol.token_number == OP_MINUS || nextSymbol.token_number == OP_MUL || nextSymbol.token_number == OP_DIV || nextSymbol.token_number == OP_MOD) && (get_priority(nextSymbol.token_number) >= min_priority)) {
+        while ((nextSymbol.token_number == OP_ADD || nextSymbol.token_number == OP_MINUS || nextSymbol.token_number == OP_MUL || nextSymbol.token_number == OP_DIV || nextSymbol.token_number == OP_MOD || nextSymbol.token_number == OP_AND || nextSymbol.token_number == OP_OR || nextSymbol.token_number == OP_XOR || nextSymbol.token_number == OP_SHL || nextSymbol.token_number == OP_LSR) && (get_priority(nextSymbol.token_number) >= min_priority)) {
             int op_priority = get_priority(nextSymbol.token_number);
             Node * operator = p_nt_binary_op(lex_input);
             Node * right = p_nt_exp(lex_input, (op_priority + 1));
