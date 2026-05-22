@@ -60,19 +60,19 @@
 #define ASM_MOV         400
 #define ASM_ADD         401
 #define ASM_SUB         402
+#define ASM_MUL         405
+#define ASM_DIV         409
+#define ASM_MOD         411
 #define ASM_NOT         436
 #define ASM_LDR         440
 #define ASM_STR         445
 
 #define ASM_MOVH        403
 #define ASM_CMP         404
-#define ASM_MUL         405
 #define ASM_MULH        406
 #define ASM_MULHU       407
 #define ASM_MULFX       408
-#define ASM_DIV         409
 #define ASM_DIVU        410
-#define ASM_MOD         411
 #define ASM_MODU        412
 #define ASM_SHL         424
 #define ASM_ASR         425

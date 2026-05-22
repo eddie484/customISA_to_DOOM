@@ -25,7 +25,7 @@ void asm_pass3_prologue_maker(Node * node);
 *********************************** */
 
 Node * asm_pass1_terminal(Node * tag){
-    if (tag->token.token_number >= 0 && tag->token.token_number <= 9) {
+    if (tag->token.token_number >= IDENT && tag->token.token_number <= PN_SEMI) {
         printf("Processing: terminal <%d, %d>\n", tag->token.token_number, tag->token.token_value);
         Node * n = node_maker(NULL, NULL, tag->token.token_number, tag->token.token_value);
 
@@ -146,8 +146,28 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
                     x1->token.token_value = 0;
                     break;
                     
-                case OP_NEG:
+                case OP_ADD:
+                    x1->token.token_number = ASM_ADD;
+                    x1->token.token_value = 0;
+                    break;
+                    
+                case OP_SUB:
                     x1->token.token_number = ASM_SUB;
+                    x1->token.token_value = 0;
+                    break;
+                    
+                case OP_MUL:
+                    x1->token.token_number = ASM_MUL;
+                    x1->token.token_value = 0;
+                    break;
+                    
+                case OP_DIV:
+                    x1->token.token_number = ASM_DIV;
+                    x1->token.token_value = 0;
+                    break;
+                    
+                case OP_MOD:
+                    x1->token.token_number = ASM_MOD;
                     x1->token.token_value = 0;
                     break;
                     
@@ -228,10 +248,25 @@ void asm_pass2_temp_to_stack(Node * node) {
 
             original_line_node->son->brother->brother->token.token_number = ASM_REGISTER;
             original_line_node->son->brother->brother->token.token_value = 2;
-        }
 
-        // rB가 임시변수일 경우
-        if (node->son->brother->brother->brother->token.token_number == TAG_TEMP && node->son->brother->brother->brother->token.token_value != 0) { // rB
+            // rA가 임시변수이면서, 동시에 rB가 임시변수일 경우
+            if (original_line_node->son->brother->brother->brother->token.token_number == TAG_TEMP && original_line_node->son->brother->brother->brother->token.token_value != 0) { // rB
+
+                int n = -(4 * original_line_node->son->brother->brother->brother->token.token_value);
+                char str[12];
+                snprintf(str, sizeof(str), "%d", n);
+
+                Node * line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+
+                node->brother = line_ldr_rb;
+                line_ldr_rb->brother = original_line_node;
+
+                original_line_node->son->brother->brother->brother->token.token_number = ASM_REGISTER;
+                original_line_node->son->brother->brother->brother->token.token_value = 3;
+            }
+
+        // rA가 임시변수가 아니고, rB가 임시변수일 경우
+        } else if (node->son->brother->brother->brother->token.token_number == TAG_TEMP && node->son->brother->brother->brother->token.token_value != 0) { // rB
 
             int n = -(4 * node->son->brother->brother->brother->token.token_value);
             char str[12];
