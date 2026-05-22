@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
             printf("Option --lex: Lexing finished. Program exit.\n");
 
             free(lexer_result.lexeme_list);
-            free(lexer_result.value_table);
+            free(lex_val_table);
 
             return 0;
         }
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
             printf("Option --parse: Parsing finished. Program exit.\n");
 
             free(lexer_result.lexeme_list);
-            free(lexer_result.value_table);
+            free(lex_val_table);
             tree_malloc_cleaner(parser_result);
 
             return 0;
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
             printf("Option --codegen: Code Generating finished. Program exit.\n");
 
             free(lexer_result.lexeme_list);
-            free(lexer_result.value_table);
+            free(lex_val_table);
             tree_malloc_cleaner(parser_result);
             tree_malloc_cleaner(tag_result);
             tree_malloc_cleaner(codegen_result);
@@ -197,7 +197,7 @@ int main(int argc, char *argv[]) {
         // ***** Code Emission *****
         printf("Start Code Emission.\n");
 
-        code_emitter(codegen_result, lexer_result, asmemit_filename);
+        code_emitter(codegen_result, asmemit_filename);
 
         printf("Code Emission is finished.\n");
 
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
             printf("Option -S: Code Emission finished. Program exit.\n");
 
             free(lexer_result.lexeme_list);
-            free(lexer_result.value_table);
+            free(lex_val_table);
             tree_malloc_cleaner(parser_result);
             tree_malloc_cleaner(tag_result);
             tree_malloc_cleaner(codegen_result);
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
         printf("GISA compiler driver's every process is finished well. Program exit.\n");
         
         free(lexer_result.lexeme_list);
-        free(lexer_result.value_table);
+        free(lex_val_table);
         tree_malloc_cleaner(parser_result);
         tree_malloc_cleaner(tag_result);
         tree_malloc_cleaner(codegen_result);

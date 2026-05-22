@@ -138,7 +138,7 @@ Lexer_result lexer(char *prep_name, char *lex_name);
 Node * parser(Lexer_result lex_input, char *parse_name);
 Node * tag_generator(Node * parse_input, char * tagtree_name);
 Node * code_generator(Node * parse_input, char * codegentree_name);
-void code_emitter(Node * codegen_result, Lexer_result lexer_result, char * codegentree_name);
+void code_emitter(Node * codegen_result, char * codegentree_name);
 
 void lexer_result_printer(Lexer_result lexer_result);
 void bin_tree_printer(Node * tree_top);
@@ -149,5 +149,6 @@ Node * line_maker(int line_type, int p1_num, int p1_val, int p2_num, int p2_val,
 
 
 extern int temp_count;
+extern Lexeme_value * lex_val_table;
 
 #endif

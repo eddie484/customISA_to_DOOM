@@ -26,13 +26,13 @@
 #include "gisa_compiler.h"
 
 
-int lexeme_limit = 10;
-int lex_val_limit = 10;
+int lexeme_limit = 100;
+int lex_val_table_limit = 10;
 
 Lexeme * lexeme;
 int lexeme_count = 0;
-Lexeme_value * lex_val;
-int lex_val_count = 0;
+Lexeme_value * lex_val_table;
+int lex_val_table_count = 0;
 
 
 /* ****************************************
@@ -42,27 +42,28 @@ int lex_val_count = 0;
 int lexval_manager (char *name) {
     int count = 0;
 
-    while(count < lex_val_count){   // 이미 저장된 value인지 확인
-        if (strcmp(name, lex_val[count].lexeme_name) == 0){
-            return lex_val[count].name_number;  // 발견하면 해당 value의 number를 return 한다.
+    while(count < lex_val_table_count){   // 이미 저장된 value인지 확인
+        if (strcmp(name, lex_val_table[count].lexeme_name) == 0){
+            return lex_val_table[count].name_number;  // 발견하면 해당 value의 number를 return 한다.
         } else {
             count++;
         }
     }
     
     // 확인 결과 저장되지 않은 value일 경우, 저장한다.
-    strcpy(lex_val[lex_val_count].lexeme_name, name);
-    lex_val[lex_val_count].name_number = lex_val_count;
+    strcpy(lex_val_table[lex_val_table_count].lexeme_name, name);
+    lex_val_table[lex_val_table_count].name_number = lex_val_table_count;
 
-    printf("새로운 Lexeme Value 저장. Lexeme Value: %s, Value Number: %d.\n", lex_val[lex_val_count].lexeme_name, lex_val[lex_val_count].name_number);
-    lex_val_count++;
+    printf("새로운 Lexeme Value 저장. Lexeme Value: %s, Value Number: %d.\n", lex_val_table[lex_val_table_count].lexeme_name, lex_val_table[lex_val_table_count].name_number);
+    lex_val_table_count++;
 
-    if (lex_val_count >= lex_val_limit) {
-        lex_val_limit = lex_val_limit * 2;
-        lex_val = realloc(lex_val, sizeof(Lexeme_value) * lex_val_limit);
+    if (lex_val_table_count >= lex_val_table_limit) {
+        lex_val_table_limit = lex_val_table_limit * 2;
+        lex_val_table = realloc(lex_val_table, sizeof(Lexeme_value) * lex_val_table_limit);
+        //printf("REALLOC! addr is: %p\n", (void *)lex_val_table);
     }
 
-    return lex_val[lex_val_count - 1].name_number;  // 저장 후 저장된 number를 return 한다.
+    return lex_val_table[lex_val_table_count - 1].name_number;  // 저장 후 저장된 number를 return 한다.
     
 }
 
@@ -107,7 +108,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
     Lexer_result lexer_result;
 
     lexeme = malloc(sizeof(Lexeme) * lexeme_limit);
-    lex_val = malloc(sizeof(Lexeme_value) * lex_val_limit);
+    lex_val_table = malloc(sizeof(Lexeme_value) * lex_val_table_limit);
 
 
     /*
@@ -493,8 +494,8 @@ Lexer_result lexer(char *prep_name, char *lex_name)
 
     lexer_result.lexeme_list = lexeme;
     lexer_result.lexeme_count = lexeme_count;
-    lexer_result.value_table = lex_val;
-    lexer_result.value_count = lex_val_count;
+    lexer_result.value_table = lex_val_table;
+    lexer_result.value_count = lex_val_table_count;
 
     return lexer_result;
 }
