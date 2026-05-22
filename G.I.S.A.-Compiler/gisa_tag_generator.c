@@ -140,7 +140,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
             return n;
-        } else if (ast->son->token.token_number == OP_ADD || ast->son->token.token_number == OP_SUB || ast->son->token.token_number == OP_MUL || ast->son->token.token_number == OP_DIV || ast->son->token.token_number == OP_MOD) {
+        } else if (ast->son->token.token_number == OP_ADD || ast->son->token.token_number == OP_SUB || ast->son->token.token_number == OP_MUL || ast->son->token.token_number == OP_DIV || ast->son->token.token_number == OP_MOD || ast->son->token.token_number == OP_AND || ast->son->token.token_number == OP_OR || ast->son->token.token_number == OP_XOR || ast->son->token.token_number == OP_SHL || ast->son->token.token_number == OP_LSR) {
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
             Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
             Node * n3 = tag_nt_instr_interpreting(ast->son, n1->token.token_value, n2->token.token_value);
@@ -179,8 +179,8 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
         return n;
 
-    // 이항 연산자일 경우 (OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD)
-    } else if (ast->token.token_number == OP_ADD || ast->token.token_number == OP_SUB || ast->token.token_number == OP_MUL || ast->token.token_number == OP_DIV || ast->token.token_number == OP_MOD) {
+    // 이항 연산자일 경우 (OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_AND, OP_OR, OP_XOR, OP_SHL, OP_LSR)
+    } else if (ast->token.token_number == OP_ADD || ast->token.token_number == OP_SUB || ast->token.token_number == OP_MUL || ast->token.token_number == OP_DIV || ast->token.token_number == OP_MOD || ast->token.token_number == OP_AND || ast->token.token_number == OP_OR || ast->token.token_number == OP_XOR || ast->token.token_number == OP_SHL || ast->token.token_number == OP_LSR) {
         printf("enter OP_%d\n", ast->token.token_number);
         Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
         
