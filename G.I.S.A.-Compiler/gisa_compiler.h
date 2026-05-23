@@ -64,6 +64,7 @@
 #define TAG_LABEL       308
 #define TAG_LABEL_MAKE  309
 #define TAG_COND        310
+#define TAG_COMP        311
 
 #define COND_EQ         385
 #define COND_NE         386
