@@ -60,6 +60,28 @@
 #define TAG_LINE_SET    304
 #define TAG_TEMP        305
 #define TAG_MOV         306
+#define TAG_BRANCH      307
+#define TAG_LABEL       308
+#define TAG_LABEL_MAKE  309
+#define TAG_COND        310
+
+#define COND_EQ         385
+#define COND_NE         386
+#define COND_CS         387
+#define COND_HS         387
+#define COND_CC         388
+#define COND_LO         388
+#define COND_MI         389
+#define COND_PL         390
+#define COND_VS         391
+#define COND_VC         392
+#define COND_HI         393
+#define COND_LS         394
+#define COND_GE         395
+#define COND_LT         396
+#define COND_GT         397
+#define COND_LE         398
+#define COND_AL         399
 
 
 #define ASM_PROGRAM     200
