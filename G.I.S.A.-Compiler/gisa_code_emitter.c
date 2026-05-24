@@ -73,13 +73,13 @@ void asm_printer(Node * node, FILE * codeemitfp){
 
                 case ASM_CMP: {
                     if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
-                        printf("\tCMPS R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
-                        fprintf(codeemitfp, "\tCMPS R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        printf("\tCMPS R%d R%d\n", node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tCMPS R%d R%d\n", node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
                     } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
-                        printf("\tCMPIS R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
-                        fprintf(codeemitfp, "\tCMPIS R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        printf("\tCMPIS R%d #%s\n", node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tCMPIS R%d #%s\n", node->son->brother->brother->token.token_value, int_value);
 
                     } else {
                         printf("CMP의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
@@ -263,33 +263,33 @@ void asm_printer(Node * node, FILE * codeemitfp){
                 case ASM_B: {
                     switch (node->son->brother->brother->token.token_value) {
                         case (COND_EQ):
-                            printf("\tBEQ LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
-                            fprintf(codeemitfp, "\tBEQ LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
+                            printf("\tBEQ LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBEQ LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             break;
                             
                         case (COND_NE):
-                            printf("\tBNE LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
-                            fprintf(codeemitfp, "\tBNE LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
+                            printf("\tBNE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBNE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             break;
 
                         case (COND_LT):
-                            printf("\tBLT LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
-                            fprintf(codeemitfp, "\tBLT LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
+                            printf("\tBLT LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBLT LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             break;
 
                         case (COND_GT):
-                            printf("\tBGT LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
-                            fprintf(codeemitfp, "\tBGT LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
+                            printf("\tBGT LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBGT LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             break;
 
                         case (COND_LE):
-                            printf("\tBLE LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
-                            fprintf(codeemitfp, "\tBLE LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
+                            printf("\tBLE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBLE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             break;
 
                         case (COND_GE):
-                            printf("\tBGE LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
-                            fprintf(codeemitfp, "\tBGE LABEL_%d:\n", node->son->brother->brother->brother->token.token_value);
+                            printf("\tBGE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBGE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             break;
 
                         default:
