@@ -64,7 +64,7 @@
 #define TAG_LABEL       308
 #define TAG_LABEL_MAKE  309
 #define TAG_COND        310
-#define TAG_COMP        311
+#define TAG_CMP         311 //
 
 #define COND_EQ         385
 #define COND_NE         386
@@ -105,6 +105,7 @@
 #define ASM_NOT         436
 #define ASM_LDR         440
 #define ASM_STR         445
+#define ASM_B           450
 
 #define ASM_MOVH        403
 #define ASM_CMP         404
@@ -128,8 +129,9 @@
 #define ASM_LDRSH       444
 #define ASM_STRB        446
 #define ASM_STRH        447
-#define ASM_B           450
 #define ASM_JMP         451
+
+#define ASM_LABEL       490
 
 
 #define LEXING_EOF      999
