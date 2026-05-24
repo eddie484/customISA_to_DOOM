@@ -109,8 +109,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
             return n;
         } else if (tag->son->token.token_number == OP_NEG && tag->son->brother->brother->token.token_number == TAG_TEMP && tag->son->brother->brother->token.token_value == 0) {
-            char str[12] = "0";
-            Node * n1 = line_maker(ASM_MOV, ASM_REGISTER, 2, TAG_TEMP, 0, NUM_INT, lexval_manager (str));
+            Node * n1 = line_maker(ASM_MOV, ASM_REGISTER, 2, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));
             Node * n2 = line_maker(ASM_SUB, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value);
 
             n1->brother = n2;
@@ -182,6 +181,18 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
                     
                 case OP_LSR:
                     x1->token.token_number = ASM_LSR;
+                    break;
+                    
+                case TAG_CMP:
+                    x1->token.token_number = ASM_CMP;
+                    break;
+                    
+                case TAG_LABEL_MAKE:
+                    x1->token.token_number = ASM_LABEL;
+                    break;
+                    
+                case TAG_BRANCH:
+                    x1->token.token_number = ASM_B;
                     break;
                     
                 default:
