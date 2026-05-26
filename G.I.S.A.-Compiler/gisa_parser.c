@@ -80,8 +80,28 @@ int token_type[1024];          // 읽어온 lexeme들의 타입을 저장.
 int token_value[1024];          // 읽어온 lexeme들의 값을 저장. 
 int cur_line = 0;
 
+static const int priority_table[33] = {
+    [OP_ADD] = 90,
+    [OP_MINUS] = 90,
+    [OP_MUL] = 100,
+    [OP_DIV] = 100,
+    [OP_MOD] = 100,
+    [OP_AND] = 50,
+    [OP_OR] = 30,
+    [OP_XOR] = 40,
+    [OP_SHL] = 80,
+    [OP_LSR] = 80,
+    [OP_LOGIC_AND] = 20,
+    [OP_LOGIC_OR] = 15,
+    [OP_EQ] = 60,
+    [OP_NE] = 60,
+    [OP_LT] = 70,
+    [OP_GT] = 70,
+    [OP_LE] = 70,
+    [OP_GE] = 70
+};
 
-int get_priority(int opcode);
+
 Node * p_nt_program(Lexer_result lex_input);
 Node * p_nt_function(Lexer_result lex_input);
 Node * p_nt_param(Lexer_result lex_input);
@@ -91,87 +111,6 @@ Node * p_nt_factor(Lexer_result lex_input);
 Node * p_nt_unary_op(Lexer_result lex_input);
 Node * p_nt_binary_op(Lexer_result lex_input);
 
-
-
-int get_priority(int opcode) {
-    switch (opcode) {
-        case OP_ADD: {
-            return 90;
-        }
-
-        case OP_MINUS: {
-            return 90;
-        }
-
-        case OP_MUL: {
-            return 100;
-        }
-
-        case OP_DIV: {
-            return 100;
-        }
-
-        case OP_MOD: {
-            return 100;
-        }
-
-        case OP_AND: {
-            return 50;
-        }
-
-        case OP_OR: {
-            return 30;
-        }
-
-        case OP_XOR: {
-            return 40;
-        }
-
-        case OP_SHL: {
-            return 80;
-        }
-
-        case OP_LSR: {
-            return 80;
-        }
-
-        case OP_LOGIC_AND: {
-            return 20;
-        }
-
-        case OP_LOGIC_OR: {
-            return 15;
-        }
-
-        case OP_EQ: {
-            return 60;
-        }
-
-        case OP_NE: {
-            return 60;
-        }
-
-        case OP_LT: {
-            return 70;
-        }
-
-        case OP_GT: {
-            return 70;
-        }
-
-        case OP_LE: {
-            return 70;
-        }
-
-        case OP_GE: {
-            return 70;
-        }
-
-        default: {
-            return 0;
-        }
-    }
-}
 
 
 void get_nextSymbol(Lexer_result lex_input){
@@ -190,7 +129,7 @@ void error(int predLex, Lexeme givenLex){
     exit(1);
 }
 
-/*Node * p_terminal(Lexer_result lex_input, int term_num){
+Node * p_terminal(Lexer_result lex_input, int term_num){
     if (nextSymbol.token_number == term_num){
         printf("parsing: %d\n", term_num);
 
@@ -200,411 +139,28 @@ void error(int predLex, Lexeme givenLex){
 
         return n;
     }
-    else error(0, nextSymbol);
-}*/
-
-Node * p_t_IDENT(Lexer_result lex_input){
-    if (nextSymbol.token_number == IDENT){
-        printf("parsing: IDENT\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(0, nextSymbol);
+    else error(term_num, nextSymbol);
 }
 
-Node * p_t_NUM_INT(Lexer_result lex_input){
-    if (nextSymbol.token_number == NUM_INT){
-        printf("parsing: NUM_INT\n");
+Node * p_t_OP_MINUS(Lexer_result lex_input, int term_num){
+    Node * n;
 
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(1,nextSymbol);
-}
-
-Node * p_t_KW_INT(Lexer_result lex_input){
-    if (nextSymbol.token_number == KW_INT){
-        printf("parsing: KW_INT\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(2, nextSymbol);
-}
-
-Node * p_t_KW_VOID(Lexer_result lex_input){
-    if (nextSymbol.token_number == KW_VOID){
-        printf("parsing: KW_VOID\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(3, nextSymbol);
-}
-
-Node * p_t_KW_RETURN(Lexer_result lex_input){
-    if (nextSymbol.token_number == KW_RETURN){
-        printf("parsing: KW_RETURN\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(4, nextSymbol);
-}
-
-Node * p_t_OPEN_PAREN(Lexer_result lex_input){
-    if (nextSymbol.token_number == OPEN_PAREN){
-        printf("parsing: OPEN_PAREN\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(5, nextSymbol);
-}
-
-Node * p_t_CLOSE_PAREN(Lexer_result lex_input){
-    if (nextSymbol.token_number == CLOSE_PAREN){
-        printf("parsing: CLOSE_PAREN\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(6, nextSymbol);
-}
-
-Node * p_t_OPEN_BRACE(Lexer_result lex_input){
-    if (nextSymbol.token_number == OPEN_BRACE){
-        printf("parsing: OPEN_BRACE\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(7, nextSymbol);
-}
-
-Node * p_t_CLOSE_BRACE(Lexer_result lex_input){
-    if (nextSymbol.token_number == CLOSE_BRACE){
-        printf("parsing: CLOSE_BRACE\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(8, nextSymbol);
-}
-
-Node * p_t_PN_SEMI(Lexer_result lex_input){
-    if (nextSymbol.token_number == PN_SEMI){
-        printf("parsing: PN_SEMI\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(9, nextSymbol);
-}
-
-Node * p_t_OP_TILDE(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_TILDE){
-        printf("parsing: OP_TILDE\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
-
-Node * p_t_OP_NEG(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_MINUS){
+    if (term_num == OP_NEG && nextSymbol.token_number == OP_MINUS){
         printf("parsing: OP_NEG\n");
+        n = node_maker(NULL, NULL, OP_NEG, nextSymbol.token_value);
 
-        Node * n = node_maker(NULL, NULL, OP_NEG, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_ADD(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_ADD){
-        printf("parsing: OP_ADD\n");
-
-        Node * n = node_maker(NULL, NULL, OP_ADD, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_SUB(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_MINUS){
+    } else if (term_num == OP_SUB && nextSymbol.token_number == OP_MINUS){
         printf("parsing: OP_SUB\n");
+        n = node_maker(NULL, NULL, OP_SUB, nextSymbol.token_value);
 
-        Node * n = node_maker(NULL, NULL, OP_SUB, nextSymbol.token_value);
+    } else error(term_num, nextSymbol);
 
-        get_nextSymbol(lex_input);
+    get_nextSymbol(lex_input);
 
-        return n;
-    }
-    else error(11, nextSymbol);
+    return n;
 }
 
-Node * p_t_OP_MUL(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_MUL){
-        printf("parsing: OP_MUL\n");
 
-        Node * n = node_maker(NULL, NULL, OP_MUL, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_DIV(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_DIV){
-        printf("parsing: OP_DIV\n");
-
-        Node * n = node_maker(NULL, NULL, OP_DIV, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_MOD(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_MOD){
-        printf("parsing: OP_MOD\n");
-
-        Node * n = node_maker(NULL, NULL, OP_MOD, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_AND(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_AND){
-        printf("parsing: OP_AND\n");
-
-        Node * n = node_maker(NULL, NULL, OP_AND, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_OR(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_OR){
-        printf("parsing: OP_OR\n");
-
-        Node * n = node_maker(NULL, NULL, OP_OR, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_XOR(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_XOR){
-        printf("parsing: OP_XOR\n");
-
-        Node * n = node_maker(NULL, NULL, OP_XOR, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_SHL(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_SHL){
-        printf("parsing: OP_SHL\n");
-
-        Node * n = node_maker(NULL, NULL, OP_SHL, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_LSR(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_LSR){
-        printf("parsing: OP_LSR\n");
-
-        Node * n = node_maker(NULL, NULL, OP_LSR, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(11, nextSymbol);
-}
-
-Node * p_t_OP_LOGIC_NOT(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_LOGIC_NOT){
-        printf("parsing: OP_LOGIC_NOT\n");
-
-        Node * n = node_maker(NULL, NULL, OP_LOGIC_NOT, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
-
-Node * p_t_OP_LOGIC_AND(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_LOGIC_AND){
-        printf("parsing: OP_LOGIC_AND\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
-
-Node * p_t_OP_LOGIC_OR(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_LOGIC_OR){
-        printf("parsing: OP_LOGIC_OR\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
-
-Node * p_t_OP_EQ(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_EQ){
-        printf("parsing: OP_EQ\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
-
-Node * p_t_OP_NE(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_NE){
-        printf("parsing: OP_NE\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
-
-Node * p_t_OP_LT(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_LT){
-        printf("parsing: OP_LT\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
-
-Node * p_t_OP_GT(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_GT){
-        printf("parsing: OP_GT\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
-
-Node * p_t_OP_LE(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_LE){
-        printf("parsing: OP_LE\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
-
-Node * p_t_OP_GE(Lexer_result lex_input){
-    if (nextSymbol.token_number == OP_GE){
-        printf("parsing: OP_GE\n");
-
-        Node * n = node_maker(NULL, NULL, nextSymbol.token_number, nextSymbol.token_value);
-
-        get_nextSymbol(lex_input);
-
-        return n;
-    }
-    else error(10, nextSymbol);
-}
 
 
 
@@ -623,14 +179,14 @@ Node * p_nt_program(Lexer_result lex_input){    // <program> ::= <function>
 Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT "OPEN_PAREN" <param> "CLOSE_PAREN" "OPEN_BRACE" <content> "CLOSE_BRACE"
     if (nextSymbol.token_number == KW_INT) {
         printf("parsing: nt_function\n");
-        Node * x1 = p_t_KW_INT(lex_input);
-        Node * x2 = p_t_IDENT(lex_input);
-        Node * x3 = p_t_OPEN_PAREN(lex_input);
+        Node * x1 = p_terminal(lex_input, KW_INT);
+        Node * x2 = p_terminal(lex_input, IDENT);
+        Node * x3 = p_terminal(lex_input, OPEN_PAREN);
         Node * x4 = p_nt_param(lex_input);
-        Node * x5 = p_t_CLOSE_PAREN(lex_input);
-        Node * x6 = p_t_OPEN_BRACE(lex_input);
+        Node * x5 = p_terminal(lex_input, CLOSE_PAREN);
+        Node * x6 = p_terminal(lex_input, OPEN_BRACE);
         Node * x7 = p_nt_content(lex_input);
-        Node * x8 = p_t_CLOSE_BRACE(lex_input);
+        Node * x8 = p_terminal(lex_input, CLOSE_BRACE);
 
         x1->brother = x2;
         x2->brother = x4;
@@ -650,7 +206,7 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
 Node * p_nt_param(Lexer_result lex_input){      // <param> ::= "KW_VOID"
     if (nextSymbol.token_number == KW_VOID) {
         printf("parsing: nt_param\n");
-        Node * x1 = p_t_KW_VOID(lex_input);
+        Node * x1 = p_terminal(lex_input, KW_VOID);
         
         return x1;
     } else error(3, nextSymbol);
@@ -659,9 +215,9 @@ Node * p_nt_param(Lexer_result lex_input){      // <param> ::= "KW_VOID"
 Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <exp> "PN_SEMI"
     if (nextSymbol.token_number == KW_RETURN) {
         printf("parsing: nt_content\n");
-        Node * x1 = p_t_KW_RETURN(lex_input);
+        Node * x1 = p_terminal(lex_input, KW_RETURN);
         Node * x2 = p_nt_exp(lex_input, 0);
-        Node * x3 = p_t_PN_SEMI(lex_input);
+        Node * x3 = p_terminal(lex_input, PN_SEMI);
 
         x1->brother = x2;
         
@@ -678,8 +234,8 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
         printf("parsing: nt_exp\n");
         Node * left = p_nt_factor(lex_input);
         
-        while ((nextSymbol.token_number == OP_ADD || nextSymbol.token_number == OP_MINUS || nextSymbol.token_number == OP_MUL || nextSymbol.token_number == OP_DIV || nextSymbol.token_number == OP_MOD || nextSymbol.token_number == OP_AND || nextSymbol.token_number == OP_OR || nextSymbol.token_number == OP_XOR || nextSymbol.token_number == OP_SHL || nextSymbol.token_number == OP_LSR || nextSymbol.token_number == OP_LOGIC_AND || nextSymbol.token_number == OP_LOGIC_OR || nextSymbol.token_number == OP_EQ || nextSymbol.token_number == OP_NE || nextSymbol.token_number == OP_LT || nextSymbol.token_number == OP_GT || nextSymbol.token_number == OP_LE || nextSymbol.token_number == OP_GE) && (get_priority(nextSymbol.token_number) >= min_priority)) {
-            int op_priority = get_priority(nextSymbol.token_number);
+        while ((nextSymbol.token_number == OP_MINUS || (nextSymbol.token_number >= OP_ADD && nextSymbol.token_number <= OP_GE && nextSymbol.token_number != OP_SUB)) && (priority_table[nextSymbol.token_number] >= min_priority)) {
+            int op_priority = priority_table[nextSymbol.token_number];
             Node * operator = p_nt_binary_op(lex_input);
             Node * right = p_nt_exp(lex_input, (op_priority + 1));
 
@@ -698,7 +254,7 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
 Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
     if (nextSymbol.token_number == NUM_INT) {
         printf("parsing: nt_exp\n");
-        Node * x1 = p_t_NUM_INT(lex_input);
+        Node * x1 = p_terminal(lex_input, NUM_INT);
         
         return x1;
     } else if (nextSymbol.token_number == OP_TILDE || nextSymbol.token_number == OP_MINUS || nextSymbol.token_number == OP_LOGIC_NOT) {
@@ -713,9 +269,9 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | <un
         return n;
     } else if (nextSymbol.token_number == OPEN_PAREN) {
         printf("parsing: nt_exp\n");
-        Node * x1 = p_t_OPEN_PAREN(lex_input);
+        Node * x1 = p_terminal(lex_input, OPEN_PAREN);
         Node * x2 = p_nt_exp(lex_input, 0);
-        Node * x3 = p_t_CLOSE_PAREN(lex_input);
+        Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
         
         free(x1);
         free(x3);
@@ -725,22 +281,20 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | <un
 }
 
 Node * p_nt_unary_op(Lexer_result lex_input){      // <unary_op> ::= "OP_TILDE" | "OP_NEG"
-    if (nextSymbol.token_number == OP_TILDE) {
-        printf("parsing: nt_unary_op\n");
-        Node * x1 = p_t_OP_TILDE(lex_input);
+    printf("parsing: nt_unary_op\n");
+    Node * x1;
 
-        return x1;
-    } else if (nextSymbol.token_number == OP_MINUS) {
-        printf("parsing: nt_unary_op\n");
-        Node * x1 = p_t_OP_NEG(lex_input);
+    switch (nextSymbol.token_number) {
+        case OP_TILDE: case OP_LOGIC_NOT: 
+            Node * x1 = p_terminal(lex_input, nextSymbol.token_number);
+            return x1;
 
-        return x1;
-    } else if (nextSymbol.token_number == OP_LOGIC_NOT) {
-        printf("parsing: nt_unary_op\n");
-        Node * x1 = p_t_OP_LOGIC_NOT(lex_input);
+        case OP_MINUS:
+            x1 = p_t_OP_MINUS(lex_input, OP_NEG);
+            return x1;
 
-        return x1;
-    } else error(3, nextSymbol);
+        default: error(3, nextSymbol);
+    }
 }
 
 Node * p_nt_binary_op(Lexer_result lex_input){      // <binary_op> ::= "OP_ADD" | "OP_SUB" | "OP_MUL" | "OP_DIV" | "OP_MOD"
@@ -748,96 +302,14 @@ Node * p_nt_binary_op(Lexer_result lex_input){      // <binary_op> ::= "OP_ADD" 
     Node * x1;
 
     switch (nextSymbol.token_number) {
-        case OP_ADD: {
-            x1 = p_t_OP_ADD(lex_input);
+        case OP_ADD: case OP_MUL: case OP_DIV: case OP_MOD: case OP_AND: case OP_OR: case OP_XOR: case OP_SHL: case OP_LSR: case OP_LOGIC_AND: case OP_LOGIC_OR: case OP_EQ: case OP_NE: case OP_LT: case OP_GT: case OP_LE: case OP_GE:
+            x1 = p_terminal(lex_input, nextSymbol.token_number);
             return x1;
-        }
         
-        case OP_MINUS: {
-            x1 = p_t_OP_SUB(lex_input);
+        case OP_MINUS:
+            x1 = p_t_OP_MINUS(lex_input, OP_SUB);
             return x1;
-        }
-        
-        case OP_MUL: {
-            x1 = p_t_OP_MUL(lex_input);
-            return x1;
-        }
-        
-        case OP_DIV: {
-            x1 = p_t_OP_DIV(lex_input);
-            return x1;
-        }
-        
-        case OP_MOD: {
-            x1 = p_t_OP_MOD(lex_input);
-            return x1;
-        }
-        
-        case OP_AND: {
-            x1 = p_t_OP_AND(lex_input);
-            return x1;
-        }
-        
-        case OP_OR: {
-            x1 = p_t_OP_OR(lex_input);
-            return x1;
-        }
-        
-        case OP_XOR: {
-            x1 = p_t_OP_XOR(lex_input);
-            return x1;
-        }
-        
-        case OP_SHL: {
-            x1 = p_t_OP_SHL(lex_input);
-            return x1;
-        }
-        
-        case OP_LSR: {
-            x1 = p_t_OP_LSR(lex_input);
-            return x1;
-        }
-
-        case OP_LOGIC_AND: {
-            x1 = p_t_OP_LOGIC_AND(lex_input);
-            return x1;
-        }
-
-        case OP_LOGIC_OR: {
-            x1 = p_t_OP_LOGIC_OR(lex_input);
-            return x1;
-        }
-
-        case OP_EQ: {
-            x1 = p_t_OP_EQ(lex_input);
-            return x1;
-        }
-
-        case OP_NE: {
-            x1 = p_t_OP_NE(lex_input);
-            return x1;
-        }
-
-        case OP_LT: {
-            x1 = p_t_OP_LT(lex_input);
-            return x1;
-        }
-
-        case OP_GT: {
-            x1 = p_t_OP_GT(lex_input);
-            return x1;
-        }
-
-        case OP_LE: {
-            x1 = p_t_OP_LE(lex_input);
-            return x1;
-        }
-
-        case OP_GE: {
-            x1 = p_t_OP_GE(lex_input);
-            return x1;
-        }
-
+            
         default: error(3, nextSymbol);
     }
 }
@@ -859,19 +331,6 @@ Node * parser(Lexer_result lex_input, char *parse_name)
 {
     symbolCount = 0;
     Node * ast_top;
-    /*
-    char *lex_name;
-    char *parse_name;
-
-        // 인자 개수 확인해 파일이름 지정.
-        if (argc == 3) {
-            lex_name = argv[1];
-            parse_name = argv[2];
-        } else {
-            lex_name = "lexeme.lex";
-            parse_name = "ast.parse";
-        }
-    */
 
 
     FILE *parsefp = fopen(parse_name, "w");         // 처리 결과 ast를 저장할 파일 오픈
@@ -881,12 +340,6 @@ Node * parser(Lexer_result lex_input, char *parse_name)
         exit(1);
     }
 
-    
-    //lexer_result_printer(lex_input);
-
-    
-
-    printf("\nLexeme 로딩 성공. Parsing 시작.\n\n");
 
     get_nextSymbol(lex_input);
     ast_top = p_nt_program(lex_input);
