@@ -141,7 +141,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
             return n;
-        } else if (ast->son->token.token_number == OP_ADD || ast->son->token.token_number == OP_SUB || ast->son->token.token_number == OP_MUL || ast->son->token.token_number == OP_DIV || ast->son->token.token_number == OP_MOD || ast->son->token.token_number == OP_AND || ast->son->token.token_number == OP_OR || ast->son->token.token_number == OP_XOR || ast->son->token.token_number == OP_SHL || ast->son->token.token_number == OP_LSR) {
+        } else if (ast->son->token.token_number >= OP_ADD && ast->son->token.token_number <= OP_LSR) {
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
             Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
             Node * n3 = tag_nt_instr_interpreting(ast->son, n1->token.token_value, n2->token.token_value);
@@ -179,60 +179,42 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, return_val_temp);
 
             return n;
-        } else if (ast->son->token.token_number == OP_LOGIC_AND) {
+        } else if (ast->son->token.token_number == OP_LOGIC_AND || ast->son->token.token_number == OP_LOGIC_OR) {
             int return_val_temp;
 
             Node * n2 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);           // e1 calc
             Node * n5 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);  // e2 calc
 
-            return_val_temp = temp_count++;
-            Node * n8 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // true, return 1
-            n8->token.token_value = n8->son->brother->token.token_value;
-            Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // false, return 0
-            n1->token.token_value = n1->son->brother->token.token_value;
-
             Node * n9 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
             n9->token.token_value = n9->son->brother->token.token_value;
 
-            Node * n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);    // e1 branch, to end
-            Node * n7 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);    // e2 branch, to end
+            return_val_temp = temp_count++;
+
+            Node * n8;
+            Node * n1;
+            Node * n4;
+            Node * n7;
+
+            if (ast->son->token.token_number == OP_LOGIC_AND){
+                n8 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // true, return 1
+                n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // false, return 0
+                n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);    // e1 branch, to end
+                n7 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);    // e2 branch, to end
+            } else {
+                n8 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // true, return 0
+                n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // false, return 1
+                n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n9->token.token_value);    // e1 branch, to end
+                n7 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n9->token.token_value);    // e2 branch, to end
+            }
+            
+            n8->token.token_value = n8->son->brother->token.token_value;
+            n1->token.token_value = n1->son->brother->token.token_value;
+            
 
             Node * n3 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, NUM_INT, lexval_manager ("0"));  // comparing, setcc
             Node * n6 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n5->token.token_value, NUM_INT, lexval_manager ("0"));  // comparing, setcc
             
-            n1->brother = n2;
-            n2->brother = n3;
-            n3->brother = n4;
-            n4->brother = n5;
-            n5->brother = n6;
-            n6->brother = n7;
-            n7->brother = n8;
-            n8->brother = n9;
 
-            Node * n = node_maker(n1, NULL, TAG_LINE_SET, return_val_temp);
-
-            return n;
-        } else if (ast->son->token.token_number == OP_LOGIC_OR) {
-            int return_val_temp;
-
-            Node * n2 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);           // e1 calc
-            Node * n5 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);  // e2 calc
-
-            return_val_temp = temp_count++;
-            Node * n8 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // true, return 1
-            n8->token.token_value = n8->son->brother->token.token_value;
-            Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // false, return 0
-            n1->token.token_value = n1->son->brother->token.token_value;
-
-            Node * n9 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
-            n9->token.token_value = n9->son->brother->token.token_value;
-
-            Node * n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n9->token.token_value);    // e1 branch, to end
-            Node * n7 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n9->token.token_value);    // e2 branch, to end
-
-            Node * n3 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, NUM_INT, lexval_manager ("0"));  // comparing, setcc
-            Node * n6 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n5->token.token_value, NUM_INT, lexval_manager ("0"));  // comparing, setcc
-            
             n1->brother = n2;
             n2->brother = n3;
             n3->brother = n4;
@@ -328,7 +310,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         return n;
 
     // 이항 연산자일 경우 (OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_AND, OP_OR, OP_XOR, OP_SHL, OP_LSR)
-    } else if (ast->token.token_number == OP_ADD || ast->token.token_number == OP_SUB || ast->token.token_number == OP_MUL || ast->token.token_number == OP_DIV || ast->token.token_number == OP_MOD || ast->token.token_number == OP_AND || ast->token.token_number == OP_OR || ast->token.token_number == OP_XOR || ast->token.token_number == OP_SHL || ast->token.token_number == OP_LSR || ast->token.token_number == OP_EQ || ast->token.token_number == OP_NE || ast->token.token_number == OP_LT || ast->token.token_number == OP_GT || ast->token.token_number == OP_LE || ast->token.token_number == OP_GE) {
+    } else if (ast->token.token_number >= OP_ADD && ast->token.token_number <= OP_GE) {
         printf("enter OP_%d\n", ast->token.token_number);
         Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
         
