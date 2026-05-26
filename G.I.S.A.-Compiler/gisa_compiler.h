@@ -43,6 +43,8 @@
 #define OP_LE           31  // <=
 #define OP_GE           32  // >=
 
+#define OP_ASSIGN       33  // =
+
 
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101

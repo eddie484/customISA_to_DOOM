@@ -38,6 +38,8 @@
     OP_LE           31  // <=
     OP_GE           32  // >=
 
+    OP_ASSIGN       33  // =
+
 */
 
 
@@ -547,9 +549,15 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     cur_index = 0;
 
                 } else {                            // =인 경우
-                    // 처리안함!
-                    printf("= 는 처리되지 않습니다.\n");
-                    exit(2);
+                    lexeme[lexeme_count].token_number = OP_ASSIGN;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, =\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
                 }
 
 
