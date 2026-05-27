@@ -49,10 +49,15 @@
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101
 #define NT_PARAM        102
-#define NT_CONTENT      103
-#define NT_EXP          104
-#define NT_UNARY_OP     105
-#define NT_BINARY_OP    106
+#define NT_INSTR_LIST   103
+#define NT_INSTR        104
+#define NT_CONTENT      105
+#define NT_DECLR        106
+#define NT_ASSIGN       107
+#define NT_EXP          108
+#define NT_FACTOR       109
+#define NT_UNARY_OP     110
+#define NT_BINARY_OP    111
 
 
 #define TAG_PROGRAM     300
