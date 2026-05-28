@@ -2151,11 +2151,10 @@ void b(struct GISA *cpu, int cond, int immB)
 
 
 
-void jmp(struct GISA *cpu, int rA, int immB)
+void jmp(struct GISA *cpu, int rB)
 {
-    uint32_t rAdata = cpu->reg[rA];
-    uint32_t rBdata = (uint32_t)immB;
-    uint32_t result = rAdata | rBdata;
+    uint32_t rBdata = cpu->reg[rB];
+    uint32_t result = rBdata;
     uint32_t oldpc = cpu->pc;
     cpu->pc = result;
 
@@ -2172,13 +2171,12 @@ void jmpi(struct GISA *cpu,int immB)
     printf("IMEM[%d]\tJump from %d to %d.\n", oldpc, oldpc, result);
 }
 
-void jmpl(struct GISA *cpu, int rD, int rA, int immB)
+void jmpl(struct GISA *cpu, int rD, int rB)
 {
-    uint32_t rAdata = cpu->reg[rA];
-    uint32_t rBdata = (uint32_t)immB;
+    uint32_t rBdata = cpu->reg[rB];
     uint32_t oldrD = cpu->reg[rD];
     uint32_t oldpc = cpu->pc;
-    uint32_t result = rAdata | rBdata;
+    uint32_t result = rBdata;
 
     cpu->reg[rD] = cpu->pc + 4;
     cpu->pc = result;
@@ -2820,13 +2818,13 @@ bool execute(struct GISA *cpu, uint32_t inst)
     case JMP:
         if (mode_2 == 0){
             if (mode_1 == 0){
-                jmp(cpu, rA(inst), immB_16(inst));
+                jmp(cpu, rB(inst));
             } else {
                 jmpi(cpu, immB_24_jump(inst));
             }
         } else {
             if (mode_1 == 0){
-                jmpl(cpu, rD(inst), rA(inst), immB_16(inst));
+                jmpl(cpu, rD(inst), rB(inst));
             } else {
                 jmpil(cpu, rD(inst), immB_20(inst));
             }        
