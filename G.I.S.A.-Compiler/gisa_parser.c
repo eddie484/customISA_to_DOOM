@@ -194,7 +194,7 @@ int first(int input_token, int nt_set){
             return (input_token == 10 || input_token == 11 || input_token == 24);
             
         case NT_BINARY_OP:
-            return (input_token == 11 || input_token == 15 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33);
+            return (input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33);
             
     }
 }
