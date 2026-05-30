@@ -49,15 +49,19 @@
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101
 #define NT_PARAM        102
-#define NT_INSTR_LIST   103
-#define NT_INSTR        104
-#define NT_CONTENT      105
-#define NT_DECLR        106
-#define NT_ASSIGN       107
-#define NT_EXP          108
-#define NT_FACTOR       109
-#define NT_UNARY_OP     110
-#define NT_BINARY_OP    111
+#define NT_SCOPE        103
+#define NT_INSTR_LIST   104
+#define NT_INSTR        105
+#define NT_CONTENT      106
+#define NT_DECLR        107
+#define NT_ASSIGN       108
+#define NT_EXP          109
+#define NT_FACTOR       110
+#define NT_UNARY_OP     111
+#define NT_BINARY_OP    112
+
+
+#define SEM_SYMBOL      150
 
 
 #define TAG_PROGRAM     300
@@ -179,11 +183,25 @@ typedef struct Node {
     struct Node * brother;
 } Node;
 
+typedef struct Symbol_location {
+    int type;
+    int location;
+} Symbol_location;
+
+typedef struct Symbol_info {
+    int name;   // IDENT의 value
+    int id;     // 모든 테이블에서 겹치지 않는 고유번호. 스코프 위치 함유.
+    Node * type_tree;
+    int size;
+    Symbol_location location;
+} Symbol_info;
+
 
 int lexval_manager (char *name);
 int check_right_word_boundary(char right);
 Lexer_result lexer(char *prep_name, char *lex_name);
 Node * parser(Lexer_result lex_input, char *parse_name);
+Node * semantic_analyzer(Node * parse_input, char * symbast_name);
 Node * tag_generator(Node * parse_input, char * tagtree_name);
 Node * code_generator(Node * parse_input, char * codegentree_name);
 void code_emitter(Node * codegen_result, char * codegentree_name);
@@ -194,6 +212,8 @@ void bin_tree_file_printer(Node * tree_top, FILE *parsefp);
 void tree_malloc_cleaner(Node * node);
 Node * node_maker(Node *  n_son, Node *  n_brother, int n_num, int n_val);
 Node * line_maker(int line_type, int p1_num, int p1_val, int p2_num, int p2_val, int p3_num, int p3_val);
+Node * get_son(Node * node);
+Node * get_brother(Node * node);
 
 
 extern int temp_count;

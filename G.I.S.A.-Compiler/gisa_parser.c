@@ -75,7 +75,8 @@
 
     *** ast rules ***
     <program> ::= <function>
-    <function> ::= "KW_INT" IDENT "KW_VOID" <instr_list>
+    <function> ::= "KW_INT" IDENT "KW_VOID" <scope>
+    <scope ::= <instr_list>
     <instr_list> ::= <content> <instr_list> | <declr> <instr_list> | ε
     <content> ::= "KW_RETURN" <exp> | <exp> | ε
     <declr> ::= "KW_INT" IDENT <assign>
@@ -296,7 +297,8 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
         Node * x4 = p_nt_param(lex_input);
         Node * x5 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x6 = p_terminal(lex_input, OPEN_BRACE);
-        Node * x7 = p_nt_instr_list(lex_input);
+        Node * x7n1 = p_nt_instr_list(lex_input);
+        Node * x7 = node_maker(x7n1, NULL, NT_SCOPE, 0);
         Node * x8 = p_terminal(lex_input, CLOSE_BRACE);
 
         x1->brother = x2;

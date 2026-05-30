@@ -137,3 +137,12 @@ Node * line_maker(int line_type, int p1_num, int p1_val, int p2_num, int p2_val,
 
     return n;
 }
+
+
+Node * get_son(Node * node) {
+    return node->son;
+}
+
+Node * get_brother(Node * node) {
+    return node->brother;
+}
