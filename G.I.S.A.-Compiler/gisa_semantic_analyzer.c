@@ -2,7 +2,7 @@
 
 
 
-int symbol_id_count = 0;
+int symbol_id_count = 1;
 
 int table_list_limit;
 int table_list_count;
@@ -143,34 +143,58 @@ void ident_symbolizer(Node * node) {
             ident_node = get_brother(ident_node);
         }
 
-        Node * exp;
-        Node * assign;
-        Node * symbol;
-        Node * right_val;
-        Node * type_cleaner;
-        
-        right_val = ident_node->brother->son->brother;
-        symbol = node_maker(NULL, right_val, SEM_SYMBOL, symbol_id);
-        assign = node_maker(NULL, symbol, OP_ASSIGN, 0);
-        exp = node_maker(assign, NULL, NT_EXP, 0);
-        // declr_to_content = node_maker(exp, node->brother, NT_CONTENT, 0);
+        if (ident_node->brother->son != NULL) {    // 변수 선언 후 초기화하는 경우.
+            Node * exp;
+            Node * assign;
+            Node * symbol;
+            Node * right_val;
+            Node * type_cleaner;
+            
+            right_val = ident_node->brother->son->brother;
+            symbol = node_maker(NULL, right_val, SEM_SYMBOL, symbol_id);
+            assign = node_maker(NULL, symbol, OP_ASSIGN, 0);
+            exp = node_maker(assign, NULL, NT_EXP, 0);
+            // declr_to_content = node_maker(exp, node->brother, NT_CONTENT, 0);
 
-        free(ident_node->brother->son);
-        free(ident_node->brother);
+            free(ident_node->brother->son);
+            free(ident_node->brother);
 
-        type_cleaner = node->son;
-        while (type_cleaner != ident_node) {
-            Node * n = type_cleaner->brother;
-            free(type_cleaner);
-            type_cleaner = n;
+            type_cleaner = node->son;
+            while (type_cleaner != ident_node) {
+                Node * n = type_cleaner->brother;
+                free(type_cleaner);
+                type_cleaner = n;
+            }
+            // node->son부터 ident_node 이전까지 free 하는 반복문
+            free(ident_node);
+
+            node->son = exp;
+            node->token.token_number = NT_CONTENT;
+
+            bin_tree_printer(node);
+        } else {        // 변수 선언만 하는 경우. 심볼 등록만 하고 라인을 삭제한다.
+            Node * type_cleaner;
+            
+            type_cleaner = node->son;
+            while (type_cleaner != ident_node) {
+                Node * n = type_cleaner->brother;
+                free(type_cleaner);
+                type_cleaner = n;
+            }
+
+            free(ident_node->brother);
+            free(ident_node);
+
+            Node * node_brother = node->brother;
+            node->son = node_brother->son;
+            node->brother = node_brother->brother;
+            node->token = node_brother->token;
+            free (node_brother);
+
+            ident_symbolizer(node);     // brother를 node 자리에 당겨왔으므로 다시 함수호출해 brother였던 노드를 처리한다.
         }
-        // node->son부터 ident_node 이전까지 free 하는 반복문
-        free(ident_node);
 
-        node->son = exp;
-        node->token.token_number = NT_CONTENT;
-
-        bin_tree_printer(node);
+        
 
     } 
     
