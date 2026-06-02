@@ -46,6 +46,7 @@
 
 int temp_count;     // 0은 처음 입력값이므로 1부터 임시변수 시작.
 int label_count = 1;
+int reverting_compound_assign;  // 복합 대입 연산자와 기본 연산자 사이의 차잇값. 두 묶음의 배치 순서가 일치하는 덕분에 차잇값을 이용해 환원이 가능하다. 중요 포인트!
 
 Node * tag_terminal(Node * ast);
 Node * tag_nt_program(Node * ast);
@@ -173,7 +174,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
             return n;
-        } else if (ast->son->token.token_number >= OP_ADD && ast->son->token.token_number <= OP_LSR) {
+        } else if ((ast->son->token.token_number >= OP_ADD && ast->son->token.token_number <= OP_LSR) || (ast->son->token.token_number >= OP_ASSIGN && ast->son->token.token_number <= OP_LSREQ)) {
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
             Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
             Node * n3 = tag_nt_instr_interpreting(ast->son, n1->token.token_value, n2->token.token_value);
@@ -198,17 +199,6 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             return n;
         } else if (ast->son->token.token_number >= OP_EQ && ast->son->token.token_number <= OP_GE) {
             Node * n = line_op_comp(ast, temp_in_rA, temp_in_rB);
-
-            return n;
-        } else if (ast->son->token.token_number == OP_ASSIGN) {
-            Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);   // symbol id를 리턴하도록 만들어야 함.
-            Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);      // rside
-            Node * n3 = tag_nt_instr_interpreting(ast->son, n1->token.token_value, n2->token.token_value);  // mov. 인자 1이 lside, 2가 rside.
-
-            n1->brother = n2;
-            n2->brother = n3;
-
-            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n3->token.token_value);
 
             return n;
         } else {
@@ -249,9 +239,19 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
     // ASSIGN 연산자일 경우
     } else if (ast->token.token_number == OP_ASSIGN) {
-        printf("enter OP_ASSIGN\n");
-        Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_in_rA, TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
+        printf("enter OP_ASSIGN\n");        // 인자 1이 lside, 2가 rside.
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_in_rA, TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
         
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    // 복합 대입 연산자일 경우
+    } else if (ast->token.token_number >= OP_ADDEQ && ast->token.token_number <= OP_LSREQ) {
+        printf("enter OP_Compound_Assignment\n");        // 인자 1이 lside, 2가 rside.
+        Node * n = line_maker(ast->token.token_number - reverting_compound_assign, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+    //                                              ^^^^^^^^ 복합대입연산자로써 가진 의미가 전부 표현되었으므로 일반 연산자로 되돌려 진행한다. 
+    //                                                       일반 연산자와 복합대입 연산자 사이의 차를 빼줌으로써 되돌린다.
         n->token.token_value = n->son->brother->token.token_value;
 
         return n;
@@ -434,6 +434,8 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
 Node * tag_generator(Node * parse_input, char * tagtree_name)
 {
     temp_count = symbol_id_count + 1;
+    reverting_compound_assign = OP_ADDEQ - OP_ADD;
+
     Node * tag_top;
 
 

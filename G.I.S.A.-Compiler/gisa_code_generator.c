@@ -221,10 +221,6 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
                     x1->token.token_number = ASM_B;
                     break;
                     
-                case OP_ASSIGN:
-                    x1->token.token_number = ASM_MOV;
-                    break;
-                    
                 default:
                     x1->token = tag->son->token;
                     break;
