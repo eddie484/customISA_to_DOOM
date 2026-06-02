@@ -4,6 +4,7 @@
 Node * asm_pass1_terminal(Node * tag);
 Node * asm_pass1_nt_program(Node * tag);
 Node * asm_pass1_nt_function(Node * tag);
+Node * asm_pass1_nt_scope(Node * tag);
 Node * asm_pass1_nt_instr(Node * tag);
 Node * asm_pass1_nt_instr_loop(Node * tag);
 Node * asm_pass1_nt_return(Node * tag);
@@ -55,7 +56,7 @@ Node * asm_pass1_nt_function(Node * tag){
         Node * x1 = asm_pass1_terminal(tag->son);
         Node * x2 = asm_pass1_terminal(tag->son->brother);
         Node * x3 = asm_pass1_terminal(tag->son->brother->brother);
-        Node * x4 = asm_pass1_nt_instr(tag->son->brother->brother->brother);
+        Node * x4 = asm_pass1_nt_scope(tag->son->brother->brother->brother);
 
         x1->brother = x2;
         x2->brother = x3;
@@ -70,11 +71,36 @@ Node * asm_pass1_nt_function(Node * tag){
     }
 }
 
+Node * asm_pass1_nt_scope(Node * tag){
+    if (tag->token.token_number == TAG_SCOPE) {
+        printf("Processing: asm_pass1_nt_scope\n");
+        Node * x1 = asm_pass1_nt_instr(tag->son);
+        Node * n = node_maker(x1, NULL, ASM_SCOPE, 0);    // Node로 감싸지 않으면 brother로 묶여있던 ASM_INSTR이 끊기는 문제 발생.
+
+        if (tag->brother != NULL) {
+            Node * x2 = asm_pass1_nt_scope(tag->brother);
+            n->brother = x2;
+        } else {
+            n->brother = NULL;
+        }
+
+        return n;
+    } else {
+        printf("TAG to asm tree pass1 과정에서 오류 발생: TAG_SCOPE node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
+        exit(1);
+    }
+}
+
 Node * asm_pass1_nt_instr(Node * tag){
     if (tag->token.token_number == TAG_INSTR) {
         printf("Processing: asm_pass1_nt_instr\n");
         Node * x1 = asm_pass1_nt_instr_loop(tag->son);
         Node * n = node_maker(x1, NULL, ASM_INSTR, 0);
+
+        if (tag->brother != NULL) {
+            Node * n1 = asm_pass1_nt_instr(tag->brother);
+            n->brother = n1;
+        }
 
         return n;
     } else {
@@ -195,6 +221,10 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
                     x1->token.token_number = ASM_B;
                     break;
                     
+                case OP_ASSIGN:
+                    x1->token.token_number = ASM_MOV;
+                    break;
+                    
                 default:
                     x1->token = tag->son->token;
                     break;
@@ -210,6 +240,9 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
             return n;
         }
+    } else if (tag->token.token_number == TAG_NOP) {
+        Node * n = asm_pass1_nt_instr_loop(tag->brother);
+        return n;
     }
 }
 
@@ -385,11 +418,17 @@ Node * code_generator(Node * parse_input, char * codegentree_name)
     asm_pass1_top = asm_pass1_nt_program(parse_input);
     bin_tree_printer(asm_pass1_top);
 
+    printf("Code Generating Pass 1 Finished.\n");
+
     asm_pass2_temp_to_stack(asm_pass1_top);
     bin_tree_printer(asm_pass1_top);
 
+    printf("Code Generating Pass 2 Finished.\n");
+
     asm_pass3_prologue_maker(asm_pass1_top);
     bin_tree_printer(asm_pass1_top);
+
+    printf("Code Generating Pass 3 Finished.\n");
     
 
     bin_tree_file_printer(asm_pass1_top, codegenfp);

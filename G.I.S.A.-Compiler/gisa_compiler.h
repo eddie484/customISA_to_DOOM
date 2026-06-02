@@ -108,6 +108,7 @@
 #define ASM_STACK       207
 #define ASM_PROLOGUE    208
 #define ASM_EPILOGUE    209
+#define ASM_SCOPE       210
 
 #define ASM_MOV         400
 #define ASM_ADD         401
