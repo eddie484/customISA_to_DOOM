@@ -12,6 +12,7 @@
     <unary_op> ::= "~" | "-" | "!"
     <binary_op> ::= "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^" | "<<" | ">>"
                     "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "="
+                    "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | ">>=" | "<<="
 
     <program> ::= <function>
     <function> ::= "KW_INT" IDENT "OPEN_PAREN" <param> "CLOSE_PAREN" "OPEN_BRACE" <instr_list> "CLOSE_BRACE"
@@ -26,6 +27,7 @@
     <unary_op> ::= "OP_TILDE" | "OP_NEG" | "OP_LOGIC_NOT"
     <binary_op> ::= "OP_ADD" | "OP_SUB" | "OP_MUL" | "OP_DIV" | "OP_MOD" | "OP_AND" | "OP_OR" | "OP_XOR" | "OP_SHL" | "OP_LSR"
                     "OP_LOGIC_AND" | "OP_LOGIC_OR" | "OP_EQ" | "OP_NE" | "OP_LT" | "OP_GT" | "OP_LE" | "OP_GE" | "OP_ASSIGN"
+                    "OP_ADDEQ" | "OP_SUBEQ" | "OP_MULEQ" | "OP_DIVEQ" | "OP_MODEQ" | "OP_ANDEQ" | "OP_OREQ" | "OP_XOREQ" | "OP_SHLEQ" | "OP_LSREQ"
 
     <program> ::= <function>
     <function> ::= 2 0 5 <param> 6 7 <instr_list> 8
@@ -40,9 +42,10 @@
     <unary_op> ::= 10 | 11 | 24
     <binary_op> ::= 11 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23
                     25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33
+                    34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43
 
     ---
-새로 배운것: first의 역할을 본인의 first는 여기서 들어올 수 있는 토큰의 경우의 수 역할이고, 어디로 갈진 직접 문법 보고 판단해야 하는것인 줄 알았는데, child의 first를 보고 함수 분기를 정하는 거였다니.. 충격!
+
     FIRST(<program>) = {2}
     FIRST(<function>) = {2}
     FIRST(<param>) = {3}
@@ -54,7 +57,7 @@
     FIRST(<exp>) = {0, 1, 5, 10, 11, 24}
     FIRST(<factor>) = {0, 1, 5, 10, 11, 24}
     FIRST(<unary_op>) = {10, 11, 24}
-    FIRST(<binary_op>) = {11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33}
+    FIRST(<binary_op>) = {11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
 
     FOLLOW(<program>) = {$}
     FOLLOW(<function>) = {$}
@@ -64,8 +67,8 @@
     FOLLOW(<content>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24}
     FOLLOW(<declr>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24}
     FOLLOW(<assign>) = {9}
-    FOLLOW(<exp>) = {6, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33}
-    FOLLOW(<factor>) = {6, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33}
+    FOLLOW(<exp>) = {6, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
+    FOLLOW(<factor>) = {6, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
     FOLLOW(<unary_op>) = {0, 1, 5, 10, 11, 24}
     FOLLOW(<binary_op>) = {0, 1, 5, 10, 11, 24}
 
@@ -105,7 +108,7 @@ int cur_line = 0;
 
 int return_exist;
 
-static const int priority_table[34] = {
+static const int priority_table[44] = {
     [OP_ADD] = 90,
     [OP_MINUS] = 90,
     [OP_MUL] = 100,
@@ -124,7 +127,17 @@ static const int priority_table[34] = {
     [OP_GT] = 70,
     [OP_LE] = 70,
     [OP_GE] = 70,
-    [OP_ASSIGN] = 5
+    [OP_ASSIGN] = 5,
+    [OP_ADDEQ] = 5,
+    [OP_SUBEQ] = 5,
+    [OP_MULEQ] = 5,
+    [OP_DIVEQ] = 5,
+    [OP_MODEQ] = 5,
+    [OP_ANDEQ] = 5,
+    [OP_OREQ] = 5,
+    [OP_XOREQ] = 5,
+    [OP_SHLEQ] = 5,
+    [OP_LSREQ] = 5
 };
 
 
@@ -197,7 +210,7 @@ int first(int input_token, int nt_set){
             return (input_token == 10 || input_token == 11 || input_token == 24);
             
         case NT_BINARY_OP:
-            return (input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33);
+            return (input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43);
             
     }
 }
@@ -229,10 +242,10 @@ int follow(int input_token, int nt_set){
             return (input_token == 9);
             
         case NT_EXP:
-            return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 15 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33);
-            
+            return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 15 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43);
+
         case NT_FACTOR:
-            return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 15 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33);
+            return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 15 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43);
             
         case NT_UNARY_OP:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 24);
@@ -457,7 +470,7 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
         Node * left = p_nt_factor(lex_input);
         
         while ((first(nextSymbol.token_number, NT_BINARY_OP)) && (priority_table[nextSymbol.token_number] >= min_priority)) {
-            if (nextSymbol.token_number == OP_ASSIGN) {
+            if (nextSymbol.token_number >= OP_ASSIGN && nextSymbol.token_number <= OP_LSREQ) {
                 int op_priority = priority_table[nextSymbol.token_number];
                 Node * operator = p_nt_binary_op(lex_input);
                 Node * right = p_nt_exp(lex_input, op_priority);
@@ -541,7 +554,7 @@ Node * p_nt_binary_op(Lexer_result lex_input){      // <binary_op> ::= "OP_ADD" 
     Node * x1;
 
     switch (nextSymbol.token_number) {
-        case OP_ADD: case OP_MUL: case OP_DIV: case OP_MOD: case OP_AND: case OP_OR: case OP_XOR: case OP_SHL: case OP_LSR: case OP_LOGIC_AND: case OP_LOGIC_OR: case OP_EQ: case OP_NE: case OP_LT: case OP_GT: case OP_LE: case OP_GE: case OP_ASSIGN:
+        case OP_ADD: case OP_MUL: case OP_DIV: case OP_MOD: case OP_AND: case OP_OR: case OP_XOR: case OP_SHL: case OP_LSR: case OP_LOGIC_AND: case OP_LOGIC_OR: case OP_EQ: case OP_NE: case OP_LT: case OP_GT: case OP_LE: case OP_GE: case OP_ASSIGN: case OP_ADDEQ: case OP_SUBEQ: case OP_MULEQ: case OP_DIVEQ: case OP_MODEQ: case OP_ANDEQ: case OP_OREQ: case OP_XOREQ: case OP_SHLEQ: case OP_LSREQ:
             x1 = p_terminal(lex_input, nextSymbol.token_number);
             return x1;
         
