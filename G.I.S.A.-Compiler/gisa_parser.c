@@ -481,7 +481,7 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | <un
 
         x1->brother = x2;
 
-        Node * n = node_maker(x1, NULL, NT_FACTOR, 0);
+        Node * n = node_maker(x1, NULL, NT_EXP, 0);
 
         return n;
     } else if (nextSymbol.token_number == OPEN_PAREN) {

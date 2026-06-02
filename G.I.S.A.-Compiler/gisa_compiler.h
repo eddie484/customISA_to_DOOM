@@ -76,6 +76,8 @@
 #define TAG_LABEL_MAKE  309
 #define TAG_COND        310
 #define TAG_CMP         311 //
+#define TAG_SCOPE       312
+#define TAG_NOP         313
 
 #define COND_EQ         385
 #define COND_NE         386
@@ -218,5 +220,6 @@ Node * get_brother(Node * node);
 
 extern int temp_count;
 extern Lexeme_value * lex_val_table;
+extern int symbol_id_count;
 
 #endif

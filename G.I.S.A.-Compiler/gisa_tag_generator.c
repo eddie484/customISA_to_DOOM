@@ -50,6 +50,7 @@ int label_count = 1;
 Node * tag_terminal(Node * ast);
 Node * tag_nt_program(Node * ast);
 Node * tag_nt_function(Node * ast);
+Node * tag_nt_scope(Node * ast);
 Node * tag_nt_instr(Node * ast);
 Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB);
 
@@ -87,7 +88,7 @@ Node * tag_nt_function(Node * ast){
         Node * x1 = tag_terminal(ast->son);
         Node * x2 = tag_terminal(ast->son->brother);
         Node * x3 = tag_terminal(ast->son->brother->brother);
-        Node * x4 = tag_nt_instr(ast->son->brother->brother->brother);
+        Node * x4 = tag_nt_scope(ast->son->brother->brother->brother);
 
         x1->brother = x2;
         x2->brother = x3;
@@ -102,12 +103,40 @@ Node * tag_nt_function(Node * ast){
     }
 }
 
+Node * tag_nt_scope(Node * ast){
+    if (ast->token.token_number == NT_SCOPE) {
+        printf("Processing: tag_nt_scope\n");
+        Node * x1 = tag_nt_instr(ast->son);
+
+        Node * n = node_maker(x1, NULL, TAG_SCOPE, 0);
+
+        if (ast->brother != NULL) {
+            Node * n1 = tag_nt_scope(ast->brother);
+            n->brother = n1;
+        } else {
+            n->brother = NULL;
+        }
+
+        return n;
+    } else {
+        printf("AST to TAG 과정에서 오류 발생: NT_SCOPE node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", ast->token.token_number);
+        exit(1);
+    }
+}
+
 Node * tag_nt_instr(Node * ast){
     if (ast->token.token_number == NT_CONTENT) {
         printf("Processing: tag_nt_instr\n");
         Node * x1 = tag_nt_instr_interpreting(ast->son, 0, 0);
 
         Node * n = node_maker(x1, NULL, TAG_INSTR, 0);
+
+        if (ast->brother->token.token_number != NT_INSTR_LIST) {    // while로 실수해 무한루프 나왔던 부분. if로 할 것.
+            Node * n1 = tag_nt_instr(ast->brother);
+            n->brother = n1;
+            //printf("DEBUG: 다음 라인 탑 토큰: <%d, %d>\n", ast->brother->token.token_number, ast->brother->token.token_value);
+            //printf("DEBUG: 다음 라인 탑-son 토큰: <%d, %d>\n", ast->brother->son->token.token_number, ast->brother->son->token.token_value);
+        }
 
         return n;
     } else {
@@ -285,6 +314,17 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, return_val_temp);
 
             return n;
+        } else if (ast->son->token.token_number == OP_ASSIGN) {
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);   // symbol id를 리턴하도록 만들어야 함.
+            Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);      // rside
+            Node * n3 = tag_nt_instr_interpreting(ast->son, n1->token.token_value, n2->token.token_value);  // mov. 인자 1이 lside, 2가 rside.
+
+            n1->brother = n2;
+            n2->brother = n3;
+
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n3->token.token_value);
+
+            return n;
         } else {
             printf("EXP로 허용되지 않는 토큰 입력: <%d, %d>\n", ast->son->token.token_number, ast->son->token.token_value);
             return NULL;
@@ -303,7 +343,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     // 단항 연산자일 경우 (OP_TILDE, OP_NEG)
     } else if (ast->token.token_number == OP_TILDE || ast->token.token_number == OP_NEG) {
         printf("enter OP_%d\n", ast->token.token_number);
-        Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+        Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_count++, TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
         
         n->token.token_value = n->son->brother->token.token_value;
 
@@ -315,6 +355,25 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
         
         n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    // ASSIGN 연산자일 경우
+    } else if (ast->token.token_number == OP_ASSIGN) {
+        printf("enter OP_ASSIGN\n");
+        Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_in_rA, TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
+        
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    // Symbol일 경우
+    } else if (ast->token.token_number == SEM_SYMBOL) {
+        printf("enter SEM_SYMBOL\n");
+        Node * n = node_maker(NULL, NULL, TAG_NOP, ast->token.token_value);
+                
+
+        printf("\tSYMBOL CALL. SYMBOL ID is %d.\n", n->token.token_value);
 
         return n;
 
