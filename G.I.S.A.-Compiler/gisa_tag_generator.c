@@ -44,7 +44,7 @@
 #include "gisa_compiler.h"
 
 
-int temp_count = 1;     // 0은 처음 입력값이므로 1부터 임시변수 시작.
+int temp_count;     // 0은 처음 입력값이므로 1부터 임시변수 시작.
 int label_count = 1;
 
 Node * tag_terminal(Node * ast);
@@ -385,6 +385,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
 Node * tag_generator(Node * parse_input, char * tagtree_name)
 {
+    temp_count = symbol_id_count + 1;
     Node * tag_top;
 
 
