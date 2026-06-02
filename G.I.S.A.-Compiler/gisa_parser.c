@@ -103,6 +103,8 @@ int token_type[1024];          // 읽어온 lexeme들의 타입을 저장.
 int token_value[1024];          // 읽어온 lexeme들의 값을 저장. 
 int cur_line = 0;
 
+int return_exist;
+
 static const int priority_table[34] = {
     [OP_ADD] = 90,
     [OP_MINUS] = 90,
@@ -304,6 +306,24 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
         x1->brother = x2;
         x2->brother = x4;
         x4->brother = x7;
+
+
+        if (return_exist == 0) {    // return이 없는 함수일 경우, return 0;을 삽입한다.
+            printf("Parsing 도중 return이 발견되지 않았습니다. return 0;을 삽입합니다.\n");
+            Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
+            Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
+            Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
+
+            Node * brother = x7n1;
+            while (brother->brother->token.token_number != NT_INSTR_LIST) {
+                brother = brother->brother;
+            }
+
+            content->son = ret;
+            ret->brother = zero;
+            content->brother = brother->brother;
+            brother->brother = content;
+        }
         
         Node * n = node_maker(x1, NULL, NT_FUNCTION, 0);
 
@@ -359,6 +379,7 @@ Node * p_nt_instr(Lexer_result lex_input){      // <param> ::= "KW_VOID"
 Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <exp> "PN_SEMI"
     if (nextSymbol.token_number == KW_RETURN) {
         printf("parsing: nt_content\n");
+        return_exist = 1;
         Node * x1 = p_terminal(lex_input, KW_RETURN);
         Node * x2 = p_nt_exp(lex_input, 0);
         Node * x3 = p_terminal(lex_input, PN_SEMI);
@@ -549,6 +570,7 @@ Node * parser(Lexer_result lex_input, char *parse_name)
 {
     symbolCount = 0;
     Node * ast_top;
+    return_exist = 0;
 
 
     FILE *parsefp = fopen(parse_name, "w");         // 처리 결과 ast를 저장할 파일 오픈
