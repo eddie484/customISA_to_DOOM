@@ -432,7 +432,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     lexeme[lexeme_count].token_number = OP_DIVEQ;
                     lexeme[lexeme_count].token_value = 0;
 
-                    printf("<%d, %d>, //\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    printf("<%d, %d>, /=\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
                     fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
                     lexeme_count++;
                     cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
