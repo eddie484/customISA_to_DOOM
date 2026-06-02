@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
         
 
     } else {
-        printf("입력된 인자 개수가 잘못되었습니다.\n인자로는 \"파일명\" 혹은 \"옵션명 파일명\"만 사용 가능합니다.\n옵션: --lex, --parse, --codegen, -S\n");
+        printf("입력된 인자 개수가 잘못되었습니다.\n인자로는 \"파일명\" 혹은 \"옵션명 파일명\"만 사용 가능합니다.\n옵션: --lex, --parse, --semantic, --tag --codegen, -S, --keep\n");
         return 1;
     }
 
