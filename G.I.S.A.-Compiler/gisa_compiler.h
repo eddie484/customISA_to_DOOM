@@ -45,6 +45,17 @@
 
 #define OP_ASSIGN       33  // =
 
+#define OP_ADDEQ        34
+#define OP_SUBEQ        35
+#define OP_MULEQ        36
+#define OP_DIVEQ        37
+#define OP_MODEQ        38
+#define OP_ANDEQ        39
+#define OP_OREQ         40
+#define OP_XOREQ        41
+#define OP_SHLEQ        42
+#define OP_LSREQ        43
+
 
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101
