@@ -226,7 +226,7 @@ void ident_symbolizer(Node * node) {
     }
     
     else if (node->token.token_number == NT_EXP) {
-        if (node->son->token.token_number == OP_ASSIGN && node->son->brother->token.token_number != SEM_SYMBOL) {
+        if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_LSREQ) && node->son->brother->token.token_number != SEM_SYMBOL) {
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
         }
