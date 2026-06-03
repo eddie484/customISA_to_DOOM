@@ -62,6 +62,11 @@
 #define OP_PRE_DECRE    47
 #define OP_POST_DECRE   48
 
+#define KW_IF           49 
+#define KW_ELSE         50
+#define OP_QUESTION     51
+#define OP_COLON        52
+
 
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101

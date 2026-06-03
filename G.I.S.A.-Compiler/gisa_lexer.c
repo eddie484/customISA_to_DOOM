@@ -81,7 +81,9 @@ static const int lexing_state_table[128] = {
     ['<'] = 19,
     ['>'] = 20,
     ['!'] = 21,
-    ['='] = 22
+    ['='] = 22,
+    ['?'] = 23,
+    [':'] = 24
 };
 
 static const Char_macro_mix lexing_result_table[128] = {
@@ -101,7 +103,13 @@ static const Char_macro_mix lexing_result_table[128] = {
     [9].char_icon = ';',
     
     [10].macro_number = OP_TILDE,
-    [10].char_icon = '~'
+    [10].char_icon = '~',
+    
+    [23].macro_number = OP_QUESTION,
+    [23].char_icon = '?',
+    
+    [24].macro_number = OP_COLON,
+    [24].char_icon = ':'
 };
 
 
@@ -301,6 +309,14 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     lexeme[lexeme_count].token_number = KW_RETURN;
                     lexeme[lexeme_count].token_value = 0;
                     //printf("RETURN");
+                } else if (!strcmp(get_str, "if")) {
+                    lexeme[lexeme_count].token_number = KW_IF;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("IF");
+                } else if (!strcmp(get_str, "else")) {
+                    lexeme[lexeme_count].token_number = KW_ELSE;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("ELSE");
                 } else {
                     lexeme[lexeme_count].token_number = IDENT;
                     lexeme[lexeme_count].token_value = lexval_manager (get_str);
@@ -760,7 +776,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
 
 
             // 한 글자 짜리 토큰들 처리
-            } else if ((cur_state >= 5 && cur_state <= 10) || (cur_state >= 12 && cur_state <= 15) || (cur_state == 18)) {
+            } else if ((cur_state >= 5 && cur_state <= 10) || (cur_state >= 12 && cur_state <= 15) || (cur_state == 18) || (cur_state == 23) || (cur_state == 24)) {
                 lexeme[lexeme_count].token_number = lexing_result_table[cur_state].macro_number;
                 lexeme[lexeme_count].token_value = 0;
 
