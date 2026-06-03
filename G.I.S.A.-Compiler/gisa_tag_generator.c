@@ -201,6 +201,28 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = line_op_comp(ast, temp_in_rA, temp_in_rB);
 
             return n;
+        } else if (ast->son->token.token_number == OP_PRE_INCRE || ast->son->token.token_number == OP_PRE_DECRE) {
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
+            Node * n2 = tag_nt_instr_interpreting(ast->son, 0, n1->token.token_value);
+
+            n1->brother = n2;
+
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
+
+            return n;
+        } else if ((ast->son->token.token_number == SEM_SYMBOL) && (ast->son->brother->token.token_number == OP_POST_INCRE || ast->son->brother->token.token_number == OP_POST_DECRE)) {
+            Node * n1 = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);
+            Node * n2 = line_maker(TAG_MOV, TAG_TEMP, temp_count++, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
+            n2->token.token_value = n2->son->brother->token.token_value;
+            Node * n3 = tag_nt_instr_interpreting(ast->son->brother, 0, n1->token.token_value);
+
+
+            n1->brother = n2;
+            n2->brother = n3;
+
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
+
+            return n;
         } else {
             printf("EXP로 허용되지 않는 토큰 입력: <%d, %d>\n", ast->son->token.token_number, ast->son->token.token_value);
             return NULL;
@@ -263,6 +285,17 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
                 
 
         printf("\tSYMBOL CALL. SYMBOL ID is %d.\n", n->token.token_value);
+
+        return n;
+
+    // 증감 연산자일 경우
+    } else if (ast->token.token_number >= OP_PRE_INCRE && ast->token.token_number <= OP_POST_DECRE) {
+        printf("enter INCRE/DECRE OP\n");
+
+        int op = (ast->token.token_number == OP_PRE_INCRE || ast->token.token_number == OP_POST_INCRE) ? OP_ADD : OP_SUB;
+        Node * n = line_maker(op, TAG_TEMP, temp_in_rB, TAG_TEMP, temp_in_rB, NUM_INT, lexval_manager("1"));
+        
+        n->token.token_value = n->son->brother->token.token_value;
 
         return n;
 
