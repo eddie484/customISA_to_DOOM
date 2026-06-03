@@ -475,7 +475,7 @@ Node * p_nt_assign(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT "
 
 Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <factor> | <exp> <binary_op> <exp>
     printf("Current nextSymbol number: %d\n", nextSymbol.token_number);
-    if (nextSymbol.token_number == IDENT || nextSymbol.token_number == NUM_INT || nextSymbol.token_number == OPEN_PAREN || first(nextSymbol.token_number, NT_UNARY_OP || nextSymbol.token_number == OP_INCREMENT || nextSymbol.token_number == OP_DECREMENT)) {
+    if (nextSymbol.token_number == IDENT || nextSymbol.token_number == NUM_INT || nextSymbol.token_number == OPEN_PAREN || first(nextSymbol.token_number, NT_UNARY_OP)) {
         printf("parsing: nt_exp\n");
         Node * left = p_nt_factor(lex_input);
         
