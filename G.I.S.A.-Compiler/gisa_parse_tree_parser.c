@@ -9,7 +9,7 @@
     <assign> ::= "=" <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp>
     <factor> ::= NUM_INT | IDENT | <unary_op> <factor> | "(" <exp> ")"
-    <unary_op> ::= "~" | "-" | "!"
+    <unary_op> ::= "~" | "-" | "!" | "++" | "--"
     <binary_op> ::= "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^" | "<<" | ">>"
                     "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "="
                     "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | ">>=" | "<<="
@@ -24,7 +24,7 @@
     <assign> ::= "OP_ASSIGN" <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp>
     <factor> ::= NUM_INT | IDENT | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
-    <unary_op> ::= "OP_TILDE" | "OP_NEG" | "OP_LOGIC_NOT"
+    <unary_op> ::= "OP_TILDE" | "OP_NEG" | "OP_LOGIC_NOT" | "OP_PRE_INCRE" | "OP_PRE_DECRE"
     <binary_op> ::= "OP_ADD" | "OP_SUB" | "OP_MUL" | "OP_DIV" | "OP_MOD" | "OP_AND" | "OP_OR" | "OP_XOR" | "OP_SHL" | "OP_LSR"
                     "OP_LOGIC_AND" | "OP_LOGIC_OR" | "OP_EQ" | "OP_NE" | "OP_LT" | "OP_GT" | "OP_LE" | "OP_GE" | "OP_ASSIGN"
                     "OP_ADDEQ" | "OP_SUBEQ" | "OP_MULEQ" | "OP_DIVEQ" | "OP_MODEQ" | "OP_ANDEQ" | "OP_OREQ" | "OP_XOREQ" | "OP_SHLEQ" | "OP_LSREQ"
@@ -39,7 +39,7 @@
     <assign> ::= 33 <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp>
     <factor> ::= 1 | 0 | <unary_op> <factor> | 5 <exp> 6
-    <unary_op> ::= 10 | 11 | 24
+    <unary_op> ::= 10 | 11 | 24 | 45 | 47
     <binary_op> ::= 11 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23
                     25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33
                     34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43
@@ -49,28 +49,28 @@
     FIRST(<program>) = {2}
     FIRST(<function>) = {2}
     FIRST(<param>) = {3}
-    FIRST(<instr_list>) = {0, 1, 2, 4, 5, 9, 10, 11, 24, ε}
-    FIRST(<instr>) = {0, 1, 2, 4, 5, 9, 10, 11, 24}
-    FIRST(<content>) = {0, 1, 4, 5, 9, 10, 11, 24}
+    FIRST(<instr_list>) = {0, 1, 2, 4, 5, 9, 10, 11, 24, 45, 47, ε}
+    FIRST(<instr>) = {0, 1, 2, 4, 5, 9, 10, 11, 24, 45, 47}
+    FIRST(<content>) = {0, 1, 4, 5, 9, 10, 11, 24, 45, 47}
     FIRST(<declr>) = {2}
     FIRST(<assign>) = {33, ε}
-    FIRST(<exp>) = {0, 1, 5, 10, 11, 24}
-    FIRST(<factor>) = {0, 1, 5, 10, 11, 24}
-    FIRST(<unary_op>) = {10, 11, 24}
+    FIRST(<exp>) = {0, 1, 5, 10, 11, 24, 45, 47}
+    FIRST(<factor>) = {0, 1, 5, 10, 11, 24, 45, 47}
+    FIRST(<unary_op>) = {10, 11, 24, 45, 47}
     FIRST(<binary_op>) = {11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
 
     FOLLOW(<program>) = {$}
     FOLLOW(<function>) = {$}
     FOLLOW(<param>) = {6}
     FOLLOW(<instr_list>) = {8}
-    FOLLOW(<instr>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24}
-    FOLLOW(<content>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24}
-    FOLLOW(<declr>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24}
+    FOLLOW(<instr>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24, 45, 47}
+    FOLLOW(<content>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24, 45, 47}
+    FOLLOW(<declr>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24, 45, 47}
     FOLLOW(<assign>) = {9}
     FOLLOW(<exp>) = {6, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
     FOLLOW(<factor>) = {6, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
-    FOLLOW(<unary_op>) = {0, 1, 5, 10, 11, 24}
-    FOLLOW(<binary_op>) = {0, 1, 5, 10, 11, 24}
+    FOLLOW(<unary_op>) = {0, 1, 5, 10, 11, 24, 45, 47}
+    FOLLOW(<binary_op>) = {0, 1, 5, 10, 11, 24, 45, 47}
 
     ---
 
@@ -180,13 +180,13 @@ int first(int input_token, int nt_set){
             return (input_token == 3);
             
         case NT_INSTR_LIST:
-            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_INSTR:
-            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_CONTENT:
-            return (input_token == 0 || input_token == 1 || input_token == 4 || input_token == 5 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 4 || input_token == 5 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_DECLR:
             return (input_token == 2);
@@ -195,13 +195,13 @@ int first(int input_token, int nt_set){
             return (input_token == 33);
             
         case NT_EXP:
-            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_FACTOR:
-            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_UNARY_OP:
-            return (input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_BINARY_OP:
             return (input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43);
@@ -224,13 +224,13 @@ int follow(int input_token, int nt_set){
             return (input_token == 8);
             
         case NT_INSTR:
-            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_CONTENT:
-            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_DECLR:
-            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_ASSIGN:
             return (input_token == 9);
@@ -242,10 +242,10 @@ int follow(int input_token, int nt_set){
             return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 15 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43);
             
         case NT_UNARY_OP:
-            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
         case NT_BINARY_OP:
-            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 24);
+            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
     }
 }
@@ -275,6 +275,33 @@ Node * p_t_OP_MINUS(Lexer_result lex_input, int term_num){
         n = node_maker(NULL, NULL, OP_SUB, nextSymbol.token_value);
 
     } else error(term_num, nextSymbol);
+
+    get_nextSymbol(lex_input);
+
+    return n;
+}
+
+Node * p_t_OP_INCRE_DECRE(Lexer_result lex_input, int term_num){    // term_num 0: PRE, 1: POST
+    Node * n;
+
+    if (term_num == 0 && nextSymbol.token_number == OP_INCREMENT){
+        printf("parsing: OP_PRE_INCRE\n");
+        n = node_maker(NULL, NULL, OP_PRE_INCRE, nextSymbol.token_value);
+
+    } else if (term_num == 1 && nextSymbol.token_number == OP_INCREMENT){
+        printf("parsing: OP_POST_INCRE\n");
+        n = node_maker(NULL, NULL, OP_POST_INCRE, nextSymbol.token_value);
+
+    } else if (term_num == 0 && nextSymbol.token_number == OP_DECREMENT){
+        printf("parsing: OP_PRE_DECRE\n");
+        n = node_maker(NULL, NULL, OP_PRE_DECRE, nextSymbol.token_value);
+
+    } else if (term_num == 1 && nextSymbol.token_number == OP_DECREMENT){
+        printf("parsing: OP_POST_DECRE\n");
+        n = node_maker(NULL, NULL, OP_POST_DECRE, nextSymbol.token_value);
+
+    } else printf("Parse Error: token number Increment/Decrement OP인 lexeme가 주어져야 할 차례지만, 제공된 lexeme는 <%d, %d>입니다.\n", nextSymbol.token_number, nextSymbol.token_value);
+    
 
     get_nextSymbol(lex_input);
 
@@ -442,7 +469,8 @@ Node * p_nt_assign(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT "
 }
 
 Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <factor> | <exp> <binary_op> <exp>
-    if (nextSymbol.token_number == IDENT || nextSymbol.token_number == NUM_INT || nextSymbol.token_number == OPEN_PAREN || first(nextSymbol.token_number, NT_UNARY_OP)) {
+    printf("Current nextSymbol number: %d\n", nextSymbol.token_number);
+    if (nextSymbol.token_number == IDENT || nextSymbol.token_number == NUM_INT || nextSymbol.token_number == OPEN_PAREN || first(nextSymbol.token_number, NT_UNARY_OP || nextSymbol.token_number == OP_INCREMENT || nextSymbol.token_number == OP_DECREMENT)) {
         printf("parsing: nt_exp\n");
         Node * left = p_nt_factor(lex_input);
         
@@ -486,6 +514,12 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | <un
         printf("parsing: nt_factor\n");
         Node * x1 = p_terminal(lex_input, IDENT);
         
+        if (nextSymbol.token_number == OP_INCREMENT || nextSymbol.token_number == OP_DECREMENT) {
+            Node * x2 = p_t_OP_INCRE_DECRE(lex_input, 1);    // 0: pre, 1: post
+
+            x1->brother = x2;
+        }        
+
         Node * n = node_maker(x1, NULL, NT_FACTOR, 0);
 
         return n;
@@ -511,6 +545,16 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | <un
         Node * n = node_maker(x1, NULL, NT_FACTOR, 0);
 
         return n;
+    } else if (first(nextSymbol.token_number, NT_UNARY_OP)) {
+        printf("parsing: nt_factor\n");
+        Node * x1 = p_nt_unary_op(lex_input);
+        Node * x2 = p_nt_factor(lex_input);
+
+        x1->brother = x2;
+
+        Node * n = node_maker(x1, NULL, NT_FACTOR, 0);
+
+        return n;
     } else error(1, nextSymbol);
 }
 
@@ -525,6 +569,11 @@ Node * p_nt_unary_op(Lexer_result lex_input){      // <unary_op> ::= "OP_TILDE" 
 
         case OP_MINUS:
             x1 = p_t_OP_MINUS(lex_input, OP_NEG);
+            break;
+
+        case OP_INCREMENT:
+        case OP_DECREMENT:
+            x1 = p_t_OP_INCRE_DECRE(lex_input, 0);    // 0: pre
             break;
 
         default: error(3, nextSymbol);

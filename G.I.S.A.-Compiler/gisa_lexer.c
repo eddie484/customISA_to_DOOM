@@ -374,7 +374,19 @@ Lexer_result lexer(char *prep_name, char *lex_name)
 
             // state = 12. +로 시작하는 경우.
             } else if (cur_state == 12) {
-                if (buf[cur_index] == '=') {    // +=인 경우
+                if (buf[cur_index] == '+') {    // ++인 경우
+                    lexeme[lexeme_count].token_number = OP_INCREMENT;
+                    lexeme[lexeme_count].token_value = 0;
+
+                    printf("<%d, %d>, ++\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else if (buf[cur_index] == '=') {    // +=인 경우
                     lexeme[lexeme_count].token_number = OP_ADDEQ;
                     lexeme[lexeme_count].token_value = 0;
 
@@ -413,7 +425,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     memmove(buf, buf + cur_index, 1024 - cur_index);
                     cur_index = 0;
 
-                } else {                            // +인 경우
+                } else {                            // *인 경우
                     lexeme[lexeme_count].token_number = OP_MUL;
                     lexeme[lexeme_count].token_value = 0;
 

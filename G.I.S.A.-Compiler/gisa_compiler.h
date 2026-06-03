@@ -56,6 +56,12 @@
 #define OP_SHLEQ        42
 #define OP_LSREQ        43
 
+#define OP_INCREMENT    44
+#define OP_PRE_INCRE    45
+#define OP_POST_INCRE   46
+#define OP_PRE_DECRE    47
+#define OP_POST_DECRE   48
+
 
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101
