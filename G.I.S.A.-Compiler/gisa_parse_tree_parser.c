@@ -8,7 +8,8 @@
     <declr> ::= "int" IDENT <assign> ";"
     <assign> ::= "=" <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp>
-    <factor> ::= NUM_INT | IDENT | <unary_op> <factor> | "(" <exp> ")"
+    <factor> ::= NUM_INT | IDENT <postfix> | <unary_op> <factor> | "(" <exp> ")"
+    <postfix> ::= "++" | "--" | ε
     <unary_op> ::= "~" | "-" | "!" | "++" | "--"
     <binary_op> ::= "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^" | "<<" | ">>"
                     "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "="
@@ -23,9 +24,10 @@
     <declr> ::= "KW_INT" IDENT <assign> "PN_SEMI"
     <assign> ::= "OP_ASSIGN" <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp>
-    <factor> ::= NUM_INT | IDENT | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
-    <unary_op> ::= "OP_TILDE" | "OP_NEG" | "OP_LOGIC_NOT" | "OP_PRE_INCRE" | "OP_PRE_DECRE"
-    <binary_op> ::= "OP_ADD" | "OP_SUB" | "OP_MUL" | "OP_DIV" | "OP_MOD" | "OP_AND" | "OP_OR" | "OP_XOR" | "OP_SHL" | "OP_LSR"
+    <factor> ::= NUM_INT | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
+    <postfix> ::= "OP_INCREMENT" | "OP_DECREMENT" | ε
+    <unary_op> ::= "OP_TILDE" | "OP_MINUS" | "OP_LOGIC_NOT" | "OP_INCREMENT" | "OP_DECREMENT"
+    <binary_op> ::= "OP_MINUS" | "OP_ADD" | "OP_MUL" | "OP_DIV" | "OP_MOD" | "OP_AND" | "OP_OR" | "OP_XOR" | "OP_SHL" | "OP_LSR"
                     "OP_LOGIC_AND" | "OP_LOGIC_OR" | "OP_EQ" | "OP_NE" | "OP_LT" | "OP_GT" | "OP_LE" | "OP_GE" | "OP_ASSIGN"
                     "OP_ADDEQ" | "OP_SUBEQ" | "OP_MULEQ" | "OP_DIVEQ" | "OP_MODEQ" | "OP_ANDEQ" | "OP_OREQ" | "OP_XOREQ" | "OP_SHLEQ" | "OP_LSREQ"
 
@@ -38,9 +40,10 @@
     <declr> ::= 2 0 <assign> 9
     <assign> ::= 33 <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp>
-    <factor> ::= 1 | 0 | <unary_op> <factor> | 5 <exp> 6
-    <unary_op> ::= 10 | 11 | 24 | 45 | 47
-    <binary_op> ::= 11 | 15 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23
+    <factor> ::= 1 | 0 <postfix> | <unary_op> <factor> | 5 <exp> 6
+    <postfix> ::= 13 | 44 | ε
+    <unary_op> ::= 10 | 11 | 13 | 24 | 44
+    <binary_op> ::= 11 | 14 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23
                     25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33
                     34 | 35 | 36 | 37 | 38 | 39 | 40 | 41 | 42 | 43
 
@@ -49,28 +52,30 @@
     FIRST(<program>) = {2}
     FIRST(<function>) = {2}
     FIRST(<param>) = {3}
-    FIRST(<instr_list>) = {0, 1, 2, 4, 5, 9, 10, 11, 24, 45, 47, ε}
-    FIRST(<instr>) = {0, 1, 2, 4, 5, 9, 10, 11, 24, 45, 47}
-    FIRST(<content>) = {0, 1, 4, 5, 9, 10, 11, 24, 45, 47}
+    FIRST(<instr_list>) = {0, 1, 2, 4, 5, 9, 10, 11, 13, 24, 44, ε}
+    FIRST(<instr>) = {0, 1, 2, 4, 5, 9, 10, 11, 13, 24, 44}
+    FIRST(<content>) = {0, 1, 4, 5, 9, 10, 11, 13, 24, 44}
     FIRST(<declr>) = {2}
     FIRST(<assign>) = {33, ε}
-    FIRST(<exp>) = {0, 1, 5, 10, 11, 24, 45, 47}
-    FIRST(<factor>) = {0, 1, 5, 10, 11, 24, 45, 47}
-    FIRST(<unary_op>) = {10, 11, 24, 45, 47}
-    FIRST(<binary_op>) = {11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
+    FIRST(<exp>) = {0, 1, 5, 10, 11, 13, 24, 44}
+    FIRST(<factor>) = {0, 1, 5, 10, 11, 13, 24, 44}
+    FIRST(<postfix>) = {13, 44, ε}
+    FIRST(<unary_op>) = {10, 11, 13, 24, 44}
+    FIRST(<binary_op>) = {11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
 
     FOLLOW(<program>) = {$}
     FOLLOW(<function>) = {$}
     FOLLOW(<param>) = {6}
     FOLLOW(<instr_list>) = {8}
-    FOLLOW(<instr>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24, 45, 47}
-    FOLLOW(<content>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24, 45, 47}
-    FOLLOW(<declr>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 24, 45, 47}
+    FOLLOW(<instr>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 13, 24, 44}
+    FOLLOW(<content>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 13, 24, 44}
+    FOLLOW(<declr>) = {0, 1, 2, 4, 5, 8, 9, 10, 11, 13, 24, 44}
     FOLLOW(<assign>) = {9}
-    FOLLOW(<exp>) = {6, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
-    FOLLOW(<factor>) = {6, 9, 11, 15, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
-    FOLLOW(<unary_op>) = {0, 1, 5, 10, 11, 24, 45, 47}
-    FOLLOW(<binary_op>) = {0, 1, 5, 10, 11, 24, 45, 47}
+    FOLLOW(<exp>) = {6, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
+    FOLLOW(<factor>) = {6, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
+    FOLLOW(<postfix>) = {6, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
+    FOLLOW(<unary_op>) = {0, 1, 5, 10, 11, 13, 24, 44}
+    FOLLOW(<binary_op>) = {0, 1, 5, 10, 11, 13, 24, 44}
 
     ---
 
@@ -506,7 +511,7 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | <un
     if (nextSymbol.token_number == NUM_INT) {
         printf("parsing: nt_factor\n");
         Node * x1 = p_terminal(lex_input, NUM_INT);
-        
+
         Node * n = node_maker(x1, NULL, NT_FACTOR, 0);
 
         return n;
