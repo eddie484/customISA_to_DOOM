@@ -133,9 +133,8 @@ void ident_symbolizer(Node * node) {
     // *** IN ***
     if (node->token.token_number == NT_SCOPE) {
         push();
-    } 
-    
-    else if (node->token.token_number == NT_DECLR) {    // NT_DECLR 구조: <DECLR>->
+
+    } else if (node->token.token_number == NT_DECLR) {    // NT_DECLR 구조: <DECLR>->
         int symbol_id = symbol_maker(node);
         Node * ident_node = node->son;
 
@@ -194,15 +193,17 @@ void ident_symbolizer(Node * node) {
             ident_symbolizer(node);     // brother를 node 자리에 당겨왔으므로 다시 함수호출해 brother였던 노드를 처리한다.
         }
 
-        
-
-    } 
-    
-    else if (node->token.token_number == IDENT) {
+    } else if (node->token.token_number == IDENT) {
         int symbol_id = symbol_finder(node->token.token_value);
 
         node->token.token_number = SEM_SYMBOL;
         node->token.token_value = symbol_id;
+        
+    } else if (node->token.token_number == OP_PRE_INCRE || node->token.token_number == OP_PRE_DECRE) {
+        if (node->brother->token.token_number != IDENT && node->brother->token.token_number != SEM_SYMBOL) {
+            printf("오류: OP_PRE_INCRE/OP_PRE_DECRE 연산자의 인자로 변수가 아닌 노드 <%d, %d>를 사용하려 합니다. 종료합니다.\n", node->brother->token.token_number, node->brother->token.token_value);
+            exit(1);    // 미선언 변수 사용 시도한 경우.
+        }
     }
 
 
