@@ -357,14 +357,27 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
             Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
 
             Node * brother = x7n1;
-            while (brother->brother->token.token_number != NT_INSTR_LIST) {
+            while ((brother->brother != NULL) && (brother->brother->token.token_number != NT_INSTR_LIST)) {
                 brother = brother->brother;
             }
 
             content->son = ret;
             ret->brother = zero;
-            content->brother = brother->brother;
-            brother->brother = content;
+
+            if (brother->brother == NULL) {     // 빈 scope일 때. brother가 instr_list를 가리키고 있음. 따라서 return이 brother 앞에 와야함.
+                brother->son = content->son;
+                brother->brother = content;
+                brother->token = content->token;
+
+                content->son = NULL;
+                content->brother = NULL;
+                content->token.token_number = NT_INSTR_LIST;
+                content->token.token_value = 0;
+
+            } else {    // 비지 않은 scope일 때
+                content->brother = brother->brother;
+                brother->brother = content;
+            }
         }
         
         Node * n = node_maker(x1, NULL, NT_FUNCTION, 0);
