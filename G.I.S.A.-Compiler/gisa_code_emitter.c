@@ -271,6 +271,51 @@ void asm_printer(Node * node, FILE * codeemitfp){
                             printf("\tBNE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             fprintf(codeemitfp, "\tBNE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             break;
+                            
+                        case (COND_CS):
+                            printf("\tBCS LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBCS LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            break;
+                            
+                        case (COND_CC):
+                            printf("\tBCC LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBCC LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            break;
+
+                        case (COND_MI):
+                            printf("\tBMI LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBMI LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            break;
+
+                        case (COND_PL):
+                            printf("\tBPL LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBPL LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            break;
+
+                        case (COND_VS):
+                            printf("\tBVS LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBVS LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            break;
+
+                        case (COND_VC):
+                            printf("\tBVC LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBVC LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            break;
+
+                        case (COND_HI):
+                            printf("\tBHI LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBHI LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            break;
+
+                        case (COND_LS):
+                            printf("\tBLS LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBLS LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            break;
+
+                        case (COND_GE):
+                            printf("\tBGE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBGE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            break;
 
                         case (COND_LT):
                             printf("\tBLT LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
@@ -287,9 +332,9 @@ void asm_printer(Node * node, FILE * codeemitfp){
                             fprintf(codeemitfp, "\tBLE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             break;
 
-                        case (COND_GE):
-                            printf("\tBGE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
-                            fprintf(codeemitfp, "\tBGE LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                        case (COND_AL):
+                            printf("\tBAL LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tBAL LABEL_%d\n", node->son->brother->brother->brother->token.token_value);
                             break;
 
                         default:

@@ -506,9 +506,9 @@ Node * p_nt_else(Lexer_result lex_input){   // <else> ::= "KW_ELSE" <instr> | ε
         Node * x1 = p_terminal(lex_input, KW_ELSE);
         Node * x2 = p_nt_instr(lex_input);
 
-        x1->brother = x2;
-        
-        Node * n = node_maker(x1, NULL, NT_ELSE, 0);
+        Node * n = node_maker(x2, NULL, NT_ELSE, 0);
+
+        free(x1);
 
         return n;
     } else if (follow(nextSymbol.token_number, NT_ELSE)) {
