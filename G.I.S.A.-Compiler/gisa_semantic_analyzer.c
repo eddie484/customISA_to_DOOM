@@ -131,7 +131,7 @@ void ident_symbolizer(Node * node) {
     printf("Ident_Symbolizer Start: Node <%d, %d>\n", node->token.token_number, node->token.token_value);
 
     // *** IN ***
-    if (node->token.token_number == NT_SCOPE) {
+    if (node->token.token_number == NT_BLOCK) {
         push();
 
     } else if (node->token.token_number == NT_DECLR) {    // NT_DECLR 구조: <DECLR>->
@@ -222,7 +222,7 @@ void ident_symbolizer(Node * node) {
 
 
     // *** OUT ***
-    if (node->token.token_number == NT_SCOPE) {
+    if (node->token.token_number == NT_BLOCK) {
         pop();
     }
     
