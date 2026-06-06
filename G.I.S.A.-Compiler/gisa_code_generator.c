@@ -4,7 +4,7 @@
 Node * asm_pass1_terminal(Node * tag);
 Node * asm_pass1_nt_program(Node * tag);
 Node * asm_pass1_nt_function(Node * tag);
-Node * asm_pass1_nt_scope(Node * tag);
+Node * asm_pass1_nt_block(Node * tag);
 Node * asm_pass1_nt_instr(Node * tag);
 Node * asm_pass1_nt_instr_loop(Node * tag);
 Node * asm_pass1_nt_return(Node * tag);
@@ -56,7 +56,7 @@ Node * asm_pass1_nt_function(Node * tag){
         Node * x1 = asm_pass1_terminal(tag->son);
         Node * x2 = asm_pass1_terminal(tag->son->brother);
         Node * x3 = asm_pass1_terminal(tag->son->brother->brother);
-        Node * x4 = asm_pass1_nt_scope(tag->son->brother->brother->brother);
+        Node * x4 = asm_pass1_nt_block(tag->son->brother->brother->brother);
 
         x1->brother = x2;
         x2->brother = x3;
@@ -71,22 +71,22 @@ Node * asm_pass1_nt_function(Node * tag){
     }
 }
 
-Node * asm_pass1_nt_scope(Node * tag){
-    if (tag->token.token_number == TAG_SCOPE) {
-        printf("Processing: asm_pass1_nt_scope\n");
+Node * asm_pass1_nt_block(Node * tag){
+    if (tag->token.token_number == TAG_BLOCK) {
+        printf("Processing: asm_pass1_nt_block\n");
         Node * x1 = asm_pass1_nt_instr(tag->son);
-        Node * n = node_maker(x1, NULL, ASM_SCOPE, 0);    // Node로 감싸지 않으면 brother로 묶여있던 ASM_INSTR이 끊기는 문제 발생.
+        Node * n = node_maker(x1, NULL, ASM_BLOCK, 0);    // Node로 감싸지 않으면 brother로 묶여있던 ASM_INSTR이 끊기는 문제 발생.
 
-        if (tag->brother != NULL) {
-            Node * x2 = asm_pass1_nt_scope(tag->brother);
+        /*if (tag->brother != NULL) {
+            Node * x2 = asm_pass1_nt_block(tag->brother);
             n->brother = x2;
         } else {
             n->brother = NULL;
-        }
+        }*/
 
         return n;
     } else {
-        printf("TAG to asm tree pass1 과정에서 오류 발생: TAG_SCOPE node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
+        printf("TAG to asm tree pass1 과정에서 오류 발생: TAG_BLOCK node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
         exit(1);
     }
 }
@@ -236,9 +236,23 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
             return n;
         }
+    } else if (tag->token.token_number == TAG_BLOCK) {
+        Node * n = asm_pass1_nt_block(tag);
+
+        if (tag->brother != NULL) {
+            Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
+            n->brother = n1;
+        } else {
+            n->brother = NULL;
+        }
+
+        return n;
     } else if (tag->token.token_number == TAG_NOP) {
         Node * n = asm_pass1_nt_instr_loop(tag->brother);
         return n;
+    } else {
+        printf("instr loop 중 잘못된 태그 토큰을 받았습니다: <%d, %d>\n", tag->token.token_number, tag->token.token_value);
+        exit(1);
     }
 }
 

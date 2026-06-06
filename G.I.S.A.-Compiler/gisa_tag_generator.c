@@ -51,8 +51,8 @@ int reverting_compound_assign;  // 복합 대입 연산자와 기본 연산자 �
 Node * tag_terminal(Node * ast);
 Node * tag_nt_program(Node * ast);
 Node * tag_nt_function(Node * ast);
-Node * tag_nt_block(Node * ast);
-Node * tag_nt_instr(Node * ast);
+Node * tag_nt_block(Node * ast, int temp_in_rA, int temp_in_rB);
+Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_op_logic_not(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_op_logic_and_or(Node * ast, int temp_in_rA, int temp_in_rB);
@@ -94,7 +94,7 @@ Node * tag_nt_function(Node * ast){
         Node * x1 = tag_terminal(ast->son);
         Node * x2 = tag_terminal(ast->son->brother);
         Node * x3 = tag_terminal(ast->son->brother->brother);
-        Node * x4 = tag_nt_block(ast->son->brother->brother->brother);
+        Node * x4 = tag_nt_block(ast->son->brother->brother->brother, 0, 0);
 
         x1->brother = x2;
         x2->brother = x3;
@@ -109,19 +109,12 @@ Node * tag_nt_function(Node * ast){
     }
 }
 
-Node * tag_nt_block(Node * ast){
+Node * tag_nt_block(Node * ast, int temp_in_rA, int temp_in_rB){
     if (ast->token.token_number == NT_BLOCK) {
         printf("Processing: tag_nt_block\n");
-        Node * x1 = tag_nt_instr(ast->son);
+        Node * x1 = tag_nt_instr(ast->son, temp_in_rA, temp_in_rB);
 
         Node * n = node_maker(x1, NULL, TAG_BLOCK, 0);
-
-        if (ast->brother != NULL) {
-            Node * n1 = tag_nt_block(ast->brother);
-            n->brother = n1;
-        } else {
-            n->brother = NULL;
-        }
 
         return n;
     } else {
@@ -130,7 +123,7 @@ Node * tag_nt_block(Node * ast){
     }
 }
 
-Node * tag_nt_instr(Node * ast){
+Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB){
     if (ast->token.token_number == NT_CONTENT) {
         printf("Processing: tag_nt_instr\n");
         Node * x1 = tag_nt_instr_interpreting(ast->son, 0, 0);
@@ -138,7 +131,7 @@ Node * tag_nt_instr(Node * ast){
         Node * n = node_maker(x1, NULL, TAG_INSTR, 0);
 
         if (ast->brother->token.token_number != NT_INSTR_LIST) {    // while로 실수해 무한루프 나왔던 부분. if로 할 것.
-            Node * n1 = tag_nt_instr(ast->brother);
+            Node * n1 = tag_nt_instr(ast->brother, temp_in_rA, temp_in_rB);
             n->brother = n1;
             //printf("DEBUG: 다음 라인 탑 토큰: <%d, %d>\n", ast->brother->token.token_number, ast->brother->token.token_value);
             //printf("DEBUG: 다음 라인 탑-son 토큰: <%d, %d>\n", ast->brother->son->token.token_number, ast->brother->son->token.token_value);
@@ -316,6 +309,9 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
     } else if (ast->token.token_number == NT_CONTENT) {
         Node * n = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);   
+        return n;
+    } else if (ast->token.token_number == NT_BLOCK) {
+        Node * n = tag_nt_block(ast, temp_in_rA, temp_in_rB);   
         return n;
     } else {
         printf("AST to TAG 과정에서 오류 발생: Instruction node들을 처리해야 하지만, instr에 해당하지 않는 노드가 입력되었습니다. 입력 노드: %d\n", ast->token.token_number);

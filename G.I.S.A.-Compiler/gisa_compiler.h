@@ -73,7 +73,7 @@
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101
 #define NT_PARAM        102
-#define NT_SCOPE        103
+#define NT_BLOCK        103
 #define NT_INSTR_LIST   104
 #define NT_INSTR        105
 #define NT_CONTENT      106
@@ -103,7 +103,7 @@
 #define TAG_LABEL_MAKE  309
 #define TAG_COND        310
 #define TAG_CMP         311 //
-#define TAG_SCOPE       312
+#define TAG_BLOCK       312
 #define TAG_NOP         313
 
 #define COND_EQ         385
@@ -135,7 +135,7 @@
 #define ASM_STACK       207
 #define ASM_PROLOGUE    208
 #define ASM_EPILOGUE    209
-#define ASM_SCOPE       210
+#define ASM_BLOCK       210
 
 #define ASM_MOV         400
 #define ASM_ADD         401

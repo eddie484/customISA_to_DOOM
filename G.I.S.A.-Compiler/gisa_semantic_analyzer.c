@@ -209,19 +209,19 @@ void ident_symbolizer(Node * node) {
 
 
 
-    // *** CALL ***
+    // *** CALL SON ***
     if (node->son != NULL) {
         ident_symbolizer(node->son);
     }
-    
-    if (node->brother != NULL) {
-        ident_symbolizer(node->brother);
-    }
+
+
+
 
 
 
 
     // *** OUT ***
+    // block 범위는 node 안쪽이고, node의 brother는 범위 바깥이므로, call brother 이전에 pop을 수행해야 한다.
     if (node->token.token_number == NT_BLOCK) {
         pop();
     }
@@ -232,6 +232,21 @@ void ident_symbolizer(Node * node) {
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
         }
     }
+    
+
+
+
+
+
+
+    // *** CALL BROTHER ***
+    if (node->brother != NULL) {
+        ident_symbolizer(node->brother);
+    }
+
+
+
+
 
     printf("Ident_Symbolizer END: Node <%d, %d>\n", node->token.token_number, node->token.token_value);
 }
