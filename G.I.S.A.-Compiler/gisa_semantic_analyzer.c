@@ -191,7 +191,8 @@ void ident_symbolizer(Node * node) {
             free (node_brother);
 
             ident_symbolizer(node);     // brother를 node 자리에 당겨왔으므로 다시 함수호출해 brother였던 노드를 처리한다.
-        }
+            return;                     // 윗줄의 함수호출 수행을 통해, 노드의 son과 brother가 전부 처리 완료된 후 이 라인으로 돌아온다. (parent는 처리하지 않는다.)
+        }                               // 따라서 여기서 리턴하여 son과 brother의 함수호출을 다시 중복 수행하지 않도록 한다.
 
     } else if (node->token.token_number == IDENT) {
         int symbol_id = symbol_finder(node->token.token_value);
