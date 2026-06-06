@@ -317,6 +317,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     lexeme[lexeme_count].token_number = KW_ELSE;
                     lexeme[lexeme_count].token_value = 0;
                     //printf("ELSE");
+                } else if (!strcmp(get_str, "goto")) {
+                    lexeme[lexeme_count].token_number = KW_GOTO;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("GOTO");
                 } else {
                     lexeme[lexeme_count].token_number = IDENT;
                     lexeme[lexeme_count].token_value = lexval_manager (get_str);

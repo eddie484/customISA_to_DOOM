@@ -67,6 +67,8 @@
 #define OP_QUESTION     51
 #define OP_COLON        52
 
+#define KW_GOTO         53
+
 
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101
@@ -82,6 +84,8 @@
 #define NT_UNARY_OP     111
 #define NT_BINARY_OP    112
 #define NT_ELSE         113
+#define NT_GOTO         114
+#define NT_LABEL        115
 
 
 #define SEM_SYMBOL      150
