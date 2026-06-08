@@ -69,6 +69,12 @@
 
 #define KW_GOTO         53
 
+#define KW_DO           54
+#define KW_WHILE        55
+#define KW_FOR          56
+#define KW_BREAK        57
+#define KW_CONTINUE     58
+
 
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101
@@ -86,6 +92,8 @@
 #define NT_ELSE         113
 #define NT_GOTO         114
 #define NT_LABEL        115
+#define NT_FOR_INIT     116
+#define NT_FOR_EXP      117
 
 
 #define SEM_SYMBOL      150

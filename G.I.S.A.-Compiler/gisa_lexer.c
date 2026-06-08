@@ -321,6 +321,26 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     lexeme[lexeme_count].token_number = KW_GOTO;
                     lexeme[lexeme_count].token_value = 0;
                     //printf("GOTO");
+                } else if (!strcmp(get_str, "do")) {
+                    lexeme[lexeme_count].token_number = KW_DO;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("DO");
+                } else if (!strcmp(get_str, "while")) {
+                    lexeme[lexeme_count].token_number = KW_WHILE;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("WHILE");
+                } else if (!strcmp(get_str, "for")) {
+                    lexeme[lexeme_count].token_number = KW_FOR;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("FOR");
+                } else if (!strcmp(get_str, "break")) {
+                    lexeme[lexeme_count].token_number = KW_BREAK;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("BREAK");
+                } else if (!strcmp(get_str, "continue")) {
+                    lexeme[lexeme_count].token_number = KW_CONTINUE;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("CONTINUE");
                 } else {
                     lexeme[lexeme_count].token_number = IDENT;
                     lexeme[lexeme_count].token_value = lexval_manager (get_str);
