@@ -647,7 +647,7 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         Node * x4 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x5 = p_nt_instr(lex_input);
 
-        x1->brother = x3;
+        x1->son = x3;
         x3->brother = x5;
         
         Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
@@ -666,7 +666,7 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         Node * x6 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x7 = p_terminal(lex_input, PN_SEMI);
 
-        x1->brother = x2;
+        x1->son = x2;
         x2->brother = x5;
         
         Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
@@ -690,7 +690,7 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         
         Node * for_init_block = node_maker(x3, NULL, NT_BLOCK, 0);
 
-        x1->brother = for_init_block;
+        x1->son = for_init_block;
         x3->brother = x4;
         x4->brother = x5;
         x5->brother = x6;

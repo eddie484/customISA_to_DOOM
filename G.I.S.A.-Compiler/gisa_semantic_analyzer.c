@@ -127,6 +127,20 @@ int symbol_finder(int ident_token_value) {
 
 
 
+
+
+
+
+/* *******************************************
+**********************************************
+**********************************************
+***********                        ***********
+***********    IDENT SYMBOLIZER    ***********
+***********                        ***********
+**********************************************
+**********************************************
+******************************************* */
+
 void ident_symbolizer(Node * node) {
     printf("Ident_Symbolizer Start: Node <%d, %d>\n", node->token.token_number, node->token.token_value);
 
@@ -191,7 +205,7 @@ void ident_symbolizer(Node * node) {
             free (node_brother);
 
             ident_symbolizer(node);     // brother를 node 자리에 당겨왔으므로 다시 함수호출해 brother였던 노드를 처리한다.
-            return;                     // 윗줄의 함수호출 수행을 통해, 노드의 son과 brother가 전부 처리 완료된 후 이 라인으로 돌아온다. (parent는 처리하지 않는다.)
+            return;                     // 윗줄의 함수호출 수행을 통해, 노드의 son과 brother가 전부 처리 완료된 후 이 라인으로 돌아온다. (parent까지 순회하며 처리하지는 않는다.)
         }                               // 따라서 여기서 리턴하여 son과 brother의 함수호출을 다시 중복 수행하지 않도록 한다.
 
     } else if (node->token.token_number == IDENT) {
@@ -257,6 +271,82 @@ void ident_symbolizer(Node * node) {
 // declr 노드들의 정보는 심볼테이블에 저장되었으니 필요없다.
 
 
+
+// ********** END IDENT_SYMBOLIZER ***********
+
+
+
+
+
+int loop_count = 0;
+int loop_label = 0; // 0이라면 루프 바깥. 이때 continue/break 만나면 오류 상황.
+
+
+/* ******************************************
+*********************************************
+*********************************************
+***********                       ***********
+***********    LABEL CONNECTOR    ***********
+***********                       ***********
+*********************************************
+*********************************************
+****************************************** */
+
+void label_connector (Node * node) {
+    printf("label_connector Start: Node <%d, %d>\n", node->token.token_number, node->token.token_value);
+
+
+    // *** IN ***
+    if (node->token.token_number == KW_DO || node->token.token_number == KW_WHILE || node->token.token_number == KW_FOR) {
+        loop_label = ++loop_count;
+
+    } else if (node->token.token_number == KW_BREAK || node->token.token_number == KW_CONTINUE) {
+        if (loop_label == 0) {
+            if (node->token.token_number == KW_BREAK) {
+                printf("Semantic Error: 반복문 바깥에서 break;를 사용했습니다. 종료합니다.\n");
+                exit(1);
+            } else {
+                printf("Semantic Error: 반복문 바깥에서 continue;를 사용했습니다. 종료합니다.\n");
+                exit(1);
+            }
+        } else {
+            node->token.token_value = loop_label;
+        }
+        
+    }
+
+
+
+    // *** CALL SON ***
+    if (node->son != NULL) {
+        label_connector(node->son);
+    }
+
+
+
+
+
+
+
+    // *** OUT ***
+    if (node->token.token_number == KW_DO || node->token.token_number == KW_WHILE || node->token.token_number == KW_FOR) {
+        loop_label = 0;
+
+    }
+
+
+
+
+
+    // *** CALL BROTHER ***
+    if (node->brother != NULL) {
+        label_connector(node->brother);
+    }
+    
+
+}
+
+
 Node * semantic_analyzer(Node * parse_input, char * symbast_name)
 {
     table_list_limit = 8;
@@ -281,7 +371,11 @@ Node * semantic_analyzer(Node * parse_input, char * symbast_name)
 
     symbolized_ast = parse_input;
     ident_symbolizer(symbolized_ast->son->son->brother->brother->brother);
-    
+    printf("Ident Symbolizer가 정상적으로 완료되었습니다.\n");
+
+    label_connector(symbolized_ast->son->son->brother->brother->brother);
+    printf("Label Connector가 정상적으로 완료되었습니다.\n");
+
     bin_tree_printer(symbolized_ast);
     bin_tree_file_printer(symbolized_ast, symbastfp);
 
