@@ -620,7 +620,9 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         printf("parsing: nt_content: NT_BLOCK\n");
         Node * x1 = p_nt_block(lex_input);
         
-        return x1;
+        Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
+        
+        return n;
     } else if (nextSymbol.token_number == KW_BREAK) {
         printf("parsing: nt_content: KW_BREAK\n");
         Node * x1 = p_terminal(lex_input, KW_BREAK);
@@ -685,8 +687,10 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         Node * x6 = p_nt_for_exp(lex_input);
         Node * x7 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x8 = p_nt_instr(lex_input);
+        
+        Node * for_init_block = node_maker(x3, NULL, NT_BLOCK, 0);
 
-        x1->brother = x3;
+        x1->brother = for_init_block;
         x3->brother = x4;
         x4->brother = x5;
         x5->brother = x6;
@@ -759,13 +763,23 @@ Node * p_nt_for_init(Lexer_result lex_input){   // <for_init> ::= <declr> | <exp
     if (first(nextSymbol.token_number, NT_DECLR)) {
         printf("parsing: nt_for_init: declr\n");
         Node * x1 = p_nt_declr(lex_input);
+        Node * x2 = node_maker(NULL, NULL, PN_SEMI, 0);
+
+        x1->brother = x2;
         
-        return x1;
+        Node * n = node_maker(x1, NULL, NT_FOR_INIT, 0);
+        
+        return n;
     } else if (first(nextSymbol.token_number, NT_EXP)) {
         printf("parsing: nt_for_init: exp\n");
         Node * x1 = p_nt_exp(lex_input, 0);
+        Node * x2 = node_maker(NULL, NULL, PN_SEMI, 0);
+
+        x1->brother = x2;
         
-        return x1;
+        Node * n = node_maker(x1, NULL, NT_FOR_INIT, 0);
+        
+        return n;
     } else if (nextSymbol.token_number == PN_SEMI) {
         printf("parsing: nt_for_init: semicolon\n");
         Node * x1 = p_terminal(lex_input, PN_SEMI);
