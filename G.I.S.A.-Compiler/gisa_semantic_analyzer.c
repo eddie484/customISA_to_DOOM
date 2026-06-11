@@ -278,8 +278,10 @@ void ident_symbolizer(Node * node) {
 
 
 
-int loop_count = 0;
-int loop_label = 0; // 0이라면 루프 바깥. 이때 continue/break 만나면 오류 상황.
+
+
+
+
 
 
 /* ******************************************
@@ -292,6 +294,14 @@ int loop_label = 0; // 0이라면 루프 바깥. 이때 continue/break 만나면
 *********************************************
 ****************************************** */
 
+
+
+
+int loop_count = 0;
+int loop_label = 0; // 0이라면 루프 바깥. 이때 continue/break 만나면 오류 상황.
+
+
+
 void label_connector (Node * node) {
     printf("label_connector Start: Node <%d, %d>\n", node->token.token_number, node->token.token_value);
 
@@ -299,6 +309,7 @@ void label_connector (Node * node) {
     // *** IN ***
     if (node->token.token_number == KW_DO || node->token.token_number == KW_WHILE || node->token.token_number == KW_FOR) {
         loop_label = ++loop_count;
+        node->token.token_value = loop_label;
 
     } else if (node->token.token_number == KW_BREAK || node->token.token_number == KW_CONTINUE) {
         if (loop_label == 0) {
@@ -345,6 +356,34 @@ void label_connector (Node * node) {
     
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* *******************************
+**********************************
+**********************************
+***********            ***********
+***********    MAIN    ***********
+***********            ***********
+**********************************
+**********************************
+******************************* */
+
+
 
 
 Node * semantic_analyzer(Node * parse_input, char * symbast_name)
