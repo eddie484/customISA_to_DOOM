@@ -99,6 +99,7 @@ int symbol_maker(Node * declr_node) {
     printf("\tSize: %d\n", table_stack[table_stack_count - 1][table_count[table_stack_count - 1] - 1]->size);
     printf("\tLocation.Type: %d\n", table_stack[table_stack_count - 1][table_count[table_stack_count - 1] - 1]->location.type);
     printf("\tLocation.Location: %d\n\n\n", table_stack[table_stack_count - 1][table_count[table_stack_count - 1] - 1]->location.location);
+
     return table_stack[table_stack_count - 1][table_count[table_stack_count - 1] - 1]->id;
 }
 
@@ -198,15 +199,24 @@ void ident_symbolizer(Node * node) {
             free(ident_node->brother);
             free(ident_node);
 
-            Node * node_brother = node->brother;
+            if (node->brother != NULL) {
+                Node * node_brother = node->brother;
             node->son = node_brother->son;
             node->brother = node_brother->brother;
             node->token = node_brother->token;
-            free (node_brother);
+            free (node_brother);        // brother를 node 자리에 당겨왔으므로 다시 함수호출해 brother였던 노드를 처리한다.
+                                        // 윗줄의 함수호출 수행을 통해, 노드의 son과 brother가 전부 처리 완료된 후 이 라인으로 돌아온다. (parent까지 순회하며 처리하지는 않는다.)
+            ident_symbolizer(node);     // 따라서 여기서 리턴하여 son과 brother의 함수호출을 다시 중복 수행하지 않도록 한다.
+            } else {
+                node->son = NULL;
+                node->brother = NULL;
+                node->token.token_number = PN_SEMI;
+                node->token.token_value = 0;
+            }
 
-            ident_symbolizer(node);     // brother를 node 자리에 당겨왔으므로 다시 함수호출해 brother였던 노드를 처리한다.
-            return;                     // 윗줄의 함수호출 수행을 통해, 노드의 son과 brother가 전부 처리 완료된 후 이 라인으로 돌아온다. (parent까지 순회하며 처리하지는 않는다.)
-        }                               // 따라서 여기서 리턴하여 son과 brother의 함수호출을 다시 중복 수행하지 않도록 한다.
+            return;
+        }
+            
 
     } else if (node->token.token_number == IDENT) {
         int symbol_id = symbol_finder(node->token.token_value);
