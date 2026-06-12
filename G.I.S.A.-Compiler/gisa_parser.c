@@ -627,18 +627,22 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         printf("parsing: nt_content: KW_BREAK\n");
         Node * x1 = p_terminal(lex_input, KW_BREAK);
         Node * x2 = p_terminal(lex_input, PN_SEMI);
+        
+        Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
 
         free(x2);
 
-        return x1;
+        return n;
     } else if (nextSymbol.token_number == KW_CONTINUE) {
         printf("parsing: nt_content: KW_CONTINUE\n");
         Node * x1 = p_terminal(lex_input, KW_CONTINUE);
         Node * x2 = p_terminal(lex_input, PN_SEMI);
+        
+        Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
 
         free(x2);
 
-        return x1;
+        return n;
     } else if (nextSymbol.token_number == KW_WHILE) {
         printf("parsing: nt_content: KW_WHILE\n");
         Node * x1 = p_terminal(lex_input, KW_WHILE);

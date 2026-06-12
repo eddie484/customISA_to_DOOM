@@ -59,6 +59,9 @@ Node * line_op_logic_and_or(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_if(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_op_question(Node * ast, int temp_in_rA, int temp_in_rB);
+Node * line_while(Node * ast, int temp_in_rA, int temp_in_rB);
+Node * line_do(Node * ast, int temp_in_rA, int temp_in_rB);
+Node * line_for(Node * ast, int temp_in_rA, int temp_in_rB);
 
 
 Node * tag_terminal(Node * ast){
@@ -126,7 +129,7 @@ Node * tag_nt_block(Node * ast, int temp_in_rA, int temp_in_rB){
 Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB){
     if (ast->token.token_number == NT_CONTENT) {
         printf("Processing: tag_nt_instr\n");
-        Node * x1 = tag_nt_instr_interpreting(ast->son, 0, 0);
+        Node * x1 = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);
 
         Node * n = node_maker(x1, NULL, TAG_INSTR, 0);
 
@@ -234,6 +237,24 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
         return n;
 
+    } else if (ast->token.token_number == KW_WHILE) {
+        printf("enter KW_WHILE\n");
+        Node * n = line_while(ast->son, temp_in_rA, temp_in_rB);
+
+        return n;
+
+    } else if (ast->token.token_number == KW_DO) {
+        printf("enter KW_DO\n");
+        Node * n = line_do(ast->son, temp_in_rA, temp_in_rB);
+
+        return n;
+
+    } else if (ast->token.token_number == KW_FOR) {
+        printf("enter KW_FOR\n");
+        Node * n = line_for(ast->son->son, temp_in_rA, temp_in_rB);
+
+        return n;
+
 
 
         
@@ -312,6 +333,17 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         return n;
     } else if (ast->token.token_number == NT_BLOCK) {
         Node * n = tag_nt_block(ast, temp_in_rA, temp_in_rB);   
+        return n;
+
+    // continue 일 경우
+    } else if (ast->token.token_number == KW_CONTINUE) {
+        Node * n = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, temp_in_rA);
+        printf("\n\n\n\n\n\n CONTINUE LABEL IS: %d\n\n\n\n\n", temp_in_rA);
+        return n;
+
+    // break 일 경우
+    } else if (ast->token.token_number == KW_BREAK) {
+        Node * n = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, temp_in_rB);
         return n;
     } else {
         printf("AST to TAG 과정에서 오류 발생: Instruction node들을 처리해야 하지만, instr에 해당하지 않는 노드가 입력되었습니다. 입력 노드: %d\n", ast->token.token_number);
@@ -476,7 +508,7 @@ Node * line_if(Node * ast, int temp_in_rA, int temp_in_rB)
     n4->brother = n6;
 
     //printf("ast->brother->brother->brother->token.token_number: %d\n\n\n\n\n", ast->brother->brother->brother->token.token_number);
-    if(ast->brother->brother->brother->token.token_number == NT_ELSE) {
+    if(ast->brother->brother->brother != NULL && ast->brother->brother->brother->token.token_number == NT_ELSE) {
         Node * n7 = tag_nt_instr_interpreting(ast->brother->brother->brother->son, temp_in_rA, temp_in_rB);           // else 수행
         Node * n8 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: else_end
         n8->token.token_value = n8->son->brother->token.token_value;
@@ -533,6 +565,114 @@ Node * line_op_question(Node * ast, int temp_in_rA, int temp_in_rB)
 
     return n;
 }
+
+Node * line_while(Node * ast, int temp_in_rA, int temp_in_rB) 
+{
+    Node * n1 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: while_start
+    n1->token.token_value = n1->son->brother->token.token_value;
+    Node * n2 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: continue_out
+    n2->token.token_value = n2->son->brother->token.token_value;
+    Node * n7 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: while_end
+    n7->token.token_value = n7->son->brother->token.token_value;
+    Node * n8 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: break_out
+    n8->token.token_value = n8->son->brother->token.token_value;
+
+    Node * n3 = tag_nt_instr_interpreting(ast, 0, 0);     // condition 수행
+    Node * n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);   // condition이 false일 경우. (0과 eq) while에서 탈출한다.
+    Node * n5 = tag_nt_instr_interpreting(ast->brother, n2->token.token_value, n8->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
+    Node * n6 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n1->token.token_value);   // 본문 수행 완료. while 시작으로 이동한다.
+
+    n1->brother = n2;
+    n2->brother = n3;
+    n3->brother = n4;
+    n4->brother = n5;
+    n5->brother = n6;
+    n6->brother = n7;
+    n7->brother = n8;
+
+    Node * n = node_maker(n1, NULL, TAG_LINE_SET, 0);
+
+    return n;
+}
+
+Node * line_do(Node * ast, int temp_in_rA, int temp_in_rB) 
+{
+    Node * n1 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: do_start
+    n1->token.token_value = n1->son->brother->token.token_value;
+    Node * n3 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: continue_out
+    n3->token.token_value = n3->son->brother->token.token_value;
+    Node * n6 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: break_out
+    n6->token.token_value = n6->son->brother->token.token_value;
+
+    Node * n2 = tag_nt_instr_interpreting(ast, n3->token.token_value, n6->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
+    Node * n4 = tag_nt_instr_interpreting(ast->brother, 0, 0);     // condition 수행
+    Node * n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n6->token.token_value);   // condition이 true일 경우. (0과 ne) do 시작으로 이동한다.
+
+    n1->brother = n2;
+    n2->brother = n3;
+    n3->brother = n4;
+    n4->brother = n5;
+    n5->brother = n6;
+
+    Node * n = node_maker(n1, NULL, TAG_LINE_SET, 0);
+
+    return n;
+}
+
+Node * line_for(Node * ast, int temp_in_rA, int temp_in_rB) 
+{
+    Node * n2 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: for_start
+    n2->token.token_value = n2->son->brother->token.token_value;
+    Node * n6 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: continue_out
+    n6->token.token_value = n6->son->brother->token.token_value;
+    Node * n9 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: for_end
+    n9->token.token_value = n9->son->brother->token.token_value;
+    Node * n10 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: break_out
+    n10->token.token_value = n10->son->brother->token.token_value;
+
+    Node * n8 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n2->token.token_value);   // for문 회차 수행 완료. for 시작으로 이동한다.
+        //printf("\n\n\n\n\n\n CONTINUE LABEL IS: %d\n\n\n\n\n", n6->token.token_value);
+
+    Node * n5 = tag_nt_instr_interpreting(ast->brother->brother->brother, n6->token.token_value, n10->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
+
+    n5->brother = n6;
+    n8->brother = n9;
+    n9->brother = n10;
+
+
+    if (ast->brother->token.token_number != NT_FOR_EXP) {
+        Node * n3 = tag_nt_instr_interpreting(ast->brother, 0, 0);     // for 인자2 수행
+        Node * n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);   // condition이 false일 경우. (0과 eq) for 끝으로 이동한다.
+        n2->brother = n3;
+        n3->brother = n4;
+        n4->brother = n5;
+    } else {
+        n2->brother = n5;
+    }
+
+    if (ast->brother->brother->token.token_number != NT_FOR_EXP) {
+        Node * n7 = tag_nt_instr_interpreting(ast->brother->brother, 0, 0);     // for 인자3 수행
+        n6->brother = n7;
+        n7->brother = n8;
+    } else {
+        n6->brother = n8;
+    }
+
+    if (ast->son->token.token_number != PN_SEMI) {
+        Node * n1 = tag_nt_instr_interpreting(ast->son, 0, 0);     // for 인자1 수행
+        n1->brother = n2;
+        Node * n = node_maker(n1, NULL, TAG_LINE_SET, 0);
+        return n;
+    } else {
+        Node * n = node_maker(n2, NULL, TAG_LINE_SET, 0);
+        return n;
+    }
+
+
+
+
+}
+
 
 
 
