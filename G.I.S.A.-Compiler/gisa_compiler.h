@@ -75,6 +75,10 @@
 #define KW_BREAK        57
 #define KW_CONTINUE     58
 
+#define KW_SWITCH       59
+#define KW_CASE         60
+#define KW_DEFAULT      61
+
 
 #define NT_PROGRAM      100
 #define NT_FUNCTION     101
@@ -94,6 +98,9 @@
 #define NT_LABEL        115
 #define NT_FOR_INIT     116
 #define NT_FOR_EXP      117
+#define NT_CASE_LIST    118
+#define NT_CASE         119
+#define NT_DEFAULT      120
 
 
 #define SEM_SYMBOL      150

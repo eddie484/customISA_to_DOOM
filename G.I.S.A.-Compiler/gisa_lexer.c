@@ -341,6 +341,18 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     lexeme[lexeme_count].token_number = KW_CONTINUE;
                     lexeme[lexeme_count].token_value = 0;
                     //printf("CONTINUE");
+                } else if (!strcmp(get_str, "switch")) {
+                    lexeme[lexeme_count].token_number = KW_SWITCH;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("SWITCH");
+                } else if (!strcmp(get_str, "case")) {
+                    lexeme[lexeme_count].token_number = KW_CASE;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("CASE");
+                } else if (!strcmp(get_str, "default")) {
+                    lexeme[lexeme_count].token_number = KW_DEFAULT;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("DEFAULT");
                 } else {
                     lexeme[lexeme_count].token_number = IDENT;
                     lexeme[lexeme_count].token_value = lexval_manager (get_str);
