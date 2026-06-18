@@ -241,6 +241,11 @@ typedef struct Symbol_info {
     Symbol_location location;
 } Symbol_info;
 
+typedef struct Label_info {
+    int name;   // IDENT의 value
+    int id;     // 모든 테이블에서 겹치지 않는 고유번호. 스코프 위치 함유.
+} Label_info;
+
 
 int lexval_manager (char *name);
 int check_right_word_boundary(char right);
