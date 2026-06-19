@@ -268,6 +268,6 @@ Node * get_brother(Node * node);
 
 extern int temp_count;
 extern Lexeme_value * lex_val_table;
-extern int symbol_id_count;
+extern int symbol_id_count, label_id_count;
 
 #endif
