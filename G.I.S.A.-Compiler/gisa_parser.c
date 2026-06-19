@@ -138,7 +138,6 @@ int token_type[1024];          // 읽어온 lexeme들의 타입을 저장.
 int token_value[1024];          // 읽어온 lexeme들의 값을 저장. 
 int cur_line = 0;
 
-int return_exist;
 
 static const int priority_table[52] = {
     [OP_ADD] = 90,
@@ -426,36 +425,40 @@ Node * p_nt_function(Lexer_result lex_input){   // <function> ::= "KW_INT" IDENT
         x4->brother = x6;
 
 
-        // 수정해야 함. 함수 종료 시점에 직전 토큰이 return이 아니면 return 0을 삽입하도록 만들어야 함.
-        if (return_exist == 0) {    // return이 없는 함수일 경우, return 0;을 삽입한다.
-            printf("Parsing 도중 return이 발견되지 않았습니다. return 0;을 삽입합니다.\n");
-            Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
-            Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
-            Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
+        // func block의 son의 마지막 brother가 return이 아닐 경우 return 0 삽입.
+        if (x1->token.token_value != KW_VOID) {     // void 타입 함수가 아닐 경우.
+            if (x6->son == NULL) {      // 빈 함수인 경우
+                printf("반환형이 있어야 하지만, 본문이 비어있는 함수입니다. return 0;을 삽입합니다.\n");
+                Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
+                Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
+                Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
 
-            Node * brother = x6->son->brother;
-            while ((brother->brother != NULL) && (brother->brother->token.token_number != NT_INSTR_LIST)) {
-                brother = brother->brother;
-            }
+                content->son = ret;
+                ret->brother = zero;
 
-            content->son = ret;
-            ret->brother = zero;
+                x6->son = content;
 
-            if (brother->brother == NULL) {     // 빈 block일 때. brother가 instr_list를 가리키고 있음. 따라서 return이 brother 앞에 와야함.
-                brother->son = content->son;
-                brother->brother = content;
-                brother->token = content->token;
+            } else {        // 비진 않았지만, return으로 끝나지 않은 함수.
+                Node * little_brother = x6->son;
 
-                content->son = NULL;
-                content->brother = NULL;
-                content->token.token_number = NT_INSTR_LIST;
-                content->token.token_value = 0;
+                while (little_brother->brother != NULL) {
+                    little_brother = little_brother->brother;
+                }
 
-            } else {    // 비지 않은 block일 때
-                content->brother = brother->brother;
-                brother->brother = content;
+                if (little_brother->son->token.token_number != KW_RETURN) {
+                    printf("반환형이 있어야 하지만, return으로 끝나지 않는 함수입니다. return 0;을 삽입합니다.\n");
+                    Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
+                    Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
+                    Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
+
+                    content->son = ret;
+                    ret->brother = zero;
+
+                    little_brother->brother = content;
+                }
             }
         }
+        
         
         Node * n = node_maker(x1, NULL, NT_FUNCTION, 0);
 
@@ -502,7 +505,7 @@ Node * p_nt_instr_list(Lexer_result lex_input){      // <param> ::= "KW_VOID"
         return x1;
     } else if (follow(nextSymbol.token_number, NT_INSTR_LIST)) {
         printf("parsing: nt_instr_list_null\n");
-        Node * n = node_maker(NULL, NULL, NT_INSTR_LIST, 0);
+        Node * n = NULL;
 
         return n;
     } else error(3, nextSymbol);
@@ -567,7 +570,6 @@ Node * p_nt_goto(Lexer_result lex_input){    // <goto> ::= "KW_GOTO" IDENT "PN_S
 Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <exp> "PN_SEMI"
     if (nextSymbol.token_number == KW_RETURN) {
         printf("parsing: nt_content: KW_RETURN\n");
-        return_exist = 1;
         Node * x1 = p_terminal(lex_input, KW_RETURN);
         Node * x2 = p_nt_exp(lex_input, 0);
         Node * x3 = p_terminal(lex_input, PN_SEMI);
@@ -607,9 +609,9 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         Node * x5 = p_nt_instr(lex_input);
         Node * x6 = p_nt_else(lex_input);
 
-        x1->brother = x3;
+        x1->son = x3;
         x3->brother = x5;
-        x5->brother = x6;
+        x1->brother = x6;
         
         Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
         
@@ -956,7 +958,6 @@ Node * parser(Lexer_result lex_input, char *parse_name)
 {
     symbolCount = 0;
     Node * ast_top;
-    return_exist = 0;
 
 
     FILE *parsefp = fopen(parse_name, "w");         // 처리 결과 ast를 저장할 파일 오픈

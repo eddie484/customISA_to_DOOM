@@ -577,11 +577,11 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         Node * x5 = p_nt_instr(lex_input);
         Node * x6 = p_nt_else(lex_input);
 
-        x1->brother = x2;
+        x1->son = x2;
         x2->brother = x3;
         x3->brother = x4;
         x4->brother = x5;
-        x5->brother = x6;
+        x1->brother = x6;
         
         Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
 
