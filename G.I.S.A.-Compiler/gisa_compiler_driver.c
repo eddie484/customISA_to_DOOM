@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
         snprintf(tag_filename, sizeof(tag_filename), "%se_TAG_%s.tag", file_dir, file_name);
         snprintf(asmtreegen_filename, sizeof(asmtreegen_filename), "%sf_ASMTREE_%s.codegen", file_dir, file_name);
         snprintf(asmemit_filename, sizeof(asmemit_filename), "%sg_ASSEMBLY_%s.asm", file_dir, file_name);
-        snprintf(binary_filename, sizeof(preprocess_filename), "%sh_BINART_%s.bin", file_dir, file_name);
+        snprintf(binary_filename, sizeof(binary_filename), "%sh_BINART_%s.bin", file_dir, file_name);
 
 
         // ***** 전처리 진행 *****
@@ -182,7 +182,7 @@ int main(int argc, char *argv[]) {
 
         
         if (strcmp(option, "--tag") == 0) {
-            printf("Option --tag: Parsing finished. Program exit.\n");
+            printf("Option --tag: TAG Generating finished. Program exit.\n");
 
             free(lexer_result.lexeme_list);
             free(lexer_result.value_table);

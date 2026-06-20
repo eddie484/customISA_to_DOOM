@@ -273,6 +273,10 @@ int first(int input_token, int nt_set){
             
         case NT_BINARY_OP:
             return (input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43);
+
+        default:
+            printf("오류: 존재하지 않는 Non-Terminal에 대한 First를 요구하고 있습니다. 요구하는 First: %d\n", nt_set);
+            exit(1);
             
     }
 }
@@ -333,6 +337,10 @@ int follow(int input_token, int nt_set){
         case NT_BINARY_OP:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
             
+        default:
+            printf("오류: 존재하지 않는 Non-Terminal에 대한 Follow를 요구하고 있습니다. 요구하는 Follow: %d\n", nt_set);
+            exit(1);
+            
     }
 }
 
@@ -386,8 +394,10 @@ Node * p_t_OP_INCRE_DECRE(Lexer_result lex_input, int term_num){    // term_num 
         printf("parsing: OP_POST_DECRE\n");
         n = node_maker(NULL, NULL, OP_POST_DECRE, nextSymbol.token_value);
 
-    } else printf("Parse Error: token number Increment/Decrement OP인 lexeme가 주어져야 할 차례지만, 제공된 lexeme는 <%d, %d>입니다.\n", nextSymbol.token_number, nextSymbol.token_value);
-    
+    } else {
+        printf("Parse Error: token number Increment/Decrement OP인 lexeme가 주어져야 할 차례지만, 제공된 lexeme는 <%d, %d>입니다.\n", nextSymbol.token_number, nextSymbol.token_value);
+        exit(1);
+    }
 
     get_nextSymbol(lex_input);
 

@@ -604,15 +604,16 @@ Node * line_while(Node * ast, int temp_in_rA, int temp_in_rB)
     n1->token.token_value = n1->son->brother->token.token_value;
     Node * n2 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: continue_out
     n2->token.token_value = n2->son->brother->token.token_value;
-    Node * n7 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: while_end
-    n7->token.token_value = n7->son->brother->token.token_value;
-    Node * n8 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: break_out
+    Node * n8 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: while_end
     n8->token.token_value = n8->son->brother->token.token_value;
+    Node * n9 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: break_out
+    n9->token.token_value = n9->son->brother->token.token_value;
 
     Node * n3 = tag_nt_instr_interpreting(ast, 0, 0);     // condition 수행
-    Node * n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);   // condition이 false일 경우. (0과 eq) while에서 탈출한다.
-    Node * n5 = tag_nt_instr(ast->brother, n2->token.token_value, n8->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
-    Node * n6 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n1->token.token_value);   // 본문 수행 완료. while 시작으로 이동한다.
+    Node * n4 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value, NUM_INT, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
+    Node * n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n8->token.token_value);   // condition이 false일 경우. (0과 eq) while에서 탈출한다.
+    Node * n6 = tag_nt_instr(ast->brother, n2->token.token_value, n9->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
+    Node * n7 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n1->token.token_value);   // 본문 수행 완료. while 시작으로 이동한다.
 
     n1->brother = n2;
     n2->brother = n3;
@@ -621,6 +622,7 @@ Node * line_while(Node * ast, int temp_in_rA, int temp_in_rB)
     n5->brother = n6;
     n6->brother = n7;
     n7->brother = n8;
+    n8->brother = n9;
 
     Node * n = node_maker(n1, NULL, TAG_LINE_SET, 0);
 
@@ -633,18 +635,20 @@ Node * line_do(Node * ast, int temp_in_rA, int temp_in_rB)
     n1->token.token_value = n1->son->brother->token.token_value;
     Node * n3 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: continue_out
     n3->token.token_value = n3->son->brother->token.token_value;
-    Node * n6 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: break_out
-    n6->token.token_value = n6->son->brother->token.token_value;
+    Node * n7 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: break_out
+    n7->token.token_value = n7->son->brother->token.token_value;
 
-    Node * n2 = tag_nt_instr(ast, n3->token.token_value, n6->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
+    Node * n2 = tag_nt_instr(ast, n3->token.token_value, n7->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
     Node * n4 = tag_nt_instr_interpreting(ast->brother, 0, 0);     // condition 수행
-    Node * n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n6->token.token_value);   // condition이 true일 경우. (0과 ne) do 시작으로 이동한다.
+    Node * n5 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n4->token.token_value, NUM_INT, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
+    Node * n6 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n1->token.token_value);   // condition이 true일 경우. (0과 ne) do 시작으로 이동한다.
 
     n1->brother = n2;
     n2->brother = n3;
     n3->brother = n4;
     n4->brother = n5;
     n5->brother = n6;
+    n6->brother = n7;
 
     Node * n = node_maker(n1, NULL, TAG_LINE_SET, 0);
 
