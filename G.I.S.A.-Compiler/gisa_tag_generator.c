@@ -143,7 +143,8 @@ Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB){
         return n;
     } else if (ast->token.token_number == NT_GOTO) {
         printf("Processing: NT_GOTO\n");
-        Node * n = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, ast->token.token_value);
+        Node * x1 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, ast->token.token_value);
+        Node * n = node_maker(x1, NULL, TAG_INSTR, 0);
 
         printf("\tGOTO line. always goto LABEL ID %d.\n", ast->token.token_value);
 
@@ -157,9 +158,11 @@ Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB){
         return n;
     } else if (ast->token.token_number == NT_LABEL) {
         printf("Processing: NT_LABEL\n");
-        Node * n = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
+        Node * x1 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
                 
-        n->token.token_value = n->son->brother->token.token_value;
+        x1->token.token_value = x1->son->brother->token.token_value;
+
+        Node * n = node_maker(x1, NULL, TAG_INSTR, 0);
 
         printf("\tLABEL MAKE. LABEL ID is %d.\n", ast->token.token_value);
 

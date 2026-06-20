@@ -5,7 +5,6 @@ Node * asm_pass1_terminal(Node * tag);
 Node * asm_pass1_nt_program(Node * tag);
 Node * asm_pass1_nt_function(Node * tag);
 Node * asm_pass1_nt_block(Node * tag);
-Node * asm_pass1_nt_instr(Node * tag);
 Node * asm_pass1_nt_instr_loop(Node * tag);
 Node * asm_pass1_nt_return(Node * tag);
 
@@ -74,15 +73,8 @@ Node * asm_pass1_nt_function(Node * tag){
 Node * asm_pass1_nt_block(Node * tag){
     if (tag->token.token_number == TAG_BLOCK) {
         printf("Processing: asm_pass1_nt_block\n");
-        Node * x1 = asm_pass1_nt_instr(tag->son);
+        Node * x1 = asm_pass1_nt_instr_loop(tag->son);
         Node * n = node_maker(x1, NULL, ASM_BLOCK, 0);    // Node로 감싸지 않으면 brother로 묶여있던 ASM_INSTR이 끊기는 문제 발생.
-
-        /*if (tag->brother != NULL) {
-            Node * x2 = asm_pass1_nt_block(tag->brother);
-            n->brother = x2;
-        } else {
-            n->brother = NULL;
-        }*/
 
         return n;
     } else {
@@ -91,26 +83,21 @@ Node * asm_pass1_nt_block(Node * tag){
     }
 }
 
-Node * asm_pass1_nt_instr(Node * tag){
+Node * asm_pass1_nt_instr_loop(Node * tag){
     if (tag->token.token_number == TAG_INSTR) {
         printf("Processing: asm_pass1_nt_instr\n");
         Node * x1 = asm_pass1_nt_instr_loop(tag->son);
-        Node * n = node_maker(x1, NULL, ASM_INSTR, 0);
+        Node * n = node_maker(x1, NULL, ASM_INSTR, tag->token.token_value);
 
         if (tag->brother != NULL) {
-            Node * n1 = asm_pass1_nt_instr(tag->brother);
+            Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
             n->brother = n1;
+        } else {
+            n->brother = NULL;
         }
-
+        
         return n;
-    } else {
-        printf("TAG to asm tree pass1 과정에서 오류 발생: NT_CONTENT node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
-        exit(1);
-    }
-}
-
-Node * asm_pass1_nt_instr_loop(Node * tag){
-    if (tag->token.token_number == TAG_LINE_SET) {
+    } else if (tag->token.token_number == TAG_LINE_SET) {
         Node * x1 = asm_pass1_nt_instr_loop(tag->son);
         Node * n = node_maker(x1, NULL, ASM_LINE_SET, tag->token.token_value);
 
