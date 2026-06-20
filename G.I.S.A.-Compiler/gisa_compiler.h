@@ -94,13 +94,12 @@
 #define NT_UNARY_OP     111
 #define NT_BINARY_OP    112
 #define NT_ELSE         113
-#define NT_GOTO         114
-#define NT_LABEL        115
-#define NT_FOR_INIT     116
-#define NT_FOR_EXP      117
-#define NT_CASE_LIST    118
-#define NT_CASE         119
-#define NT_DEFAULT      120
+#define NT_LABEL        114
+#define NT_FOR_INIT     115
+#define NT_FOR_EXP      116
+#define NT_CASE_LIST    117
+#define NT_CASE         118
+#define NT_DEFAULT      119
 
 
 #define SEM_SYMBOL      150

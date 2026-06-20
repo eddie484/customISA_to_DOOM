@@ -4,10 +4,9 @@
     <param> ::= "void"
     <block> ::= "{" <instr_list> "}"
     <instr_list> ::= <instr> <instr_list> | ε
-    <instr> ::= <content> | <declr> | <goto> | <label>
-    <content> ::= "return" <exp> ";" | <exp> ";" | ";" | "if" "(" <exp> ")" <instr> <else> | <block> | "break" ";" | "continue" ";" | "while" "(" <exp> ")" <instr> | "do" <instr> "while" "(" <exp> ")" ";" | "for" "(" <for_init> <for_exp> ";" <for_exp> ")" <instr>
+    <instr> ::= <content> | <declr> | <label>
+    <content> ::= "return" <exp> ";" | <exp> ";" | ";" | "if" "(" <exp> ")" <instr> <else> | "goto" IDENT ";" | <block> | "break" ";" | "continue" ";" | "while" "(" <exp> ")" <instr> | "do" <instr> "while" "(" <exp> ")" ";" | "for" "(" <for_init> <for_exp> ";" <for_exp> ")" <instr>
     <else> ::= "else" <instr> | ε
-    <goto> ::= "goto" IDENT ";"
     <label> ::= IDENT ":"
     <declr> ::= "int" IDENT <assign> ";"
     <assign> ::= "=" <exp> | ε
@@ -26,10 +25,9 @@
     <param> ::= "KW_VOID"
     <block> ::= "OPEN_BRACE" <instr_list> "CLOSE_BRACE"
     <instr_list> ::= <instr> <instr_list> | ε
-    <instr> ::= <content> | <declr> | <goto> | <label>
-    <content> ::= "KW_RETURN" <exp> "PN_SEMI" | <exp> "PN_SEMI" | "PN_SEMI" | "KW_IF" "OPEN_PAREN" <exp> "CLOSE_PAREN" <instr> <else> | <block> | "KW_BREAK" "PN_SEMI" | "KW_CONTINUE" "PN_SEMI" | "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" <instr> | "KW_DO" <instr> "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" "PN_SEMI" | "KW_FOR" "OPEN_PAREN" <for_init> <for_exp> "PN_SEMI" <for_exp> "CLOSE_PAREN" <instr>
+    <instr> ::= <content> | <declr> | <label>
+    <content> ::= "KW_RETURN" <exp> "PN_SEMI" | <exp> "PN_SEMI" | "PN_SEMI" | "KW_IF" "OPEN_PAREN" <exp> "CLOSE_PAREN" <instr> <else> | "KW_GOTO" IDENT "PN_SEMI" | <block> | "KW_BREAK" "PN_SEMI" | "KW_CONTINUE" "PN_SEMI" | "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" <instr> | "KW_DO" <instr> "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" "PN_SEMI" | "KW_FOR" "OPEN_PAREN" <for_init> <for_exp> "PN_SEMI" <for_exp> "CLOSE_PAREN" <instr>
     <else> ::= "KW_ELSE" <instr> | ε
-    <goto> ::= "KW_GOTO" IDENT "PN_SEMI"
     <label> ::= IDENT "OP_COLON"
     <declr> ::= "KW_INT" IDENT <assign> "PN_SEMI"
     <assign> ::= "OP_ASSIGN" <exp> | ε
@@ -48,10 +46,9 @@
     <param> ::= 3
     <block> ::= 7 <instr_list> 8
     <instr_list> ::= <instr> <instr_list> | ε
-    <instr> ::= <content> | <declr> | <goto> | <label>
-    <content> ::= 4 <exp> 9 | <exp> 9 | 9 | 49 5 <exp> 6 <instr> <else> | <block> | 57 9 | 58 9 | 55 5 <exp> 6 <instr> | 54 <instr> 55 5 <exp> 6 9 | 56 5 <for_init> <for_exp> 9 <for_exp> 6 <instr>
+    <instr> ::= <content> | <declr> | <label>
+    <content> ::= 4 <exp> 9 | <exp> 9 | 9 | 49 5 <exp> 6 <instr> <else> | 53 0 9 | <block> | 57 9 | 58 9 | 55 5 <exp> 6 <instr> | 54 <instr> 55 5 <exp> 6 9 | 56 5 <for_init> <for_exp> 9 <for_exp> 6 <instr>
     <else> ::= 50 <instr> | ε
-    <goto> ::= 53 0 9
     <label> ::= 0 52
     <declr> ::= 2 0 <assign> 9
     <assign> ::= 33 <exp> | ε
@@ -73,9 +70,8 @@
     FIRST(<block>) = {7}
     FIRST(<instr_list>) = {0, 1, 2, 4, 5, 7, 9, 10, 11, 13, 24, 44, 49, 53, 54, 55, 56, 57, 58, ε}
     FIRST(<instr>) = {0, 1, 2, 4, 5, 7, 9, 10, 11, 13, 24, 44, 49, 53, 54, 55, 56, 57, 58}
-    FIRST(<content>) = {0, 1, 4, 5, 7, 9, 10, 11, 13, 24, 44, 49, 54, 55, 56, 57, 58}
+    FIRST(<content>) = {0, 1, 4, 5, 7, 9, 10, 11, 13, 24, 44, 49, 53, 54, 55, 56, 57, 58}
     FIRST(<else>) = {50, ε}
-    FIRST(<goto>) = {53}
     FIRST(<label>) = {0}
     FIRST(<declr>) = {2}
     FIRST(<assign>) = {33, ε}
@@ -96,7 +92,6 @@
     FOLLOW(<content>) = {0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 24, 44, 49, 50, 53, 54, 55, 56, 57, 58}
     FOLLOW(<else>) = {0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 24, 44, 49, 50, 53, 54, 55, 56, 57, 58}
     FOLLOW(<declr>) = {0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 24, 44, 49, 50, 53, 54, 55, 56, 57, 58}
-    FOLLOW(<goto>) = {0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 24, 44, 49, 50, 53, 54, 55, 56, 57, 58}
     FOLLOW(<label>) = {0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 24, 44, 49, 50, 53, 54, 55, 56, 57, 58}
     FOLLOW(<assign>) = {9}
     FOLLOW(<for_init>) = {0, 1, 5, 9, 10, 11, 13, 24, 44}
@@ -180,7 +175,6 @@ Node * p_nt_block(Lexer_result lex_input);
 Node * p_nt_instr_list(Lexer_result lex_input);
 Node * p_nt_instr(Lexer_result lex_input);
 Node * p_nt_label(Lexer_result lex_input);
-Node * p_nt_goto(Lexer_result lex_input);
 Node * p_nt_content(Lexer_result lex_input);
 Node * p_nt_else(Lexer_result lex_input);
 Node * p_nt_declr(Lexer_result lex_input);
@@ -237,13 +231,10 @@ int first(int input_token, int nt_set){
             return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 7 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44 || input_token == 49 || input_token == 53 || input_token == 54 || input_token == 55 || input_token == 56 || input_token == 57 || input_token == 58);
             
         case NT_CONTENT:
-            return (input_token == 0 || input_token == 1 || input_token == 4 || input_token == 5 || input_token == 7 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44 || input_token == 49 || input_token == 54 || input_token == 55 || input_token == 56 || input_token == 57 || input_token == 58);
+            return (input_token == 0 || input_token == 1 || input_token == 4 || input_token == 5 || input_token == 7 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44 || input_token == 49 || input_token == 53 || input_token == 54 || input_token == 55 || input_token == 56 || input_token == 57 || input_token == 58);
             
         case NT_ELSE:
             return (input_token == 50);
-            
-        case NT_GOTO:
-            return (input_token == 53);
             
         case NT_LABEL:
             return (input_token == 0);
@@ -306,9 +297,6 @@ int follow(int input_token, int nt_set){
             return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 7 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44 || input_token == 49 || input_token == 50 || input_token == 53 || input_token == 54 || input_token == 55 || input_token == 56 || input_token == 57 || input_token == 58);
             
         case NT_DECLR:
-            return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 7 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44 || input_token == 49 || input_token == 50 || input_token == 53 || input_token == 54 || input_token == 55 || input_token == 56 || input_token == 57 || input_token == 58);
-            
-        case NT_GOTO:
             return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 7 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44 || input_token == 49 || input_token == 50 || input_token == 53 || input_token == 54 || input_token == 55 || input_token == 56 || input_token == 57 || input_token == 58);
             
         case NT_LABEL:
@@ -492,13 +480,6 @@ Node * p_nt_instr(Lexer_result lex_input){      // <param> ::= "KW_VOID"
         Node * n = node_maker(x1, NULL, NT_INSTR, 0);
 
         return n;
-    } else if (first(nextSymbol.token_number, NT_GOTO)) {
-        printf("parsing: nt_goto\n");
-        Node * x1 = p_nt_goto(lex_input);
-        
-        Node * n = node_maker(x1, NULL, NT_INSTR, 0);
-
-        return n;
     } else if (first(nextSymbol.token_number, NT_CONTENT)) {
         printf("parsing: nt_instr\n");
         Node * x1 = p_nt_content(lex_input);
@@ -525,22 +506,6 @@ Node * p_nt_label(Lexer_result lex_input){    // <label> ::= IDENT "OP_COLON"
         x1->brother = x2;
         
         Node * n = node_maker(x1, NULL, NT_LABEL, 0);
-
-        return n;
-    } else error(3, nextSymbol);
-}
-
-Node * p_nt_goto(Lexer_result lex_input){    // <goto> ::= "KW_GOTO" IDENT "PN_SEMI"
-    if (nextSymbol.token_number == KW_GOTO) {
-        printf("parsing: nt_goto\n");
-        Node * x1 = p_terminal(lex_input, KW_GOTO);
-        Node * x2 = p_terminal(lex_input, IDENT);
-        Node * x3 = p_terminal(lex_input, PN_SEMI);
-
-        x1->brother = x2;
-        x2->brother = x3;
-    
-        Node * n = node_maker(x1, NULL, NT_GOTO, 0);
 
         return n;
     } else error(3, nextSymbol);
@@ -591,6 +556,18 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         x4->brother = x5;
         x1->brother = x6;
         
+        Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
+
+        return n;
+    } else if (nextSymbol.token_number == KW_GOTO) {
+        printf("parsing: nt_content: nt_goto\n");
+        Node * x1 = p_terminal(lex_input, KW_GOTO);
+        Node * x2 = p_terminal(lex_input, IDENT);
+        Node * x3 = p_terminal(lex_input, PN_SEMI);
+
+        x1->brother = x2;
+        x2->brother = x3;
+    
         Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
 
         return n;

@@ -141,21 +141,6 @@ Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB){
         }
 
         return n;
-    } else if (ast->token.token_number == NT_GOTO) {
-        printf("Processing: NT_GOTO\n");
-        Node * x1 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, ast->token.token_value);
-        Node * n = node_maker(x1, NULL, TAG_INSTR, 0);
-
-        printf("\tGOTO line. always goto LABEL ID %d.\n", ast->token.token_value);
-
-        if (ast->brother != NULL) {
-            Node * n1 = tag_nt_instr(ast->brother, temp_in_rA, temp_in_rB);
-            n->brother = n1;
-            //printf("DEBUG: 다음 라인 탑 토큰: <%d, %d>\n", ast->brother->token.token_number, ast->brother->token.token_value);
-            //printf("DEBUG: 다음 라인 탑-son 토큰: <%d, %d>\n", ast->brother->son->token.token_number, ast->brother->son->token.token_value);
-        }
-
-        return n;
     } else if (ast->token.token_number == NT_LABEL) {
         printf("Processing: NT_LABEL\n");
         Node * x1 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
@@ -270,6 +255,15 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
         return n;
 
+    } else if (ast->token.token_number == KW_GOTO) {
+        printf("enter KW_GOTO\n");
+        Node * x1 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, ast->token.token_value);
+        Node * n = node_maker(x1, NULL, TAG_INSTR, 0);
+
+        printf("\tGOTO line. always goto LABEL ID %d.\n", ast->token.token_value);
+
+        return n;
+        
     } else if (ast->token.token_number == KW_WHILE) {
         printf("enter KW_WHILE\n");
         Node * n = line_while(ast->son, temp_in_rA, temp_in_rB);

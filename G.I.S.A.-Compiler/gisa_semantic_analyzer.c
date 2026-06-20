@@ -491,7 +491,7 @@ void goto_name_checker (Node * node) {
     if (node->token.token_number == NT_FUNCTION) {
         inside_func++;
 
-    } else if (node->token.token_number == NT_GOTO) {
+    } else if (node->token.token_number == KW_GOTO) {
         if (inside_func == 1) {
             int label_id = label_name_finder(node->token.token_value);
             node->token.token_value = label_id;
