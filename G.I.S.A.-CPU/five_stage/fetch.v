@@ -8,18 +8,18 @@
 	미리 처리하여 결과를 내보낸다.
 */
 
-(* keep_hierarchy *) module fetch (clk, nRESET, pc_in, predPC_out, PCplus4_out, instr_out, stall_D, bubble_D);
+(* keep_hierarchy *) module fetch (clk, nRESET, pc_in, pc_IMEM, predPC_out, PCplus4_out, instr_out, stall_F);
 	
-	input clk, nRESET, stall_D, bubble_D;
+	input clk, nRESET, stall_F;
 	
-	input [31:0] pc_in;
+	input [31:0] pc_in, pc_IMEM;
 	
 	(* keep *) output [31:0] predPC_out, PCplus4_out, instr_out;
 	
 	wire [31:0] instr, PCplus4, predPC;
 	
 	
-	imem imem_module (clk, nRESET, stall_D, bubble_D, pc_in, instr);
+	imem imem_module (clk, nRESET, stall_F, pc_IMEM, instr);
 	branch_predictor bp_module (pc_in, instr[31:26], {{10{instr[25]}}, instr[25:4]}, PCplus4, predPC);
 	
 	assign predPC_out = predPC;

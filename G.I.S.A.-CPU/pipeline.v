@@ -21,12 +21,13 @@ endmodule
 
 
 
-(* keep_hierarchy *) module pipereg_F (clk, nRESET, stall_F, nextPC, PC_F);
+(* keep_hierarchy *) module pipereg_F (clk, nRESET, stall_F, nextPC, PC_F, PC_IMEM);
 
 	input clk, nRESET, stall_F;
 	input [31:0] nextPC;
 	
 	(* keep *) output reg [31:0] PC_F;
+	(* keep *) output [31:0] PC_IMEM;
 	
 	
 	always @(posedge clk)
@@ -34,6 +35,8 @@ endmodule
 			PC_F <= 32'b0;
 		else if (!stall_F) 
 			PC_F <= nextPC;
+			
+		assign PC_IMEM = !nRESET ? 32'b0 : nextPC;
 		
 endmodule
 
@@ -44,20 +47,19 @@ endmodule
 	input clk, nRESET, stall_D, bubble_D;
 	input [31:0] PC_F, IR_F, PCplus4_F;
 	
-	(* keep *) output reg [31:0] PC_D, PCplus4_D;
-	(* keep *) output [31:0] IR_D;
+	(* keep *) output reg [31:0] PC_D, IR_D, PCplus4_D;
 	
 	
 	always @(posedge clk)
 		if (!nRESET || bubble_D) begin
 			PC_D <= 32'b0;
+			IR_D <= 32'b0;
 			PCplus4_D <= 32'b0;
 		end else if (!stall_D) begin
 			PC_D <= PC_F;
+			IR_D <= IR_F;
 			PCplus4_D <= PCplus4_F;
 		end
-		
-	assign IR_D = IR_F;
 		
 endmodule
 
@@ -127,7 +129,7 @@ endmodule
 
 
 
-(* keep_hierarchy *) module pipereg_M (clk, nRESET, bubble_M, icode_E, load_E, dmen_E, dmrw_E, lk_E, valE_E, wdata_E, dmsize_E, dmsext_E, PCplus4_E, rD_E, wben_E, icode_M, load_M, dmen_M, dmrw_M, lk_M, valE_M, wdata_M, dmsize_M, dmsext_M, PCplus4_M, rD_M, wben_M);
+(* keep_hierarchy *) module pipereg_M (clk, nRESET, bubble_M, icode_E, load_E, dmen_E, dmrw_E, lk_E, valE_E, wdata_E, dmsize_E, dmsext_E, PCplus4_E, rD_E, wben_E, icode_M, load_M, lk_M, valE_M, dmsize_M, dmsext_M, PCplus4_M, rD_M, wben_M, valE_DMEM, wdata_DMEM, dmsize_DMEM, dmen_DMEM, dmrw_DMEM, dmsext_DMEM);
 
 	input clk, nRESET, bubble_M;
 	
@@ -137,41 +139,46 @@ endmodule
 	input [1:0] dmsize_E;
 	input load_E, dmen_E, dmrw_E, lk_E, dmsext_E, wben_E;
 	
-	(* keep *) output reg [31:0] valE_M, wdata_M, PCplus4_M;
+	(* keep *) output reg [31:0] valE_M, PCplus4_M;
 	(* keep *) output reg [5:0] icode_M;
 	(* keep *) output reg [3:0] rD_M;
 	(* keep *) output reg [1:0] dmsize_M;
-	(* keep *) output reg load_M, dmen_M, dmrw_M, lk_M, dmsext_M, wben_M;
+	(* keep *) output reg load_M, lk_M, dmsext_M, wben_M;
+	
+	(* keep *) output [31:0] valE_DMEM, wdata_DMEM;
+	(* keep *) output [1:0] dmsize_DMEM;
+	(* keep *) output dmen_DMEM, dmrw_DMEM, dmsext_DMEM;
 
 	
 	always @(posedge clk)
 		if (!nRESET || bubble_M) begin
 			valE_M <= 32'b0;
-			wdata_M <= 32'b0;
 			PCplus4_M <= 32'b0;
 			icode_M <= 6'b0;
 			rD_M <= 4'b0;
 			dmsize_M <= 2'b0;
 			load_M <= 1'b0;
-			dmen_M <= 1'b0;
-			dmrw_M <= 1'b0;
 			lk_M <= 1'b0;
 			dmsext_M <= 1'b0;
 			wben_M <= 1'b0;
 		end else begin
 			valE_M <= valE_E;
-			wdata_M <= wdata_E;
 			PCplus4_M <= PCplus4_E;
 			icode_M <= icode_E;
 			rD_M <= rD_E;
 			dmsize_M <= dmsize_E;
 			load_M <= load_E;
-			dmen_M <= dmen_E;
-			dmrw_M <= dmrw_E;
 			lk_M <= lk_E;
 			dmsext_M <= dmsext_E;
 			wben_M <= wben_E;
 		end
+		
+		assign valE_DMEM = valE_E;
+		assign wdata_DMEM = wdata_E;
+		assign dmsize_DMEM = dmsize_E;
+		assign dmen_DMEM = dmen_E;
+		assign dmrw_DMEM = dmrw_E;
+		assign dmsext_DMEM = dmsext_E;
 		
 endmodule
 
@@ -186,9 +193,7 @@ endmodule
 	input [3:0] rD_M;
 	input load_M, lk_M, wben_M;
 	
-	(* keep *) output [31:0] valM_W;
-	
-	(* keep *) output reg [31:0] valE_W, PCplus4_W;
+	(* keep *) output reg [31:0] valE_W, valM_W, PCplus4_W;
 	(* keep *) output reg [5:0] icode_W;
 	(* keep *) output reg [3:0] rD_W;
 	(* keep *) output reg load_W, lk_W, wben_W;
@@ -197,6 +202,7 @@ endmodule
 	always @(posedge clk)
 		if (!nRESET) begin
 			valE_W <= 32'b0;
+			valM_W <= 32'b0;
 			PCplus4_W <= 32'b0;
 			icode_W <= 6'b0;
 			rD_W <= 4'b0;
@@ -205,6 +211,7 @@ endmodule
 			wben_W <= 1'b0;
 		end else begin
 			valE_W <= valE_M;
+			valM_W <= valM_M;
 			PCplus4_W <= PCplus4_M;
 			icode_W <= icode_M;
 			rD_W <= rD_M;
@@ -212,7 +219,5 @@ endmodule
 			lk_W <= lk_M;
 			wben_W <= wben_M;
 		end
-		
-	assign valM_W = valM_M;
 		
 endmodule

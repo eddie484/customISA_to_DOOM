@@ -27,12 +27,12 @@
 	
 	// ----- Fetch Level -----
 	
-	wire [31:0] pc_F, predPC_F, PCplus4_F, instr_F;
+	wire [31:0] pc_F, pc_IMEM, predPC_F, PCplus4_F, instr_F;
 	
 	
-	pipereg_F PR_F (clk, nRESET, stall_F, pc_computed, pc_F);
+	pipereg_F PR_F (clk, nRESET, stall_F, pc_computed, pc_F, pc_IMEM);
 	
-	fetch F (clk, nRESET, pc_F, predPC_F, PCplus4_F, instr_F, stall_D, bubble_D);
+	fetch F (clk, nRESET, pc_F, pc_IMEM, predPC_F, PCplus4_F, instr_F, stall_F);
 	
 	
 	
@@ -79,15 +79,19 @@
 	
 	// ----- Memory Level -----
 	
-	wire [31:0] valE_M, valM_M, wdata_M, PCplus4_M;
+	wire [31:0] valE_M, valM_M, PCplus4_M;
 	wire [5:0] icode_M;
 	wire [1:0] dmsize_M;
-	wire load_M, dmen_M, dmrw_M, lk_M, dmsext_M;
+	wire load_M, lk_M, dmsext_M;
+	
+	wire [31:0] valE_DMEM, wdata_DMEM;
+	wire [1:0] dmsize_DMEM;
+	wire dmen_DMEM, dmrw_DMEM, dmsext_DMEM;
 	
 	
-	pipereg_M PR_M (clk, nRESET, bubble_M, icode_E, load_E, dmen_E, dmrw_E, lk_E, valE_E, wdata_E, dmsize_E, dmsext_E, PCplus4_E, rD_E, wben_E, icode_M, load_M, dmen_M, dmrw_M, lk_M, valE_M, wdata_M, dmsize_M, dmsext_M, PCplus4_M, rD_M, wben_M);
+	pipereg_M PR_M (clk, nRESET, bubble_M, icode_E, load_E, dmen_E, dmrw_E, lk_E, valE_E, wdata_E, dmsize_E, dmsext_E, PCplus4_E, rD_E, wben_E, icode_M, load_M, lk_M, valE_M, dmsize_M, dmsext_M, PCplus4_M, rD_M, wben_M, valE_DMEM, wdata_DMEM, dmsize_DMEM, dmen_DMEM, dmrw_DMEM, dmsext_DMEM);
 
-	memory M (clk, nRESET, load_M, dmen_M, dmrw_M, lk_M, valE_M, wdata_M, dmsize_M, dmsext_M, PCplus4_M, valM_M, fwd_M);
+	memory M (clk, nRESET, load_M, lk_M, valE_M, dmsize_M, dmsext_M, PCplus4_M, valE_DMEM, wdata_DMEM, dmsize_DMEM, dmen_DMEM, dmrw_DMEM, dmsext_DMEM, valM_M, fwd_M);
 
 	
 	
