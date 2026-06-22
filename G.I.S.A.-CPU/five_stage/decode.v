@@ -1,3 +1,9 @@
+/*
+	5단계 파이프라인 중 2단계인 Decode.
+	instr_decoder를 이용해 fetch에서 추출한 instr에서 제어 신호를 얻는다.
+	또한, reg_file에서 값을 읽어와 연산에 사용할 수 있도록 준비한다.
+*/
+
 (* keep_hierarchy *) module decode (clk, nRESET, instr_in, pc_in, icode_out, load_out, dmen_out, dmrw_out, aluop_out, sign_out, mulsel_out, lk_out, valA_out, valB_out, wdata_out, dmsize_out, dmsext_out, setcc_out, cond_out, branch_out, rD_out, wben_out, jump_out, rA_out, rB_out, wben_W, dst_W, valD_W, fwd_E, fwd_M, rD_E, rD_M, wben_E, wben_M, reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15);
 
 	input clk, nRESET;
@@ -18,6 +24,8 @@
 	(* keep *) output [3:0] aluop_out, cond_out, rD_out, rA_out, rB_out;
 	(* keep *) output [1:0] mulsel_out, dmsize_out;
 	(* keep *) output load_out, dmen_out, dmrw_out, sign_out, lk_out, dmsext_out, setcc_out, branch_out, wben_out, jump_out;
+	
+	// 디버깅 용 reg_file 출력
 	output [31:0] reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15;
 	
 	wire [31:0] immB;

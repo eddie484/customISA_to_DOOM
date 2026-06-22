@@ -1,20 +1,20 @@
 `include "defines.v"
 
-module instr_decoder (instr_in, icode_out, aluop_out, imode_out, rmode_out, lkmode_out, setcc_out, signed_out, unary_out, jump_out, branch_out, load_out, mulsel_out, rD_out, rA_out, rB_out, immB_out, cond_out, dmen_out, dmrw_out, dmsize_out, dmsext_out, wben_out);
+(* keep_hierarchy *) module instr_decoder (instr_in, icode_out, aluop_out, imode_out, rmode_out, lkmode_out, setcc_out, signed_out, unary_out, jump_out, branch_out, load_out, mulsel_out, rD_out, rA_out, rB_out, immB_out, cond_out, dmen_out, dmrw_out, dmsize_out, dmsext_out, wben_out);
 
 	input [31:0] instr_in;
 	
-	output [5:0] icode_out;
-	output reg [3:0] aluop_out;
-	output imode_out, rmode_out, lkmode_out, setcc_out, signed_out, unary_out, jump_out, branch_out, load_out;
-	output reg [1:0] mulsel_out;
-	output [3:0] rD_out, rA_out, rB_out;
-	output reg [31:0] immB_out;
-	output [3:0] cond_out;
-	output dmen_out, dmrw_out;
-	output reg [1:0] dmsize_out;
-	output dmsext_out;
-	output wben_out;
+	(* keep *) output [5:0] icode_out;
+	(* keep *) output reg [3:0] aluop_out;
+	(* keep *) output imode_out, rmode_out, lkmode_out, setcc_out, signed_out, unary_out, jump_out, branch_out, load_out;
+	(* keep *) output reg [1:0] mulsel_out;
+	(* keep *) output [3:0] rD_out, rA_out, rB_out;
+	(* keep *) output reg [31:0] immB_out;
+	(* keep *) output [3:0] cond_out;
+	(* keep *) output dmen_out, dmrw_out;
+	(* keep *) output reg [1:0] dmsize_out;
+	(* keep *) output dmsext_out;
+	(* keep *) output wben_out;
 	
 	wire [5:0] icode;
 	wire mode_A, mode_B;

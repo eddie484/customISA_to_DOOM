@@ -1,4 +1,4 @@
-module shifter_rotator (valA, valB, sftmode, signed_sig, result, pushed);
+(* keep_hierarchy *) module shifter_rotator (valA, valB, sftmode, signed_sig, result, pushed);
 
     input [31:0] valA, valB;
     input [1:0] sftmode;

@@ -1,5 +1,11 @@
 `include "v/defines.v"
 
+/*
+	5단계 파이프라인 중 3단계인 Execute.
+	Decode에서 얻은 제어 신호들과 피연산값들을 이용해, ALU에서 연산을 진행한다.
+	NZCV reg를 이용해 연산 결과의 상태를 기록한다.
+*/
+
 (* keep_hierarchy *) module execute (clk, nRESET, aluop_in, sign_in, mulsel_in, lk_in, valA_in, valB_in, setcc_in, cond_in, branch_in, PCplus4_in, valE_out, mispred_out, fwd_out, mul_finished_out);
 
 	input clk, nRESET;

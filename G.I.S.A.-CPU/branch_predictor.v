@@ -1,11 +1,11 @@
 `include "defines.v"
 
-module branch_predictor (pc_in, icode_in, immB_in, PCplus4_out, predPC_out);
+(* keep_hierarchy *) module branch_predictor (pc_in, icode_in, immB_in, PCplus4_out, predPC_out);
 
 	input [31:0] pc_in, immB_in;
 	input [5:0] icode_in;
 	
-	output [31:0] PCplus4_out, predPC_out;
+	(* keep *) output [31:0] PCplus4_out, predPC_out;
 	
 	wire [31:0] PCplus4, PCplusImmB;
 	
