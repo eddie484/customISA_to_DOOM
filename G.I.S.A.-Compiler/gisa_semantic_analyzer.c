@@ -2,6 +2,10 @@
 
 
 
+int case_calculator (Node * node);
+
+
+
 
 
 
@@ -441,6 +445,9 @@ int label_name_finder(int label_token_value) {
 
 int inside_func = 0;
 
+int can_break = 0;
+int can_continue = 0;
+
 
 
 void label_name_checker (Node * node) {
@@ -452,12 +459,29 @@ void label_name_checker (Node * node) {
         inside_func++;
         enqueue();
 
+    } else if (node->token.token_number == KW_WHILE || node->token.token_number == KW_DO || node->token.token_number == KW_FOR || node->token.token_number == KW_SWITCH) {
+        if (node->token.token_number != KW_SWITCH) {
+            can_continue++;
+        }
+
+        can_break++;
+        
     } else if (node->token.token_number == NT_LABEL) {
         if (inside_func == 1) {
             int label_id = label_name_saver(node);
             node->token.token_value = label_id;
         } else {
             printf("오류! 함수 바깥에서 라벨이 발견되었습니다. 종료합니다: <%d, %d>\n", node->token.token_number, node->token.token_value);
+            exit(1);
+        }
+    } else if (node->token.token_number == KW_BREAK) {
+        if (can_break < 1) {
+            printf("오류! 사용할 수 없는 위치에서 BREAK가 발견되었습니다. 종료합니다.\n");
+            exit(1);
+        }
+    } else if (node->token.token_number == KW_CONTINUE) {
+        if (can_continue < 1) {
+            printf("오류! 사용할 수 없는 위치에서 CONTINUE가 발견되었습니다. 종료합니다.\n");
             exit(1);
         }
     }
@@ -472,6 +496,14 @@ void label_name_checker (Node * node) {
     // *** OUT ***
     if (node->token.token_number == NT_FUNCTION) {
         inside_func--;
+
+    } else if (node->token.token_number == KW_WHILE || node->token.token_number == KW_DO || node->token.token_number == KW_FOR || node->token.token_number == KW_SWITCH) {
+        if (node->token.token_number != KW_SWITCH) {
+            can_continue--;
+        }
+
+        can_break--;
+        
     }
 
 
@@ -523,9 +555,174 @@ void goto_name_checker (Node * node) {
 
 
 
+
+/**/
+
+// int값을 받아 저장해두는 테이블의 스택이면 충분할듯. ID는 안됨->value를 보고 결정해야 하기에. 네임만 받아서 현재 테이블 상의 중복만 체크.
+// int malloc의 malloc
+
+int case_table_stack_limit;
+int case_table_stack_count;
+
+int * case_table_limit;
+int * case_table_count;
+
+int * default_count;
+
+int ** case_table_stack;
+
+void push_switch() {
+    printf("Pushing Start. Current Case Table stack count: %d\n", case_table_stack_count);
+    case_table_limit[case_table_stack_count] = 8;
+    case_table_count[case_table_stack_count] = 0;
+    default_count[case_table_stack_count] = 0;
+    int * case_table = malloc(sizeof(int) * case_table_limit[case_table_stack_count]);
+    case_table_stack[case_table_stack_count++] = case_table;
+    
+    if (case_table_stack_count == case_table_stack_limit) {
+        case_table_stack_limit = case_table_stack_limit * 2;
+        case_table_stack = realloc(case_table_stack, sizeof(int*) * case_table_stack_limit);
+        memset((char*)case_table_stack + (case_table_stack_limit / 2) * sizeof(int*), 0, (case_table_stack_limit / 2) * sizeof(int*));
+        
+        case_table_limit = realloc(case_table_limit, sizeof(int) * case_table_stack_limit);
+        case_table_count = realloc(case_table_count, sizeof(int) * case_table_stack_limit);
+        default_count = realloc(default_count, sizeof(int) * case_table_stack_limit);
+    }
+
+    printf("Pushing Finish. Current Table stack count: %d\n", case_table_stack_count);
+}
+
+void pop_switch() {
+    printf("Popping\n");
+    free(case_table_stack[--case_table_stack_count]);
+    
+    
+    if ((case_table_stack_count <= case_table_stack_limit / 4) && (case_table_stack_count > 0)) {
+        case_table_stack_limit = case_table_stack_limit / 2;
+        case_table_stack = realloc(case_table_stack, sizeof(int*) * case_table_stack_limit);
+        
+        case_table_limit = realloc(case_table_limit, sizeof(int) * case_table_stack_limit);
+        case_table_count = realloc(case_table_count, sizeof(int) * case_table_stack_limit);
+    }
+}
+
+
+void case_saver(int case_val) {
+
+
+    //case_val와 같은 값이 있는지 현재 테이블 순회해 검토. 있다면 오류 발생.
+    for (int j = 0; j <= case_table_count[case_table_stack_count - 1] - 1; j++) {        // 테이블 내부 순회
+        printf("DEBUG. j: %d\n", j);
+        if (case_val == case_table_stack[case_table_stack_count - 1][j]) {
+            printf("오류: 이미 선언된 Case Value %d입니다. 종료합니다.\n", case_val);
+            exit(1);
+        }
+    }
+
+    printf("정상: 이전에 선언되지 않은 Case Value %d입니다. 계속 진행합니다.\n", case_val);
+
+
+    case_table_stack[case_table_stack_count - 1][case_table_count[case_table_stack_count - 1]++] = case_val;
+
+    if (case_table_count[case_table_stack_count - 1] == case_table_limit[case_table_stack_count - 1]) {
+        case_table_limit[case_table_stack_count - 1] = case_table_limit[case_table_stack_count - 1] * 2;
+        case_table_stack[case_table_stack_count - 1] = realloc(case_table_stack[case_table_stack_count - 1], sizeof(int) * case_table_limit[case_table_stack_count - 1]);
+    }
+
+    printf("Case Value %d를 Table %d에 저장했습니다.\n", case_val, case_table_stack_count - 1);
+}
+
+
+void default_checker() {
+    if (default_count[case_table_stack_count - 1] == 0) {
+        default_count[case_table_stack_count - 1]++;
+    } else {
+        printf("오류: 하나의 Switch 문 안에 %d개의 default가 발견되었습니다.\n", default_count[case_table_stack_count - 1]);
+        exit(1);
+    }
+}
+
+
+
+
+///
+
+
+int switch_depth = 0;
+
+void switch_checker (Node * node) {
+    printf("switch_checker Start: Node <%d, %d>\n", node->token.token_number, node->token.token_value);
+
+
+    // *** IN ***
+    if (node->token.token_number == KW_SWITCH) {
+        switch_depth++;
+        push_switch();
+
+    } else if (node->token.token_number == KW_CASE) {
+        if (switch_depth >= 1) {
+            int case_val = case_calculator(node->son);
+            case_saver(case_val);
+            node->token.token_value = case_val;
+
+            tree_malloc_cleaner(node->son);
+            node->son = NULL;
+
+        } else {
+            printf("오류! SWITCH 바깥에서 CASE가 발견되었습니다. 종료합니다: <%d, %d>\n", node->token.token_number, node->token.token_value);
+            exit(1);
+        }
+    } else if (node->token.token_number == KW_DEFAULT) {
+        if (switch_depth >= 1) {
+            default_checker();
+        } else {
+            printf("오류! SWITCH 바깥에서 DEFAULT가 발견되었습니다. 종료합니다: <%d, %d>\n", node->token.token_number, node->token.token_value);
+            exit(1);
+        }
+    }
+
+
+    // *** CALL SON ***
+    if (node->son != NULL) {
+        switch_checker(node->son);
+    }
+
+
+    // *** OUT ***
+    if (node->token.token_number == KW_SWITCH) {
+        switch_depth--;
+        pop_switch();
+
+    }
+
+
+    // *** CALL BROTHER ***
+    if (node->brother != NULL) {
+        switch_checker(node->brother);
+    }
+}
+
+
+
+
+int case_calculator (Node * node) {
+    if (node->token.token_number == NUM_INT) {
+        return node->token.token_value;
+    } else {
+        printf("오류: case의 값으로 동적 exp가 들어왔습니다: <%d, %d>\n", node->token.token_number, node->token.token_value);
+        exit(1);
+    }
+}
+
+
+
 void label_connector (Node * node) {
+    printf("라벨 네임 체킹을 시작합니다.\n");
     label_name_checker(node);
+    printf("라벨 네임 체킹을 완료했습니다.\n고투 네임 체킹을 시작합니다.\n");
     goto_name_checker(node);
+    printf("고투 네임 체킹을 완료했습니다.\n스위치 체킹을 시작합니다.\n");
+    switch_checker(node);
 
 }
 
@@ -575,6 +772,14 @@ Node * semantic_analyzer(Node * parse_input, char * symbast_name)
     label_table_queue = calloc(label_table_queue_limit, sizeof(Label_info**));
     label_table_limit = malloc(sizeof(int) * label_table_queue_limit);
     label_table_count = malloc(sizeof(int) * label_table_queue_limit);
+
+    case_table_stack_limit = 8;
+    case_table_stack_count = 0;
+    case_table_limit = malloc(sizeof(int) * case_table_stack_limit);
+    case_table_count = malloc(sizeof(int) * case_table_stack_limit);
+    default_count = malloc(sizeof(int) * case_table_stack_limit);
+    case_table_stack = calloc(case_table_stack_limit, sizeof(int*));
+
     
     Node * symbolized_ast;
 
