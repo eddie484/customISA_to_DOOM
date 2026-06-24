@@ -62,6 +62,7 @@ Node * line_op_question(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_while(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_do(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_for(Node * ast, int temp_in_rA, int temp_in_rB);
+Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB);
 
 
 Node * tag_terminal(Node * ast){
@@ -361,6 +362,17 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     // break 일 경우
     } else if (ast->token.token_number == KW_BREAK) {
         Node * n = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, temp_in_rB);
+        return n;
+    } else if (ast->token.token_number == KW_SWITCH) {
+        Node * n = line_switch(ast, temp_in_rA, temp_in_rB);
+        return n;
+    } else if (ast->token.token_number == KW_CASE) {
+        Node * n = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);
+        n->token.token_value = n->son->brother->token.token_value;
+        return n;
+    } else if (ast->token.token_number == KW_DEFAULT) {
+        Node * n = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);
+        n->token.token_value = n->son->brother->token.token_value;
         return n;
     } else {
         printf("AST to TAG 과정에서 오류 발생: Instruction node들을 처리해야 하지만, instr에 해당하지 않는 노드가 입력되었습니다. 입력 노드: %d\n", ast->token.token_number);
@@ -691,6 +703,46 @@ Node * line_for(Node * ast, int temp_in_rA, int temp_in_rB)
 
 
 
+}
+
+Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB) 
+{
+    Node * n1_tail = node_maker(NULL, NULL, TAG_NOP, 0);
+    Node * n1 = node_maker(n1_tail, NULL, TAG_LINE_SET, 0);
+    for (int i = 0; i < case_table_count[ast->token.token_value]; i++) {
+        printf("DEBUG SWITCH CASE LOOP: I = %d, ast->token.token_value = %d\n\n\n", i, ast->token.token_value);
+
+        if (case_table_list[ast->token.token_value][i]->is_default == 0) {
+            printf("asdfnn\n\n\n");
+            Node * cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, ast->son->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
+            Node * branch = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, case_table_list[ast->token.token_value][i]->id);
+            n1_tail->brother = cmp;
+            cmp->brother = branch;
+            n1_tail = branch;
+        }
+    }
+    for (int i = 0; i < case_table_count[ast->token.token_value]; i++) {
+        if (case_table_list[ast->token.token_value][i]->is_default == 1) {
+            Node * branch = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, case_table_list[ast->token.token_value][i]->id);
+            n1_tail->brother = branch;
+            n1_tail = branch;
+        }
+    }
+
+    printf("Switch Table Loading Finished.\n");
+
+    Node * n4 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: switch_end
+    n4->token.token_value = n4->son->brother->token.token_value;
+    Node * n2 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n4->token.token_value);
+    Node * n3 = tag_nt_instr_interpreting(ast->son->brother, 0, n4->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
+
+    n1->brother = n2;
+    n2->brother = n3;
+    n3->brother = n4;
+
+    Node * n = node_maker(n1, NULL, TAG_LINE_SET, 0);
+
+    return n;
 }
 
 

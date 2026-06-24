@@ -245,6 +245,12 @@ typedef struct Label_info {
     int id;     // 모든 테이블에서 겹치지 않는 고유번호. 스코프 위치 함유.
 } Label_info;
 
+typedef struct Switch_info {
+    int is_default;   // 0: case, 1: default
+    int name;   // IDENT의 value
+    int id;     // 모든 테이블에서 겹치지 않는 고유번호. 스코프 위치 함유.
+} Switch_info;
+
 
 int lexval_manager (char *name);
 int check_right_word_boundary(char right);
@@ -268,5 +274,8 @@ Node * get_brother(Node * node);
 extern int temp_count;
 extern Lexeme_value * lex_val_table;
 extern int symbol_id_count, label_id_count;
+extern Switch_info *** case_table_list;
+extern int * case_table_count;
+
 
 #endif
