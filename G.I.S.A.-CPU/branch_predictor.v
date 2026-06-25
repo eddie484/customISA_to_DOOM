@@ -14,6 +14,6 @@
 	adder_subtractor pc_immB_adder (pc_in, immB_in, 1'b0, , PCplusImmB);
 	
 	assign PCplus4_out = PCplus4;
-	assign predPC_out = (icode_in == `B) ? PCplusImmB : PCplus4;
+	assign predPC_out = (icode_in == `B && immB_in[31] == 1'b1) ? PCplusImmB : PCplus4;
 
 endmodule

@@ -50,7 +50,7 @@
 				`AL: taken = 1'b1;
 				default: taken = 1'b0;
 			endcase		
-			mispred_out = (!taken && branch_in);
+			mispred_out = branch_in && (taken ^ (valB_in[31]));
 		end else begin
 			taken = 1'b0;
 			mispred_out = 1'b0;

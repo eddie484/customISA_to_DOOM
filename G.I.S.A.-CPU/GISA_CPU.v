@@ -109,7 +109,7 @@
 	
 	// ----- PC control -----
 	
-	assign pc_computed = mispred_E ? PCplus4_E : (jump_D ? valB_D : predPC_F);
+	assign pc_computed = mispred_E ? (valB_E[31] ? PCplus4_E : valE_E) : (jump_D ? valB_D : predPC_F);
 	
 	
 
