@@ -83,7 +83,8 @@ static const int lexing_state_table[128] = {
     ['!'] = 21,
     ['='] = 22,
     ['?'] = 23,
-    [':'] = 24
+    [':'] = 24,
+    [','] = 25
 };
 
 static const Char_macro_mix lexing_result_table[128] = {
@@ -109,7 +110,10 @@ static const Char_macro_mix lexing_result_table[128] = {
     [23].char_icon = '?',
     
     [24].macro_number = OP_COLON,
-    [24].char_icon = ':'
+    [24].char_icon = ':',
+    
+    [25].macro_number = PN_COMMA,
+    [25].char_icon = ','
 };
 
 
@@ -812,7 +816,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
 
 
             // 한 글자 짜리 토큰들 처리
-            } else if ((cur_state >= 5 && cur_state <= 10) || (cur_state >= 12 && cur_state <= 15) || (cur_state == 18) || (cur_state == 23) || (cur_state == 24)) {
+            } else if ((cur_state >= 5 && cur_state <= 10) || (cur_state >= 12 && cur_state <= 15) || (cur_state == 18) || (cur_state == 23) || (cur_state == 24) || (cur_state == 25)) {
                 lexeme[lexeme_count].token_number = lexing_result_table[cur_state].macro_number;
                 lexeme[lexeme_count].token_value = 0;
 

@@ -79,27 +79,35 @@
 #define KW_CASE         60
 #define KW_DEFAULT      61
 
+#define PN_COMMA        62
+
 
 #define NT_PROGRAM      100
-#define NT_FUNCTION     101
-#define NT_PARAM        102
-#define NT_BLOCK        103
-#define NT_INSTR_LIST   104
-#define NT_INSTR        105
-#define NT_CONTENT      106
-#define NT_DECLR        107
-#define NT_ASSIGN       108
-#define NT_EXP          109
-#define NT_FACTOR       110
-#define NT_UNARY_OP     111
-#define NT_BINARY_OP    112
-#define NT_ELSE         113
-#define NT_LABEL        114
+#define NT_FUNC_DECLR   101
+#define NT_PARAM_LIST   102
+#define NT_PARAM_MULTI  103
+#define NT_PARAM        104
+#define NT_FUNC_CONTENT 105
+#define NT_BLOCK        106
+#define NT_INSTR_LIST   107
+#define NT_INSTR        108
+#define NT_CONTENT      109
+#define NT_ELSE         110
+#define NT_LABEL        111
+#define NT_DECLR        112
+#define NT_VAR_DECLR    113
+#define NT_ASSIGN       114
 #define NT_FOR_INIT     115
 #define NT_FOR_EXP      116
-#define NT_CASE_LIST    117
-#define NT_CASE         118
-#define NT_DEFAULT      119
+#define NT_EXP          117
+#define NT_FACTOR       118
+#define NT_POSTFIX      119
+#define NT_ARG_LIST     120
+#define NT_ARG          121
+#define NT_UNARY_OP     122
+#define NT_BINARY_OP    123
+
+#define NT_FUNCTION     130
 
 
 #define SEM_SYMBOL      150
