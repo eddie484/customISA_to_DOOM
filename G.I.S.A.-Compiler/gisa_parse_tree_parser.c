@@ -875,7 +875,7 @@ Node * p_nt_declr(Lexer_result lex_input){   // <declr> ::= <func_declr> | <var_
         Node * n = node_maker(x1, NULL, NT_DECLR, 0);
 
         return n;
-    } else if (first(nextSymbol.token_number, NT_VAR_DECLR) && first(peek(lex_input, 2).token_number, NT_ASSIGN)) {
+    } else if (first(nextSymbol.token_number, NT_VAR_DECLR) && (first(peek(lex_input, 2).token_number, NT_ASSIGN) || follow(peek(lex_input, 2).token_number, NT_ASSIGN))) {
         printf("parsing: nt_declr->nt_var_declr\n");
         Node * x1 = p_nt_var_declr(lex_input);
         
