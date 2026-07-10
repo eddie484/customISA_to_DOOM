@@ -568,10 +568,12 @@ Node * p_nt_param_list(Lexer_result lex_input){    // <param_list> ::= "void" | 
         Node * x2 = p_terminal(lex_input, IDENT);
         Node * x3 = p_nt_param_multi(lex_input);
 
+        Node * param_node = node_maker(x1, NULL, NT_PARAM, 0);
+
         x1->brother = x2;
-        x2->brother = x3;
+        param_node->brother = x3;
         
-        Node * n = node_maker(x1, NULL, NT_PARAM_LIST, 0);
+        Node * n = node_maker(param_node, NULL, NT_PARAM_LIST, 0);
 
         return n;
     } else error(2, nextSymbol);
@@ -585,12 +587,14 @@ Node * p_nt_param_multi(Lexer_result lex_input){    // <param_multi> ::= "," <pa
         Node * x3 = p_terminal(lex_input, IDENT);
         Node * x4 = p_nt_param_multi(lex_input);
 
+        Node * param_node = node_maker(x2, NULL, NT_PARAM, 0);
+
         x2->brother = x3;
-        x3->brother = x4;
+        param_node->brother = x4;
 
         free(x1);
         
-        return x2;
+        return param_node;
     } else if (follow(nextSymbol.token_number, NT_PARAM_MULTI)) {
         printf("parsing: nt_param_multi_null\n");
         Node * n = NULL;

@@ -33,6 +33,11 @@ int * symbol_table_count;
 Symbol_info *** symbol_table_list;
 Symbol_info *** symbol_table_stack;
 
+
+int func_table_limit;
+int func_table_count;
+Symbol_info ** func_table;
+
 void push() {
     printf("Pushing Start. Current Table stack count: %d\n", symbol_table_stack_count);
     symbol_table_limit[symbol_table_stack_count] = 8;
@@ -81,44 +86,153 @@ int symbol_maker(Node * declr_node) {
 
     printf("Symbol Making IDENT %d\n", ident_node->token.token_value);
 
-    //ident_node->토큰밸류 와 같은 심볼네임이 있는지 현재 테이블 순회해 검토. 있다면 오류 발생.
-    for (int j = 0; j <= symbol_table_count[symbol_table_stack_count - 1] - 1; j++) {        // 테이블 내부 순회
-        printf("DEBUG. j: %d\n", j);
-        if (symbol_table_stack[symbol_table_stack_count - 1][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
-            printf("DEBUG. Table[%d] is NULL. Break.\n", j);
-            break;
-        } else if (ident_node->token.token_value == symbol_table_stack[symbol_table_stack_count - 1][j]->name) {
-            printf("오류: 이미 선언된 Symbol Name <%d, %d>입니다. 종료합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
-            exit(1);
+
+    if (ident_node->brother == NULL || (ident_node->brother != NULL && ident_node->brother->token.token_number != NT_PARAM_LIST)) { // !!!변수 선언일 경우!!!
+        printf("선언되는 IDENT는 변수입니다.\n");
+        //ident_node->토큰밸류 와 같은 심볼네임이 있는지 현재 테이블 순회해 검토. 있다면 오류 발생.
+        for (int j = 0; j <= symbol_table_count[symbol_table_stack_count - 1] - 1; j++) {        // 테이블 내부 순회
+            printf("DEBUG. j: %d\n", j);
+            if (symbol_table_stack[symbol_table_stack_count - 1][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
+                printf("DEBUG. Table[%d] is NULL. Break.\n", j);
+                break;
+            } else if (ident_node->token.token_value == symbol_table_stack[symbol_table_stack_count - 1][j]->name) {
+                printf("오류: 이미 선언된 Symbol Name <%d, %d>입니다. 종료합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
+                exit(1);
+            }
         }
+
+        printf("정상: 이전에 선언되지 않은 Symbol Name <%d, %d>입니다. 계속 진행합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
+
+        // ***** 심볼 만들어 정보 채우기 *****
+        Symbol_info * symbol = malloc(sizeof(Symbol_info));
+        symbol->name = ident_node->token.token_value;
+        symbol->id = symbol_id_count++;
+        symbol->type_tree = node_maker(NULL, NULL, NUM_INT, 0);    // 이후 확장할 것. 형식도 enum으로 개선하고...
+        symbol->size = 4;               // 위의 while문에서 typetree 만드는 함수도 만들어 호출하면 좋을것 같음.
+        symbol->location.type = 0;
+        symbol->location.location = 0;
+        symbol->is_func = 0;
+        symbol->having_body = 0;
+
+        // ***** 심볼을 테이블에 저장 *****
+        symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = symbol;
+
+        if (symbol_table_count[symbol_table_stack_count - 1] == symbol_table_limit[symbol_table_stack_count - 1]) {
+            symbol_table_limit[symbol_table_stack_count - 1] = symbol_table_limit[symbol_table_stack_count - 1] * 2;
+            symbol_table_stack[symbol_table_stack_count - 1] = realloc(symbol_table_stack[symbol_table_stack_count - 1], sizeof(Symbol_info*) * symbol_table_limit[symbol_table_stack_count - 1]);
+        }
+
+        // ***** 저장한 심볼을 프린트하기 *****
+        printf("\n***** Symbol Making End. Made Symbol's info: *****\n");
+        printf("\tName: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->name);
+        printf("\tID: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id);
+        printf("\tType Tree's Top: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->type_tree->token.token_number);
+        printf("\tSize: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->size);
+        printf("\tLocation.Type: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.type);
+        printf("\tLocation.Location: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.location);
+        printf("\tIs Function: NO\n");
+        printf("\tHaving Body: NO (It's only about function.)\n\n\n");
+
+        return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
+        // 변수 선언 끝!
+
+
+    } else { // !!!함수 선언일 경우!!!
+        printf("선언되는 IDENT는 함수입니다.\n");
+        // 이 함수가 이전에 선언된 적이 있는지 확인.
+        for (int j = 0; j <= func_table_count - 1; j++) {        // 함수 테이블 순회
+            printf("DEBUG. j: %d\n", j);
+            if (ident_node->token.token_value == func_table[j]->name) {
+                printf("이전에 선언된 적이 있는 함수입니다: Symbol Name <%d, %d>. 새로운 심볼을 생성하지 않고, 해당 함수의 심볼을 이용합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
+
+                if (func_table[j]->having_body == 0) {  // 정의된적 없는 함수인 경우
+                    if (ident_node->brother->brother != NULL && ident_node->brother->brother->token.token_number == NT_BLOCK) {
+                        if (symbol_table_stack_count == 1) {
+                            printf("함수가 정의되었습니다.\n");
+                            func_table[j]->having_body = 1;
+                        } else {
+                            printf("오류: 스코프 베이스가 아닌 곳에서 함수 정의가 시도되었습니다.\n");
+                            exit(1);
+                        }
+                    }
+                } else {    // 정의된적 있는 함수인 경우
+                    if (ident_node->brother->brother != NULL && ident_node->brother->brother->token.token_number == NT_BLOCK) {
+                        printf("오류: 함수가 두 번 이상 정의되었습니다.\n");
+                        exit(1);
+                    }
+                }
+
+                symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = func_table[j];
+
+                if (symbol_table_count[symbol_table_stack_count - 1] == symbol_table_limit[symbol_table_stack_count - 1]) {
+                    symbol_table_limit[symbol_table_stack_count - 1] = symbol_table_limit[symbol_table_stack_count - 1] * 2;
+                    symbol_table_stack[symbol_table_stack_count - 1] = realloc(symbol_table_stack[symbol_table_stack_count - 1], sizeof(Symbol_info*) * symbol_table_limit[symbol_table_stack_count - 1]);
+                }
+
+                return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
+                // 이전에 선언된 함수 처리 끝.
+            }
+        }
+
+        printf("이전에 선언되지 않은 함수 Symbol Name <%d, %d>입니다. 새로운 심볼을 생성해 저장합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
+
+        // ***** 심볼 만들어 정보 채우기 *****
+        Symbol_info * symbol = malloc(sizeof(Symbol_info));
+        symbol->name = ident_node->token.token_value;
+        symbol->id = symbol_id_count++;
+        symbol->type_tree = node_maker(NULL, NULL, NUM_INT, 0);    // 이후 확장할 것. 형식도 enum으로 개선하고...
+        symbol->size = 4;               // 위의 while문에서 typetree 만드는 함수도 만들어 호출하면 좋을것 같음.
+        symbol->location.type = 0;
+        symbol->location.location = 0;
+        symbol->is_func = 1;
+        symbol->having_body = 0;
+
+        if (ident_node->brother->brother != NULL && ident_node->brother->brother->token.token_number == NT_BLOCK) {
+            if (symbol_table_stack_count == 1) {
+                symbol->having_body = 1;
+            } else {
+                printf("오류: 스코프 베이스가 아닌 곳에서 함수 정의가 시도되었습니다.");
+                exit(1);
+            }
+        }
+
+        
+
+        // ***** 심볼을 테이블에 저장 *****
+        func_table[func_table_count++] = symbol;
+
+        if (func_table_count == func_table_limit) {
+            func_table_limit = func_table_limit * 2;
+            func_table = realloc(func_table, sizeof(Symbol_info*) * func_table_limit);
+        }
+
+        symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = func_table[func_table_count - 1];
+
+        if (symbol_table_count[symbol_table_stack_count - 1] == symbol_table_limit[symbol_table_stack_count - 1]) {
+            symbol_table_limit[symbol_table_stack_count - 1] = symbol_table_limit[symbol_table_stack_count - 1] * 2;
+            symbol_table_stack[symbol_table_stack_count - 1] = realloc(symbol_table_stack[symbol_table_stack_count - 1], sizeof(Symbol_info*) * symbol_table_limit[symbol_table_stack_count - 1]);
+        }
+
+        // ***** 저장한 심볼을 프린트하기 *****
+        printf("\n***** Symbol Making End. Made Symbol's info: *****\n");
+        printf("\tName: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->name);
+        printf("\tID: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id);
+        printf("\tType Tree's Top: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->type_tree->token.token_number);
+        printf("\tSize: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->size);
+        printf("\tLocation.Type: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.type);
+        printf("\tLocation.Location: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.location);
+        printf("\tIs Function: YES\n");
+        if(symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->having_body == 1) {
+            printf("\tHaving Body: YES\n\n\n");
+        } else {
+            printf("\tHaving Body: NO\n\n\n");
+        }
+        
+
+        return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
     }
 
-    printf("정상: 이전에 선언되지 않은 Symbol Name <%d, %d>입니다. 계속 진행합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
-
-    Symbol_info * symbol = malloc(sizeof(Symbol_info));
-    symbol->name = ident_node->token.token_value;
-    symbol->id = symbol_id_count++;
-    symbol->type_tree = node_maker(NULL, NULL, NUM_INT, 0);    // 이후 확장할 것. 형식도 enum으로 개선하고...
-    symbol->size = 4;               // 위의 while문에서 typetree 만드는 함수도 만들어 호출하면 좋을것 같음.
-    symbol->location.type = 0;
-    symbol->location.location = 0;
-
-    symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = symbol;
-
-    if (symbol_table_count[symbol_table_stack_count - 1] == symbol_table_limit[symbol_table_stack_count - 1]) {
-        symbol_table_limit[symbol_table_stack_count - 1] = symbol_table_limit[symbol_table_stack_count - 1] * 2;
-        symbol_table_stack[symbol_table_stack_count - 1] = realloc(symbol_table_stack[symbol_table_stack_count - 1], sizeof(Symbol_info*) * symbol_table_limit[symbol_table_stack_count - 1]);
-    }
-
-    printf("\n***** Symbol Making End. Made Symbol's info: *****\n");
-    printf("\tName: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->name);
-    printf("\tID: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id);
-    printf("\tType Tree's Top: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->type_tree->token.token_number);
-    printf("\tSize: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->size);
-    printf("\tLocation.Type: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.type);
-    printf("\tLocation.Location: %d\n\n\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.location);
-
-    return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
+    
 }
 
 int symbol_finder(int ident_token_value) {
@@ -167,7 +281,7 @@ void ident_symbolizer(Node * node) {
     if (node->token.token_number == NT_BLOCK) {
         push();
 
-    } else if (node->token.token_number == NT_DECLR) {    // NT_DECLR 구조: <DECLR>->
+    } else if (node->token.token_number == NT_VAR_DECLR) {    // NT_VAR_DECLR 구조: <DECLR>->
         int symbol_id = symbol_maker(node);
         Node * ident_node = node->son;
 
@@ -236,6 +350,35 @@ void ident_symbolizer(Node * node) {
         }
             
 
+    } else if (node->token.token_number == NT_FUNC_DECLR) {    
+        int symbol_id = symbol_maker(node);
+        Node * ident_node = node->son;
+
+        while (ident_node->token.token_number != IDENT) {
+            ident_node = get_brother(ident_node);
+        }
+        
+        ident_node->token.token_number = SEM_SYMBOL;
+        ident_node->token.token_value = symbol_id;
+
+        push();
+
+        Node * param_node = ident_node->brother->son;
+        while (param_node != NULL && param_node->token.token_number == NT_PARAM) {
+            int param_node_id = symbol_maker(param_node);
+
+            Node * param_node_son = param_node->son;
+            while (param_node_son != NULL) {
+                Node * n = param_node_son->brother;
+                free(param_node_son);
+                param_node_son = n;
+            }
+
+            param_node->son = node_maker(NULL, NULL, SEM_SYMBOL, param_node_id);
+            param_node = param_node->brother;
+        }
+            
+
     } else if (node->token.token_number == IDENT) {
         int symbol_id = symbol_finder(node->token.token_value);
 
@@ -267,14 +410,17 @@ void ident_symbolizer(Node * node) {
     // block 범위는 node 안쪽이고, node의 brother는 범위 바깥이므로, call brother 이전에 pop을 수행해야 한다.
     if (node->token.token_number == NT_BLOCK) {
         pop();
-    }
-    
-    else if (node->token.token_number == NT_EXP) {
+
+    } else if (node->token.token_number == NT_EXP) {
         if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_LSREQ) && node->son->brother->token.token_number != SEM_SYMBOL) {
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
         }
-    }
+
+    }else if (node->token.token_number == NT_FUNC_DECLR) {    
+        pop(); 
+
+    } 
     
 
 
@@ -829,6 +975,10 @@ Node * semantic_analyzer(Node * parse_input, char * symbast_name)
     symbol_table_limit = malloc(sizeof(int) * symbol_table_stack_limit);
     symbol_table_count = malloc(sizeof(int) * symbol_table_stack_limit);
 
+    func_table_limit = 4;
+    func_table_count = 0;
+    func_table = malloc(sizeof(Symbol_info*) * func_table_limit);
+
     label_table_queue_limit = 4;
     label_table_queue_top = 0;
     label_table_queue_base = 0;
@@ -858,7 +1008,9 @@ Node * semantic_analyzer(Node * parse_input, char * symbast_name)
 
 
     symbolized_ast = parse_input;
-    ident_symbolizer(symbolized_ast->son->son->brother->brother->brother);
+    push();
+    ident_symbolizer(symbolized_ast);
+    pop();
     printf("Ident Symbolizer가 정상적으로 완료되었습니다.\n");
 
     label_connector(symbolized_ast);
