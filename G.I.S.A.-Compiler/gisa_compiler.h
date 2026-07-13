@@ -111,6 +111,7 @@
 
 
 #define SEM_SYMBOL      150
+#define SEM_TYPE        151
 
 
 #define TAG_PROGRAM     300

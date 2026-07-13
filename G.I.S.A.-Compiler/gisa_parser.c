@@ -558,8 +558,10 @@ Node * p_nt_param_list(Lexer_result lex_input){    // <param_list> ::= "void" | 
     if (nextSymbol.token_number == KW_VOID) {
         printf("parsing: nt_param_list->kw_void\n");
         Node * x1 = p_terminal(lex_input, KW_VOID);
+
+        Node * param_node = node_maker(x1, NULL, NT_PARAM, 0);
         
-        Node * n = node_maker(x1, NULL, NT_PARAM_LIST, 0);
+        Node * n = node_maker(param_node, NULL, NT_PARAM_LIST, 0);
 
         return n;
     } else if (first(nextSymbol.token_number, NT_PARAM)) {

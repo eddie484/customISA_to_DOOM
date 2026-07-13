@@ -139,7 +139,19 @@ int symbol_maker(Node * declr_node) {
 
     } else { // !!!함수 선언일 경우!!!
         printf("선언되는 IDENT는 함수입니다.\n");
-        // 이 함수가 이전에 선언된 적이 있는지 확인.
+        // 이 함수가 이전에 변수로 선언된 적이 있는지 확인.
+        for (int j = 0; j <= symbol_table_count[symbol_table_stack_count - 1] - 1; j++) {        // 테이블 내부 순회
+            printf("DEBUG. j: %d\n", j);
+            if (symbol_table_stack[symbol_table_stack_count - 1][j] == NULL) {     
+                printf("DEBUG. Table[%d] is NULL. Break.\n", j);
+                break;
+            } else if (ident_node->token.token_value == symbol_table_stack[symbol_table_stack_count - 1][j]->name && symbol_table_stack[symbol_table_stack_count - 1][j]->is_func == 0) {
+                printf("오류: 이미 변수로 선언된 Symbol Name <%d, %d>을, 함수로 다시 선언 시도하고 있습니다. 종료합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
+                exit(1);
+            }
+        }
+
+        // 이 함수가 이전에 함수로 선언된 적이 있는지 확인.
         for (int j = 0; j <= func_table_count - 1; j++) {        // 함수 테이블 순회
             printf("DEBUG. j: %d\n", j);
             if (ident_node->token.token_value == func_table[j]->name) {
@@ -180,8 +192,28 @@ int symbol_maker(Node * declr_node) {
         Symbol_info * symbol = malloc(sizeof(Symbol_info));
         symbol->name = ident_node->token.token_value;
         symbol->id = symbol_id_count++;
-        symbol->type_tree = node_maker(NULL, NULL, NUM_INT, 0);    // 이후 확장할 것. 형식도 enum으로 개선하고...
-        symbol->size = 4;               // 위의 while문에서 typetree 만드는 함수도 만들어 호출하면 좋을것 같음.
+
+        Node * type_return = node_maker(node_maker(NULL, NULL, declr_node->son->token.token_number, 0), NULL, SEM_TYPE, 0);
+        Node * type_tree_current = type_return;
+        Node * param_node = ident_node->brother->son;
+        while (param_node != NULL) {
+            Node * param_node_son_holder = param_node->son;
+            Node * param_node_type_holder = node_maker(NULL, NULL, param_node_son_holder->token.token_number, param_node_son_holder->token.token_value);
+            param_node_son_holder = param_node_son_holder->brother;
+            while (param_node_son_holder != NULL && param_node_son_holder->token.token_number != IDENT) {
+                param_node_type_holder->brother = node_maker(NULL, NULL, param_node_son_holder->token.token_number, param_node_son_holder->token.token_value);
+                param_node_son_holder = param_node_son_holder->brother;
+                param_node_type_holder = param_node_type_holder->brother;
+            }
+
+            type_tree_current->brother = node_maker(param_node_type_holder, NULL, SEM_TYPE, 0);
+            type_tree_current = type_tree_current->brother;
+
+            param_node = param_node->brother;
+        }
+
+        symbol->type_tree = type_return;    // 이후 확장할 것. 형식도 enum으로 개선하고...
+        symbol->size = 4;               // 수정 및 처리가 필요할듯.
         symbol->location.type = 0;
         symbol->location.location = 0;
         symbol->is_func = 1;
@@ -217,7 +249,8 @@ int symbol_maker(Node * declr_node) {
         printf("\n***** Symbol Making End. Made Symbol's info: *****\n");
         printf("\tName: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->name);
         printf("\tID: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id);
-        printf("\tType Tree's Top: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->type_tree->token.token_number);
+        printf("\tType Tree:\n");
+        bin_tree_printer(symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->type_tree);
         printf("\tSize: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->size);
         printf("\tLocation.Type: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.type);
         printf("\tLocation.Location: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.location);
@@ -235,14 +268,22 @@ int symbol_maker(Node * declr_node) {
     
 }
 
-int symbol_finder(int ident_token_value) {
+int symbol_finder(Node * ident_node) {
     for (int i = symbol_table_stack_count - 1; i >= 0; i--) {      // 테이블 스택 순회
         for (int j = 0; j <= symbol_table_count[i] - 1; j++) {        // 테이블 내부 순회
             if (symbol_table_stack[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
                 printf("DEBUG: symbol_table_stack[%d][%d] is NULL\n", i, j);
                 break;
-            } else if (ident_token_value == symbol_table_stack[i][j]->name) {
-                printf("DEBUG: %d는 symbol_table_stack[%d][%d]에 정상적으로 선언된 심볼입니다.\n", ident_token_value, i, j);
+            } else if (ident_node->token.token_value == symbol_table_stack[i][j]->name) {
+                printf("DEBUG: %d는 symbol_table_stack[%d][%d]에 정상적으로 선언된 심볼입니다.\n", ident_node->token.token_value, i, j);
+
+                if (symbol_table_stack[i][j]->is_func == 0 && ident_node->brother != NULL && ident_node->brother->token.token_number == NT_ARG_LIST) {
+                    printf("오류: 변수로 선언된 심볼(id: %d, name: %d)를, 노드 <%d, %d>에서 함수처럼 호출하고 있습니다.", symbol_table_stack[i][j]->id, symbol_table_stack[i][j]->name, ident_node->token.token_number, ident_node->token.token_value);
+                    exit(1);
+                } else if (symbol_table_stack[i][j]->is_func == 1 && (ident_node->brother == NULL || (ident_node->brother != NULL && ident_node->brother->token.token_number != NT_ARG_LIST))) {
+                    printf("오류: 함수로 선언된 심볼(id: %d, name: %d)를, 노드 <%d, %d>에서 변수처럼 호출하고 있습니다.", symbol_table_stack[i][j]->id, symbol_table_stack[i][j]->name, ident_node->token.token_number, ident_node->token.token_value);
+                    exit(1);
+                }
                 return symbol_table_stack[i][j]->id;
             }
 
@@ -250,7 +291,7 @@ int symbol_finder(int ident_token_value) {
         }
     }
 
-    printf("오류: 선언되지 않은 Symbol Name %d을 사용하려 합니다. 종료합니다.\n", ident_token_value);
+    printf("오류: 선언되지 않은 Symbol Name %d을 사용하려 합니다. 종료합니다.\n", ident_node->token.token_value);
     exit(1);    // 미선언 변수 사용 시도한 경우.
 }
 
@@ -364,7 +405,7 @@ void ident_symbolizer(Node * node) {
         push();
 
         Node * param_node = ident_node->brother->son;
-        while (param_node != NULL && param_node->token.token_number == NT_PARAM) {
+        while (param_node != NULL && param_node->token.token_number == NT_PARAM && param_node->son->token.token_number != KW_VOID) {
             int param_node_id = symbol_maker(param_node);
 
             Node * param_node_son = param_node->son;
@@ -380,7 +421,7 @@ void ident_symbolizer(Node * node) {
             
 
     } else if (node->token.token_number == IDENT) {
-        int symbol_id = symbol_finder(node->token.token_value);
+        int symbol_id = symbol_finder(node);
 
         node->token.token_number = SEM_SYMBOL;
         node->token.token_value = symbol_id;
