@@ -280,6 +280,8 @@ Node * node_maker(Node *  n_son, Node *  n_brother, int n_num, int n_val);
 Node * line_maker(int line_type, int p1_num, int p1_val, int p2_num, int p2_val, int p3_num, int p3_val);
 Node * get_son(Node * node);
 Node * get_brother(Node * node);
+Node * copy_tree(Node * node);
+int compare_tree(Node * node_A, Node * node_B);
 
 
 extern int temp_count;
@@ -287,6 +289,7 @@ extern Lexeme_value * lex_val_table;
 extern int symbol_id_count, label_id_count;
 extern Switch_info *** case_table_list;
 extern int * case_table_count;
+
 
 
 #endif

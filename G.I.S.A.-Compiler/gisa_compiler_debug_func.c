@@ -146,3 +146,53 @@ Node * get_son(Node * node) {
 Node * get_brother(Node * node) {
     return node->brother;
 }
+
+
+Node * copy_tree(Node * node) {
+    Node * n = node_maker(NULL, NULL, node->token.token_number, node->token.token_value);
+
+    if (node->son != NULL) {
+        n->son = copy_tree(node->son);
+    }
+
+    if (node->brother != NULL) {
+        n->brother = copy_tree(node->brother);
+    }
+
+    return n;
+}
+
+int compare_tree(Node * node_A, Node * node_B) {
+    if (node_A == NULL && node_B == NULL) {
+        return 1;
+    } else if ((node_A != NULL && node_B == NULL) || (node_A == NULL && node_B != NULL)) {
+        return 0;
+    }
+
+    int result;
+    int result_son;
+    int result_brother;
+    if (node_A->token.token_number == node_B->token.token_number && node_A->token.token_value == node_B->token.token_value) {
+        result = 1;
+    } else {
+        result = 0;
+    }
+
+    if ((node_A->son != NULL && node_B->son == NULL) || (node_A->son == NULL && node_B->son != NULL) || (node_A->brother != NULL && node_B->brother == NULL) || (node_A->brother == NULL && node_B->brother != NULL)) {
+        return 0;
+    }
+
+    if (node_A->son != NULL && node_B->son != NULL) {
+        result_son = compare_tree(node_A->son, node_B->son);
+    } else {
+        result_son = 1;
+    }
+
+    if (node_A->brother != NULL && node_B->brother != NULL) {
+        result_brother = compare_tree(node_A->brother, node_B->brother);
+    } else {
+        result_brother = 1;
+    }
+
+    return (result && result_son && result_brother);
+}

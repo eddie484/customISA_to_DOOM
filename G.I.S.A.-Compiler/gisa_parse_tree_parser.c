@@ -1110,7 +1110,7 @@ Node * p_nt_arg_list(Lexer_result lex_input){   // <arg_list> ::= <exp> <arg> | 
         return n;
     } else if (follow(nextSymbol.token_number, NT_ARG_LIST)) {
         printf("parsing: nt_arg_list_null\n");
-        Node * n = NULL;
+        Node * n = node_maker(NULL, NULL, NT_ARG_LIST, 0);
 
         return n;
     } else error(2, nextSymbol);
