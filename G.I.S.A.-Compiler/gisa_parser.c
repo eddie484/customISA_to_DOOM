@@ -506,42 +506,6 @@ Node * p_nt_func_declr(Lexer_result lex_input){   // <func_declr> ::= "KW_INT" I
         x1->brother = x2;
         x2->brother = x4;
         x4->brother = x6;
-
-
-        /*// func block의 son의 마지막 brother가 return이 아닐 경우 return 0 삽입.
-        if (x1->token.token_value != KW_VOID) {     // void 타입 함수가 아닐 경우.
-            if (x6->son == NULL) {      // 빈 함수인 경우
-                printf("반환형이 있어야 하지만, 본문이 비어있는 함수입니다. return 0;을 삽입합니다.\n");
-                Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
-                Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
-                Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
-
-                content->son = ret;
-                ret->brother = zero;
-
-                x6->son = content;
-
-            } else {        // 비진 않았지만, return으로 끝나지 않은 함수.
-                Node * little_brother = x6->son;
-
-                while (little_brother->brother != NULL) {
-                    little_brother = little_brother->brother;
-                }
-
-                if (little_brother->son->token.token_number != KW_RETURN) {
-                    printf("반환형이 있어야 하지만, return으로 끝나지 않는 함수입니다. return 0;을 삽입합니다.\n");
-                    Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
-                    Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
-                    Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
-
-                    content->son = ret;
-                    ret->brother = zero;
-
-                    little_brother->brother = content;
-                }
-            }
-        }*/
-        
         
         Node * n = node_maker(x1, NULL, NT_FUNC_DECLR, 0);
 
@@ -616,6 +580,31 @@ Node * p_nt_func_content(Lexer_result lex_input){      // <func_content> ::= <bl
     if (first(nextSymbol.token_number, NT_BLOCK)) {
         printf("parsing: nt_func_content->nt_block\n");
         Node * x1 = p_nt_block(lex_input);
+
+        if (x1->son == NULL) {  // 빈 함수
+            Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
+            Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
+            Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
+
+            content->son = ret;
+            ret->brother = zero;
+
+            x1->son = content;
+        } else {    // 비지 않은 함수
+            Node * func_content = x1->son;
+            while (func_content->brother != NULL) {
+                func_content = func_content->brother;
+            }
+
+            Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
+            Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
+            Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
+
+            content->son = ret;
+            ret->brother = zero;
+
+            func_content->brother = content;
+        }
         
         return x1;
     } else if (nextSymbol.token_number == PN_SEMI) {
