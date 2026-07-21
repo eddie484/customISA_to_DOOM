@@ -36,6 +36,8 @@ int * symbol_table_count;
 Symbol_info *** symbol_table_list;
 Symbol_info *** symbol_table_stack;
 
+int * symbol_table_list_inside_count;
+
 
 int func_table_limit;
 int func_table_count;
@@ -62,12 +64,16 @@ void push() {
 
 void pop() {
     printf("Popping\n");
-    symbol_table_list[symbol_table_list_count++] = symbol_table_stack[--symbol_table_stack_count];
+    symbol_table_list[symbol_table_list_count] = symbol_table_stack[--symbol_table_stack_count];
+    symbol_table_list_inside_count[symbol_table_list_count] = symbol_table_count[symbol_table_stack_count];
     symbol_table_stack[symbol_table_stack_count] = NULL;
+
+    symbol_table_list_count++;
     
     if (symbol_table_list_count == symbol_table_list_limit) {
         symbol_table_list_limit = symbol_table_list_limit * 2;
         symbol_table_list = realloc(symbol_table_list, sizeof(Symbol_info**) * symbol_table_list_limit);
+        symbol_table_list_inside_count = realloc(symbol_table_list_inside_count, sizeof(int) * symbol_table_list_limit);
     }
     
     if ((symbol_table_stack_count <= symbol_table_stack_limit / 4) && (symbol_table_stack_count > 0)) {
@@ -179,6 +185,8 @@ int symbol_maker(Node * declr_node) {
                         if (symbol_table_stack_count == 1) {
                             printf("정상: 함수가 정의되었습니다.\n");
                             func_table[j]->having_body = 1;
+                            func_table[j]->location.type = 1;
+                            func_table[j]->location.location = label_id_count++;
                         } else {
                             printf("오류: 스코프 베이스가 아닌 곳에서 함수 정의가 시도되었습니다.\n");
                             exit(1);
@@ -219,6 +227,8 @@ int symbol_maker(Node * declr_node) {
         if (ident_node->brother->brother != NULL && ident_node->brother->brother->token.token_number == NT_BLOCK) {
             if (symbol_table_stack_count == 1) {
                 symbol->having_body = 1;
+                symbol->location.type = 1;
+                symbol->location.location = label_id_count++;
             } else {
                 printf("오류: 스코프 베이스가 아닌 곳에서 함수 정의가 시도되었습니다.");
                 exit(1);
@@ -265,7 +275,7 @@ int symbol_maker(Node * declr_node) {
     
 }
 
-Symbol_info * symbol_finder(Node * ident_node) {
+Symbol_info * symbol_finder_from_ident_node(Node * ident_node) {
     for (int i = symbol_table_stack_count - 1; i >= 0; i--) {      // 테이블 스택 순회
         for (int j = 0; j <= symbol_table_count[i] - 1; j++) {        // 테이블 내부 순회
             if (symbol_table_stack[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
@@ -305,6 +315,26 @@ Symbol_info * symbol_finder(Node * ident_node) {
     }
 
     printf("오류: 선언되지 않은 Symbol Name %d을 사용하려 합니다. 종료합니다.\n", ident_node->token.token_value);
+    exit(1);    // 미선언 변수 사용 시도한 경우.
+}
+
+Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node) {
+    for (int i = symbol_table_list_count - 1; i >= 0; i--) {      // 테이블 스택 순회
+        for (int j = 0; j <= symbol_table_list_inside_count[i] - 1; j++) {        // 테이블 내부 순회
+            if (symbol_table_list[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
+                printf("DEBUG: symbol_table_list[%d][%d] is NULL\n", i, j);
+                break;
+            } else if (symbol_node->token.token_value == symbol_table_list[i][j]->id) {
+                printf("DEBUG: Symbol ID %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_node->token.token_value, i, j);
+                
+                return symbol_table_list[i][j];
+            }
+
+            printf("DEBUG: symbol_table_list[%d][%d]'s name is %d\n", i, j, symbol_table_list[i][j]->name);
+        }
+    }
+
+    printf("오류: 선언되지 않은 Symbol Name %d을 사용하려 합니다. 종료합니다.\n", symbol_node->token.token_value);
     exit(1);    // 미선언 변수 사용 시도한 경우.
 }
 
@@ -351,10 +381,10 @@ Node * get_type_tree_from_func_call(Node * ident_node) {
     }else {
         while (param_node != NULL) {
             Node * param_return_type;
-            if (symbol_finder(param_node->son)->is_func == 1) {
-                param_return_type = symbol_finder(param_node->son)->type_tree->son;
+            if (symbol_finder_from_ident_node(param_node->son)->is_func == 1) {
+                param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree->son;
             } else {
-                param_return_type = symbol_finder(param_node->son)->type_tree;
+                param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree;
             }
             Node * param_node_type = copy_tree(param_return_type);
 
@@ -497,7 +527,7 @@ void ident_symbolizer(Node * node) {
             
 
     } else if (node->token.token_number == IDENT) {
-        int symbol_id = symbol_finder(node)->id;
+        int symbol_id = symbol_finder_from_ident_node(node)->id;
 
         node->token.token_number = SEM_SYMBOL;
         node->token.token_value = symbol_id;
@@ -1089,6 +1119,8 @@ Node * semantic_analyzer(Node * parse_input, char * symbast_name)
     symbol_table_stack_count = 0;
     symbol_table_list = calloc(symbol_table_list_limit, sizeof(Symbol_info**));
     symbol_table_stack = calloc(symbol_table_stack_limit, sizeof(Symbol_info**));
+    symbol_table_list_inside_count = calloc(symbol_table_list_limit, sizeof(int));
+
     symbol_table_limit = malloc(sizeof(int) * symbol_table_stack_limit);
     symbol_table_count = malloc(sizeof(int) * symbol_table_stack_limit);
 

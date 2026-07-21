@@ -484,9 +484,7 @@ Node * p_nt_program(Lexer_result lex_input){    //     <program> ::= <func_declr
 
         x1->brother = x2;
         
-        Node * n = node_maker(x1, NULL, NT_PROGRAM, 0);
-
-        return n;
+        return x1;
     } else if (follow(nextSymbol.token_number, NT_PROGRAM)) {
         printf("parsing: nt_program_null\n");
         Node * n = NULL;
@@ -1215,7 +1213,8 @@ Node * p_nt_binary_op(Lexer_result lex_input){      // <binary_op> ::= "OP_ADD" 
 Node * parser(Lexer_result lex_input, char *parse_name)
 {
     symbolCount = 0;
-    Node * ast_top;
+    Node * ast_top = node_maker(NULL, NULL, NT_PROGRAM, 0);
+;
 
 
     FILE *parsefp = fopen(parse_name, "w");         // 처리 결과 ast를 저장할 파일 오픈
@@ -1227,7 +1226,7 @@ Node * parser(Lexer_result lex_input, char *parse_name)
 
 
     get_nextSymbol(lex_input);
-    ast_top = p_nt_program(lex_input);
+    ast_top->son = p_nt_program(lex_input);
 
     if (nextSymbol.token_number != 999) {
         printf("Parse Error: parsing이 마무리되지 않은 lexeme가 남은 채 parsing이 종료되었습니다. 현재 처리되어야 할 토큰: <%d, %d>\n", nextSymbol.token_number, nextSymbol.token_value);

@@ -116,18 +116,20 @@
 
 #define TAG_PROGRAM     300
 #define TAG_FUNCTION    301
-#define TAG_INSTR       302
-#define TAG_LINE        303
-#define TAG_LINE_SET    304
-#define TAG_TEMP        305
-#define TAG_MOV         306
-#define TAG_BRANCH      307
-#define TAG_LABEL       308
-#define TAG_LABEL_MAKE  309
-#define TAG_COND        310
-#define TAG_CMP         311 //
-#define TAG_BLOCK       312
-#define TAG_NOP         313
+#define TAG_PARAM_LIST  302
+#define TAG_INSTR       303
+#define TAG_LINE        304
+#define TAG_LINE_SET    305
+#define TAG_TEMP        306
+#define TAG_MOV         307
+#define TAG_BRANCH      308
+#define TAG_LABEL       309
+#define TAG_LABEL_MAKE  310
+#define TAG_COND        311
+#define TAG_CMP         312 //
+#define TAG_BLOCK       313
+#define TAG_NOP         314
+#define TAG_FUNC_CALL   315
 
 #define COND_EQ         385
 #define COND_NE         386
@@ -237,7 +239,7 @@ typedef struct Node {
 } Node;
 
 typedef struct Symbol_location {
-    int type;
+    int type;       // 0: 일반 변수, 1: 라벨
     int location;
 } Symbol_location;
 
@@ -289,6 +291,8 @@ extern Lexeme_value * lex_val_table;
 extern int symbol_id_count, label_id_count;
 extern Switch_info *** case_table_list;
 extern int * case_table_count;
+extern Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node);
+
 
 
 
