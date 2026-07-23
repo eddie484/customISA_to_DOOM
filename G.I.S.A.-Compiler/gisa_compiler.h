@@ -161,6 +161,8 @@
 #define ASM_PROLOGUE    208
 #define ASM_EPILOGUE    209
 #define ASM_BLOCK       210
+#define ASM_PARAM_LIST  211 // 나중에 없앨수도
+#define ASM_FUNC_CALL   212 // JMPL이 된다.
 
 #define ASM_MOV         400
 #define ASM_ADD         401

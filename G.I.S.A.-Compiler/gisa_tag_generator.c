@@ -161,15 +161,11 @@ Node * tag_nt_function(Node * ast){
 
             printf("Processing: tag_nt_function\n");
             printf("Processing: 정의가 존재하는 함수. TAG tree에 등록됩니다.\n");
-            Node * x1 = tag_terminal(ast->son);
-            Node * x2 = tag_terminal(ast->son->brother);
-            Node * x3 = tag_nt_param_list(ast->son->brother->brother);
-            Node * x4 = tag_nt_block(ast->son->brother->brother->brother, 0, 0);
+            Node * x1 = tag_nt_param_list(ast->son->brother->brother);
+            Node * x2 = tag_nt_block(ast->son->brother->brother->brother, 0, 0);
 
             func_start_label->brother = x1;
             x1->brother = x2;
-            x2->brother = x3;
-            x3->brother = x4;
 
             Node * n = node_maker(func_start_label, brother_func, TAG_FUNCTION, 0);
 

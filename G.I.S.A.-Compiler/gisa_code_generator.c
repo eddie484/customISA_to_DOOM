@@ -4,6 +4,7 @@
 Node * asm_pass1_terminal(Node * tag);
 Node * asm_pass1_nt_program(Node * tag);
 Node * asm_pass1_nt_function(Node * tag);
+Node * asm_pass1_nt_param_receive(Node * tag);
 Node * asm_pass1_nt_block(Node * tag);
 Node * asm_pass1_nt_instr(Node * tag);
 Node * asm_pass1_nt_instr_loop(Node * tag);
@@ -51,24 +52,107 @@ Node * asm_pass1_nt_program(Node * tag){
 }
 
 Node * asm_pass1_nt_function(Node * tag){
-    if (tag->token.token_number == TAG_FUNCTION) {
+    if (tag != NULL && tag->token.token_number == TAG_FUNCTION) {
+        Node * brother_func = NULL;
+        if (tag->brother != NULL && tag->brother->token.token_number == TAG_FUNCTION) {
+            printf("Processing: brother function을 처리합니다.\n");
+            brother_func = asm_pass1_nt_function(tag->brother);
+        }
+        
         printf("Processing: asm_pass1_nt_function\n");
-        Node * x1 = asm_pass1_terminal(tag->son);
-        Node * x2 = asm_pass1_terminal(tag->son->brother);
-        Node * x3 = asm_pass1_terminal(tag->son->brother->brother);
-        Node * x4 = asm_pass1_nt_block(tag->son->brother->brother->brother);
+        Node * x1 = asm_pass1_nt_instr_loop(tag->son);
+        Node * x2 = asm_pass1_nt_param_receive(tag->son->brother);
+        Node * x3 = asm_pass1_nt_block(tag->son->brother->brother);
 
         x1->brother = x2;
         x2->brother = x3;
-        x3->brother = x4;
 
-        Node * n = node_maker(x1, NULL, ASM_FUNCTION, 0);
+        Node * n = node_maker(x1, brother_func, ASM_FUNCTION, 0);
 
         return n;
+    } else if (tag == NULL) {
+        printf("TAG to asm tree pass1: 모든 함수 처리가 완료되었습니다.\n");
+        return NULL;
     } else {
         printf("TAG to asm tree pass1 과정에서 오류 발생: NT_FUNCTION node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
         exit(1);
     }
+}
+
+Node * asm_pass1_nt_param_receive(Node * tag){
+    // 인자들 값 가져오기 작업 할 곳!
+    int param_count = 0;
+
+    if (tag->son != NULL) {
+        param_count++;
+        Node * couning_current_param = tag->son->brother;
+        while (couning_current_param != NULL) {
+            param_count++;
+            couning_current_param = couning_current_param->brother;
+        }
+    }
+
+
+    Node * param_get_set = node_maker(NULL, NULL, ASM_LINE_SET, 0);
+    if (param_count >= 1) {
+        Node * param_1 = line_maker(ASM_MOV, TAG_TEMP, tag->son->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 4);
+        param_get_set->son = param_1;
+
+        if (param_count >= 2) {
+            Node * param_2 = line_maker(ASM_MOV, TAG_TEMP, tag->son->brother->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 5);
+            param_1->brother = param_2;
+
+            if (param_count >= 3) {
+                Node * param_3 = line_maker(ASM_MOV, TAG_TEMP, tag->son->brother->brother->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 6);
+                param_2->brother = param_3;
+
+                if (param_count >= 4) {
+                    // 4개 이상 인자들 스택에서 뽑아오기 구현해야 함.
+                }
+            }
+        }
+    }
+
+    return param_get_set;
+}
+
+Node * asm_pass1_nt_func_call(Node * tag){
+    // 인자들 값 저장하고 함수로 점프하는 작업 할 곳!
+    Node * param_set = node_maker(NULL, NULL, ASM_LINE_SET, 0);
+
+    if (tag->son != NULL) {
+        Node * param_instr_1 = asm_pass1_nt_instr_loop(tag->son);
+        Node * param_save_1 = line_maker(ASM_MOV, ASM_REGISTER, 4, TAG_TEMP, 0, TAG_TEMP, param_instr_1->token.token_value);
+        param_set->son = param_instr_1;
+        param_instr_1->brother = param_save_1;
+
+        if (tag->son->brother != NULL) {
+            Node * param_instr_2 = asm_pass1_nt_instr_loop(tag->son->brother);
+            Node * param_save_2 = line_maker(ASM_MOV, ASM_REGISTER, 5, TAG_TEMP, 0, TAG_TEMP, param_instr_2->token.token_value);
+            param_save_1->brother = param_instr_2;
+            param_instr_2->brother = param_save_2;
+
+            if (tag->son->brother->brother != NULL) {
+                Node * param_instr_3 = asm_pass1_nt_instr_loop(tag->son->brother->brother);
+                Node * param_save_3 = line_maker(ASM_MOV, ASM_REGISTER, 6, TAG_TEMP, 0, TAG_TEMP, param_instr_3->token.token_value);
+                param_save_2->brother = param_instr_3;
+                param_instr_3->brother = param_save_3;
+
+                // 4개 이상 인자들 스택에 넣기 구현해야 함.
+            }
+        }
+    }
+
+    
+    Node * func_calling = line_maker(ASM_FUNC_CALL, ASM_REGISTER, 15, TAG_TEMP, 0, TAG_LABEL, tag->token.token_value);
+    Node * ret_val_saving = line_maker(ASM_MOV, TAG_TEMP, tag->brother->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 0);
+
+    param_set->brother = func_calling;
+    func_calling->brother = ret_val_saving;
+
+    Node * n = node_maker(param_set, NULL, ASM_LINE_SET, 0);
+
+    return n;
 }
 
 Node * asm_pass1_nt_block(Node * tag){
@@ -241,8 +325,18 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
         return n;
     } else if (tag->token.token_number == TAG_NOP) {
-        Node * n = asm_pass1_nt_instr_loop(tag->brother);
+        if (tag->brother != NULL) {
+            Node * n = asm_pass1_nt_instr_loop(tag->brother);
+            return n;
+        } else {
+            return NULL;
+        }
+        
+    } else if (tag->token.token_number == TAG_FUNC_CALL) {
+        Node * n = asm_pass1_nt_func_call(tag);
         return n;
+    } else if (tag->token.token_number == TAG_PARAM_LIST) {
+        return NULL;    // 재귀 방식 문제로 인해 잘못 호출되는 것임. 원래는 시작라벨의 brother로, instr_loop에서 호출되면 안됨. 중간5의 문제와 같은 원인.
     } else {
         printf("instr loop 중 잘못된 태그 토큰을 받았습니다: <%d, %d>\n", tag->token.token_number, tag->token.token_value);
         exit(1);
@@ -393,9 +487,8 @@ void asm_pass3_prologue_maker(Node * node) {
         p1->brother = p2;
         p2->brother = p3;
         
-        
-        Node * prologue = node_maker(p1, node->son->brother->brother->brother, ASM_PROLOGUE, 0);
-        node->son->brother->brother->brother = prologue;
+        Node * prologue = node_maker(p1, node->son->brother, ASM_PROLOGUE, 0);
+        node->son->brother = prologue;
     }
 
 }
