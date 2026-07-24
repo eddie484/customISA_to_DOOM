@@ -7,6 +7,7 @@ Node * asm_pass1_nt_function(Node * tag);
 Node * asm_pass1_nt_param_receive(Node * tag);
 Node * asm_pass1_nt_block(Node * tag);
 Node * asm_pass1_nt_instr(Node * tag);
+Node * asm_pass1_nt_instr_brother(Node * tag);
 Node * asm_pass1_nt_instr_loop(Node * tag);
 Node * asm_pass1_nt_return(Node * tag);
 
@@ -129,14 +130,16 @@ Node * asm_pass1_nt_func_call(Node * tag){
         if (tag->son->brother != NULL) {
             Node * param_instr_2 = asm_pass1_nt_instr_loop(tag->son->brother);
             Node * param_save_2 = line_maker(ASM_MOV, ASM_REGISTER, 5, TAG_TEMP, 0, TAG_TEMP, param_instr_2->token.token_value);
-            param_save_1->brother = param_instr_2;
-            param_instr_2->brother = param_save_2;
+            param_instr_1->brother = param_instr_2;
+            param_instr_2->brother = param_save_1;
+            param_save_1->brother = param_save_2;
 
             if (tag->son->brother->brother != NULL) {
                 Node * param_instr_3 = asm_pass1_nt_instr_loop(tag->son->brother->brother);
                 Node * param_save_3 = line_maker(ASM_MOV, ASM_REGISTER, 6, TAG_TEMP, 0, TAG_TEMP, param_instr_3->token.token_value);
-                param_save_2->brother = param_instr_3;
-                param_instr_3->brother = param_save_3;
+                param_instr_2->brother = param_instr_3;
+                param_instr_3->brother = param_save_1;
+                param_save_2->brother = param_save_3;
 
                 // 4개 이상 인자들 스택에 넣기 구현해야 함.
             }
@@ -171,7 +174,7 @@ Node * asm_pass1_nt_block(Node * tag){
 Node * asm_pass1_nt_instr(Node * tag){
     if (tag->token.token_number == TAG_INSTR) {
         printf("Processing: asm_pass1_nt_instr\n");
-        Node * x1 = asm_pass1_nt_instr_loop(tag->son);
+        Node * x1 = asm_pass1_nt_instr_brother(tag->son);
         Node * n = node_maker(x1, NULL, ASM_INSTR, 0);
 
         if (tag->brother != NULL) {
@@ -186,29 +189,38 @@ Node * asm_pass1_nt_instr(Node * tag){
     }
 }
 
+Node * asm_pass1_nt_instr_brother(Node * tag) {
+    Node * n = NULL;
+
+    if (tag->token.token_number != TAG_NOP) {
+        n = asm_pass1_nt_instr_loop(tag);
+
+        if (tag->token.token_number == TAG_FUNC_CALL) {
+            tag = tag->brother;
+        }
+    } else {
+        if (tag->brother != NULL) {
+            return asm_pass1_nt_instr_brother(tag->brother);
+        }
+    }
+
+    if (tag->brother != NULL) {
+        Node * n1 = asm_pass1_nt_instr_brother(tag->brother);
+        n->brother = n1;
+    }
+
+    return n;
+}
+
 Node * asm_pass1_nt_instr_loop(Node * tag){
     if (tag->token.token_number == TAG_LINE_SET) {
-        Node * x1 = asm_pass1_nt_instr_loop(tag->son);
+        Node * x1 = asm_pass1_nt_instr_brother(tag->son);
         Node * n = node_maker(x1, NULL, ASM_LINE_SET, tag->token.token_value);
-
-        if (tag->brother != NULL) {
-            Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
-            n->brother = n1;
-        } else {
-            n->brother = NULL;
-        }
         
         return n;
     } else if (tag->token.token_number == TAG_LINE){
         if (tag->son->token.token_number == KW_RETURN){
             Node * n = line_maker(ASM_RET, TAG_TEMP, 0, TAG_TEMP, 0, TAG_TEMP, tag->son->brother->brother->brother->token.token_value);
-
-            if (tag->brother != NULL) {
-                Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
-                n->brother = n1;
-            } else {
-                n->brother = NULL;
-            }
 
             return n;
         } else if (tag->son->token.token_number == OP_NEG && tag->son->brother->brother->token.token_number == TAG_TEMP && tag->son->brother->brother->token.token_value == 0) {
@@ -218,13 +230,6 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             n1->brother = n2;
 
             Node * n = node_maker(n1, NULL, ASM_LINE_SET, tag->token.token_value);
-
-            if (tag->brother != NULL) {
-                Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
-                n->brother = n1;
-            } else {
-                n->brother = NULL;
-            }
 
             return n;
         } else {
@@ -304,38 +309,17 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             }
             x1->token.token_value = 0;
 
-            if (tag->brother != NULL) {
-                Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
-                n->brother = n1;
-            } else {
-                n->brother = NULL;
-            }
-
             return n;
         }
     } else if (tag->token.token_number == TAG_BLOCK) {
         Node * n = asm_pass1_nt_block(tag);
 
-        if (tag->brother != NULL) {
-            Node * n1 = asm_pass1_nt_instr_loop(tag->brother);
-            n->brother = n1;
-        } else {
-            n->brother = NULL;
-        }
-
         return n;
-    } else if (tag->token.token_number == TAG_NOP) {
-        if (tag->brother != NULL) {
-            Node * n = asm_pass1_nt_instr_loop(tag->brother);
-            return n;
-        } else {
-            return NULL;
-        }
-        
     } else if (tag->token.token_number == TAG_FUNC_CALL) {
         Node * n = asm_pass1_nt_func_call(tag);
         return n;
     } else if (tag->token.token_number == TAG_PARAM_LIST) {
+        printf("DEBUG: 확인필요. TAG_PARAM_LIST가 호출됨!!!!\n\n");
         return NULL;    // 재귀 방식 문제로 인해 잘못 호출되는 것임. 원래는 시작라벨의 brother로, instr_loop에서 호출되면 안됨. 중간5의 문제와 같은 원인.
     } else {
         printf("instr loop 중 잘못된 태그 토큰을 받았습니다: <%d, %d>\n", tag->token.token_number, tag->token.token_value);
@@ -469,23 +453,30 @@ void asm_pass3_prologue_maker(Node * node) {
     }
 
     if (node->token.token_number == ASM_FUNCTION) {
-        // STR R13 R14 -(temp_count * 4 + 1)
+        // STR R15 R14 -(temp_count * 4 + 1)
         int n = -((temp_count + 1) * 4);
-        char str[12];
-        snprintf(str, sizeof(str), "%d", n);
-        Node * p1 = line_maker(ASM_STR, ASM_REGISTER, 13, ASM_REGISTER, 14, NUM_INT, lexval_manager (str));
+        char str_r15[12];
+        snprintf(str_r15, sizeof(str_r15), "%d", n);
+        Node * p1 = line_maker(ASM_STR, ASM_REGISTER, 15, ASM_REGISTER, 14, NUM_INT, lexval_manager (str_r15));
+
+        // STR R13 R14 -(temp_count * 4 + 2)
+        n = -((temp_count + 2) * 4);
+        char str_r13[12];
+        snprintf(str_r13, sizeof(str_r13), "%d", n);
+        Node * p2 = line_maker(ASM_STR, ASM_REGISTER, 13, ASM_REGISTER, 14, NUM_INT, lexval_manager (str_r13));
 
         // MOV R13 R14
-        Node * p2 = line_maker(ASM_MOV, ASM_REGISTER, 13, TAG_TEMP, 0, ASM_REGISTER, 14);
+        Node * p3 = line_maker(ASM_MOV, ASM_REGISTER, 13, TAG_TEMP, 0, ASM_REGISTER, 14);
 
-        // ADD R14 R13 -(temp_count * 4 + 1)
-        n = -((temp_count + 1) * 4);
-        snprintf(str, sizeof(str), "%d", n);
-        Node * p3 = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+        // ADD R14 R13 -(temp_count * 4 + 2)
+        n = -((temp_count + 2) * 4);
+        snprintf(str_r13, sizeof(str_r13), "%d", n);
+        Node * p4 = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 13, NUM_INT, lexval_manager (str_r13));
         
 
         p1->brother = p2;
         p2->brother = p3;
+        p3->brother = p4;
         
         Node * prologue = node_maker(p1, node->son->brother, ASM_PROLOGUE, 0);
         node->son->brother = prologue;

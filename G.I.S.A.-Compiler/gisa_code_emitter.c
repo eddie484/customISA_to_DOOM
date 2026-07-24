@@ -357,8 +357,11 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tMOV R14 R13\n");
                         fprintf(codeemitfp, "\tMOV R14 R13\n");
                         
-                        printf("\tLDR R13 R14 #%d\n", -((temp_count + 1) * 4));
-                        fprintf(codeemitfp, "\tLDR R13 R14 #%d\n", -((temp_count + 1) * 4));
+                        printf("\tLDR R13 R14 #%d\n", -((temp_count + 2) * 4));
+                        fprintf(codeemitfp, "\tLDR R13 R14 #%d\n", -((temp_count + 2) * 4));
+                        
+                        printf("\tLDR R15 R14 #%d\n", -((temp_count + 1) * 4));
+                        fprintf(codeemitfp, "\tLDR R15 R14 #%d\n", -((temp_count + 1) * 4));
 
                         printf("\tJMP R15\n");
                         fprintf(codeemitfp, "\tJMP R15\n");
