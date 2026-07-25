@@ -95,20 +95,48 @@ Node * asm_pass1_nt_param_receive(Node * tag){
 
 
     Node * param_get_set = node_maker(NULL, NULL, ASM_LINE_SET, 0);
+    Node * current_param_node = tag->son;
     if (param_count >= 1) {
-        Node * param_1 = line_maker(ASM_MOV, TAG_TEMP, tag->son->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 4);
+        Node * param_1 = line_maker(ASM_MOV, TAG_TEMP, current_param_node->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 4);
         param_get_set->son = param_1;
+        current_param_node = current_param_node->brother;
 
         if (param_count >= 2) {
-            Node * param_2 = line_maker(ASM_MOV, TAG_TEMP, tag->son->brother->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 5);
+            Node * param_2 = line_maker(ASM_MOV, TAG_TEMP, current_param_node->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 5);
             param_1->brother = param_2;
+            current_param_node = current_param_node->brother;
 
             if (param_count >= 3) {
-                Node * param_3 = line_maker(ASM_MOV, TAG_TEMP, tag->son->brother->brother->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 6);
+                Node * param_3 = line_maker(ASM_MOV, TAG_TEMP, current_param_node->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 6);
                 param_2->brother = param_3;
+                current_param_node = current_param_node->brother;
 
                 if (param_count >= 4) {
                     // 4개 이상 인자들 스택에서 뽑아오기 구현해야 함.
+
+                    // 스택에 저장된 인자값 가져오기
+                    Node * param_stack;
+
+                    int n = (4 - 3 + 2) * 4;
+                    char param_stack_size[12];
+                    snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
+                    param_stack = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+                    current_param_node = current_param_node->brother;
+
+                    param_3->brother = param_stack;
+
+                    printf("param_receive: param count %d\n\n\n", param_count);
+
+                    for (int i = 5; i <= param_count; i++) {
+                        n = (i - 3 + 2) * 4;
+                        snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
+                        param_stack->brother = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+                        current_param_node = current_param_node->brother;
+
+                        param_stack = param_stack->brother;
+                    }
+
+
                 }
             }
         }
@@ -119,29 +147,79 @@ Node * asm_pass1_nt_param_receive(Node * tag){
 
 Node * asm_pass1_nt_func_call(Node * tag){
     // 인자들 값 저장하고 함수로 점프하는 작업 할 곳!
-    Node * param_set = node_maker(NULL, NULL, ASM_LINE_SET, 0);
+    int param_count = 0;
+    Node * stack_space_making_for_param = NULL;
+    Node * stack_space_return_for_param = NULL;
 
     if (tag->son != NULL) {
+        param_count++;
+        Node * couning_current_param = tag->son->brother;
+        while (couning_current_param != NULL) {
+            param_count++;
+            couning_current_param = couning_current_param->brother;
+        }
+    }
+
+    Node * param_set = node_maker(NULL, NULL, ASM_LINE_SET, 0);
+
+    if (param_count >= 1) {
         Node * param_instr_1 = asm_pass1_nt_instr_loop(tag->son);
         Node * param_save_1 = line_maker(ASM_MOV, ASM_REGISTER, 4, TAG_TEMP, 0, TAG_TEMP, param_instr_1->token.token_value);
         param_set->son = param_instr_1;
         param_instr_1->brother = param_save_1;
 
-        if (tag->son->brother != NULL) {
+        if (param_count >= 2) {
             Node * param_instr_2 = asm_pass1_nt_instr_loop(tag->son->brother);
             Node * param_save_2 = line_maker(ASM_MOV, ASM_REGISTER, 5, TAG_TEMP, 0, TAG_TEMP, param_instr_2->token.token_value);
             param_instr_1->brother = param_instr_2;
             param_instr_2->brother = param_save_1;
             param_save_1->brother = param_save_2;
 
-            if (tag->son->brother->brother != NULL) {
+            if (param_count >= 3) {
                 Node * param_instr_3 = asm_pass1_nt_instr_loop(tag->son->brother->brother);
                 Node * param_save_3 = line_maker(ASM_MOV, ASM_REGISTER, 6, TAG_TEMP, 0, TAG_TEMP, param_instr_3->token.token_value);
                 param_instr_2->brother = param_instr_3;
                 param_instr_3->brother = param_save_1;
                 param_save_2->brother = param_save_3;
 
-                // 4개 이상 인자들 스택에 넣기 구현해야 함.
+                if (param_count >= 4) {
+                    // 4개 이상 인자들 스택에 넣기 구현해야 함.
+
+                    // 저장할 인자만큼 스택 크기 늘리기
+                    int n = -((param_count - 3) * 4);
+                    char param_stack_size[12];
+                    snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
+                    stack_space_making_for_param = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+                    stack_space_return_for_param = line_maker(ASM_SUB, ASM_REGISTER, 14, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+
+                    // 인자들 실행시켜 temp에 인자값 가져오기
+                    Node * param_instr_stack;
+                    Node * param_save_stack;
+                    Node * current_param = tag->son->brother->brother->brother;
+
+                    param_instr_stack = asm_pass1_nt_instr_loop(current_param);
+                    param_save_stack = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager ("4"));
+                    param_instr_3->brother = param_instr_stack;
+                    param_save_3->brother = param_save_stack;
+
+                    current_param = current_param->brother;
+
+                    for (int i = 5; i <= param_count; i++) {
+                        param_instr_stack->brother = asm_pass1_nt_instr_loop(current_param);
+
+                        n = (i - 3) * 4;
+                        snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
+                        param_save_stack->brother = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+                        current_param = current_param->brother;
+
+                        param_instr_stack = param_instr_stack->brother;
+                    }
+
+                    param_instr_stack->brother = param_save_1;
+
+                }
+
+                
             }
         }
     }
@@ -150,10 +228,22 @@ Node * asm_pass1_nt_func_call(Node * tag){
     Node * func_calling = line_maker(ASM_FUNC_CALL, ASM_REGISTER, 15, TAG_TEMP, 0, TAG_LABEL, tag->token.token_value);
     Node * ret_val_saving = line_maker(ASM_MOV, TAG_TEMP, tag->brother->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 0);
 
-    param_set->brother = func_calling;
-    func_calling->brother = ret_val_saving;
+    Node * n = NULL;
+    if (param_count >= 4) {
+        stack_space_making_for_param->brother = param_set;
+        param_set->brother = func_calling;
+        func_calling->brother = ret_val_saving;
+        ret_val_saving->brother = stack_space_return_for_param;
 
-    Node * n = node_maker(param_set, NULL, ASM_LINE_SET, 0);
+        n = node_maker(stack_space_making_for_param, NULL, ASM_LINE_SET, 0);
+    } else {
+        param_set->brother = func_calling;
+        func_calling->brother = ret_val_saving;
+
+        n = node_maker(param_set, NULL, ASM_LINE_SET, 0);
+    }
+
+    
 
     return n;
 }

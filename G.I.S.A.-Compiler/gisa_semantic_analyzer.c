@@ -380,13 +380,25 @@ Node * get_type_tree_from_func_call(Node * ident_node) {
         type_tree_current->son = node_maker(NULL, NULL, KW_VOID, 0);
     }else {
         while (param_node != NULL) {
-            Node * param_return_type;
-            if (symbol_finder_from_ident_node(param_node->son)->is_func == 1) {
-                param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree->son;
+            Node * param_return_type = NULL;
+            Node * param_node_type = NULL;
+
+            if (param_node->token.token_number == NT_EXP) {
+                if (symbol_finder_from_ident_node(param_node->son)->is_func == 1) {
+                    param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree->son;
+                } else {
+                    param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree;
+                }
+
+                param_node_type = copy_tree(param_return_type);
+            } else if (param_node->token.token_number == NUM_INT) {
+                param_node_type = node_maker(NULL, NULL, KW_INT, 0);
             } else {
-                param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree;
+                printf("잘못된 노드가 func call 인자 체킹에 들어왔습니다: <%d, %d>\n", param_node->token.token_number, param_node->token.token_value);
+                exit(1);
             }
-            Node * param_node_type = copy_tree(param_return_type);
+            
+            
 
             type_tree_current->brother = node_maker(param_node_type, NULL, SEM_TYPE, 0);
             type_tree_current = type_tree_current->brother;
