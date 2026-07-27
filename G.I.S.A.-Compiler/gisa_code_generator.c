@@ -117,10 +117,10 @@ Node * asm_pass1_nt_param_receive(Node * tag){
                     // 스택에 저장된 인자값 가져오기
                     Node * param_stack;
 
-                    int n = (4 - 3 + 2) * 4;
+                    int n = (4 - 4) * 4;
                     char param_stack_size[12];
                     snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
-                    param_stack = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+                    param_stack = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 13, NUM_INT, lexval_manager (param_stack_size));
                     current_param_node = current_param_node->brother;
 
                     param_3->brother = param_stack;
@@ -128,9 +128,9 @@ Node * asm_pass1_nt_param_receive(Node * tag){
                     printf("param_receive: param count %d\n\n\n", param_count);
 
                     for (int i = 5; i <= param_count; i++) {
-                        n = (i - 3 + 2) * 4;
+                        n = (i - 4) * 4;
                         snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
-                        param_stack->brother = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+                        param_stack->brother = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 13, NUM_INT, lexval_manager (param_stack_size));
                         current_param_node = current_param_node->brother;
 
                         param_stack = param_stack->brother;
@@ -186,7 +186,7 @@ Node * asm_pass1_nt_func_call(Node * tag){
                     // 4개 이상 인자들 스택에 넣기 구현해야 함.
 
                     // 저장할 인자만큼 스택 크기 늘리기
-                    int n = -((param_count - 3) * 4);
+                    int n = -(((param_count - 3) * 4) + 7 & ~7);
                     char param_stack_size[12];
                     snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
                     stack_space_making_for_param = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
@@ -198,7 +198,7 @@ Node * asm_pass1_nt_func_call(Node * tag){
                     Node * current_param = tag->son->brother->brother->brother;
 
                     param_instr_stack = asm_pass1_nt_instr_loop(current_param);
-                    param_save_stack = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager ("4"));
+                    param_save_stack = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager ("0"));
                     param_instr_3->brother = param_instr_stack;
                     param_save_3->brother = param_save_stack;
 
@@ -207,10 +207,11 @@ Node * asm_pass1_nt_func_call(Node * tag){
                     for (int i = 5; i <= param_count; i++) {
                         param_instr_stack->brother = asm_pass1_nt_instr_loop(current_param);
 
-                        n = (i - 3) * 4;
+                        n = (i - 4) * 4;
                         snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
-                        param_save_stack->brother = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+                        param_save_stack->brother = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->brother->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
                         current_param = current_param->brother;
+                        param_save_stack = param_save_stack->brother;
 
                         param_instr_stack = param_instr_stack->brother;
                     }
@@ -442,17 +443,39 @@ void asm_pass2_temp_to_stack(Node * node) {
     if (node->token.token_number == ASM_LINE) {
         // rD가 임시 레지스터일 경우
         if (node->son->brother->token.token_number == TAG_TEMP && node->son->brother->token.token_value != 0) { // rD
+            if (node->son->token.token_number == ASM_STR || node->son->token.token_number == ASM_STRB || node->son->token.token_number == ASM_STRH) {   // rD가 값을 불러오는 역할을 하는 경우
+                int n = -(4 * node->son->brother->token.token_value);
+                char str[12];
+                snprintf(str, sizeof(str), "%d", n);
 
-            int n = -(4 * node->son->brother->token.token_value);
-            char str[12];
-            snprintf(str, sizeof(str), "%d", n);
+                Node * original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                Node * son = original_line_node->son;
 
-            Node * store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
-            store_rD->brother = node->brother;
+                original_line_node->son = node->son;
+                original_line_node->brother = node->brother;
+                original_line_node->token.token_number = node->token.token_number;
+                original_line_node->token.token_value = node->token.token_value;
 
-            node->son->brother->token.token_number = ASM_REGISTER;
-            node->son->brother->token.token_value = 1;
-            node->brother = store_rD;
+                node->son = son;
+                node->brother = original_line_node;
+                node->token.token_number = ASM_LINE;
+                node->token.token_value = 0;
+
+                original_line_node->son->brother->token.token_number = ASM_REGISTER;
+                original_line_node->son->brother->token.token_value = 1;
+            } else {   // rD가 값을 저장하는 역할을 하는 경우
+                int n = -(4 * node->son->brother->token.token_value);
+                char str[12];
+                snprintf(str, sizeof(str), "%d", n);
+
+                Node * store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                store_rD->brother = node->brother;
+
+                node->son->brother->token.token_number = ASM_REGISTER;
+                node->son->brother->token.token_value = 1;
+                node->brother = store_rD;
+            }
+            
         }
 
         // rA가 임시변수일 경우
@@ -559,7 +582,7 @@ void asm_pass3_prologue_maker(Node * node) {
         Node * p3 = line_maker(ASM_MOV, ASM_REGISTER, 13, TAG_TEMP, 0, ASM_REGISTER, 14);
 
         // ADD R14 R13 -(temp_count * 4 + 2)
-        n = -((temp_count + 2) * 4);
+        n = -(((temp_count + 2) * 4) + 7 & ~7);
         snprintf(str_r13, sizeof(str_r13), "%d", n);
         Node * p4 = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 13, NUM_INT, lexval_manager (str_r13));
         
