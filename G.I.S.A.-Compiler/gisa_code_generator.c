@@ -68,7 +68,7 @@ Node * asm_pass1_nt_function(Node * tag){
         x1->brother = x2;
         x2->brother = x3;
 
-        Node * n = node_maker(x1, brother_func, ASM_FUNCTION, 0);
+        Node * n = node_maker(x1, brother_func, ASM_FUNCTION, tag->token.token_value);
 
         return n;
     } else if (tag == NULL) {
@@ -226,7 +226,7 @@ Node * asm_pass1_nt_func_call(Node * tag){
     }
 
     
-    Node * func_calling = line_maker(ASM_FUNC_CALL, ASM_REGISTER, 15, TAG_TEMP, 0, TAG_LABEL, tag->token.token_value);
+    Node * func_calling = line_maker(ASM_JMPL, ASM_REGISTER, 15, TAG_TEMP, 0, TAG_LABEL, tag->token.token_value);
     Node * ret_val_saving = line_maker(ASM_MOV, TAG_TEMP, tag->brother->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 0);
 
     Node * n = NULL;

@@ -154,7 +154,9 @@ Node * tag_nt_function(Node * ast){
 
             return brother_func;
         } else {
-            int func_location = symbol_finder_from_symbol_node(ast->son->brother)->location.location;
+            Symbol_info * func_symbol = symbol_finder_from_symbol_node(ast->son->brother);
+            int func_location = func_symbol->location.location;
+            int func_name = func_symbol->name;
             Node * func_start_label = line_maker(TAG_LABEL_MAKE, TAG_LABEL, func_location, TAG_TEMP, 0, TAG_TEMP, 0);
             func_start_label->token.token_value = func_start_label->son->brother->token.token_value;
             printf("함수의 시작 지점을 가리키는 라벨을 추가했습니다. Label Number: %d\n", func_location);
@@ -167,7 +169,7 @@ Node * tag_nt_function(Node * ast){
             func_start_label->brother = x1;
             x1->brother = x2;
 
-            Node * n = node_maker(func_start_label, brother_func, TAG_FUNCTION, 0);
+            Node * n = node_maker(func_start_label, brother_func, TAG_FUNCTION, func_name);
 
             return n;
         }

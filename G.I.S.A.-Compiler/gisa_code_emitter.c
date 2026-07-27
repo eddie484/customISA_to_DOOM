@@ -15,7 +15,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
             break;
             
         case ASM_FUNCTION: {
-            char * label_name = lexval_finder(node->son->brother->token.token_value);
+            char * label_name = lexval_finder(node->token.token_value);
             printf("%s:\n", label_name);
             fprintf(codeemitfp, "%s:\n", label_name);
             break;
@@ -343,6 +343,12 @@ void asm_printer(Node * node, FILE * codeemitfp){
                     break;
                 }
 
+                case ASM_JMPL: {
+                    printf("\tJMPL R%d LABEL_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                    fprintf(codeemitfp, "\tJMPL R%d LABEL_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                    break;
+                }
+
                 case ASM_LABEL: {
                     printf("LABEL_%d:\n", node->son->brother->token.token_value);
                     fprintf(codeemitfp, "LABEL_%d:\n", node->son->brother->token.token_value);
@@ -370,6 +376,11 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("STR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
                     }
                     break;
+                }
+
+                default: {
+                    printf("정의되지 않은 명령어가 입력되었습니다: <%d, %d>\n", node->son->token.token_number, node->son->token.token_value);
+                    exit(1);
                 }
             }
         }
