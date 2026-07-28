@@ -1,3 +1,5 @@
+`include "v/defines.v"
+
 /*
 	5단계 파이프라인 중 1단계인 Fetch.
 	pc에 따라 imem에 저장된 instr을 가져오고,
@@ -22,8 +24,8 @@
 	imem imem_module (clk, nRESET, stall_F, pc_IMEM, instr);
 	branch_predictor bp_module (pc_in, instr[31:26], {{10{instr[25]}}, instr[25:4]}, PCplus4, predPC);
 	
-	assign predPC_out = predPC;
-	assign PCplus4_out = PCplus4;
+	assign predPC_out = (instr[31:26] == `KILL) ? pc_in : predPC;
+	assign PCplus4_out = (instr[31:26] == `KILL) ? pc_in : PCplus4;
 	assign instr_out = instr;
 	
 endmodule
