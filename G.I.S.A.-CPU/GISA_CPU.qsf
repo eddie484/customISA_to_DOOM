@@ -1,0 +1,106 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2025  Altera Corporation. All rights reserved.
+# Your use of Altera Corporation's design tools, logic functions 
+# and other software and tools, and any partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any 
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Altera Program License 
+# Subscription Agreement, the Altera Quartus Prime License Agreement,
+# the Altera IP License Agreement, or other applicable license
+# agreement, including, without limitation, that your use is for
+# the sole purpose of programming logic devices manufactured by
+# Altera and sold by Altera or its authorized distributors.  Please
+# refer to the Altera Software License Subscription Agreements 
+# on the Quartus Prime software download page.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 25.3.1 Build 100 12/19/2025 SC Pro Edition
+# Date created = 21:11:31  March 13, 2026
+#
+# -------------------------------------------------------------------------- #
+set_global_assignment -name TOP_LEVEL_ENTITY GISA_CPU_onboard
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 25.3.1
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "21:11:31  MARCH 13, 2026"
+set_global_assignment -name LAST_QUARTUS_VERSION "26.1.0 Pro Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP 0
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 100
+set_global_assignment -name DEVICE A5EB013BB23BE4SR1
+set_global_assignment -name FAMILY "Agilex 5"
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR 256
+set_global_assignment -name EDA_SIMULATION_TOOL "QuestaSim (Verilog)"
+set_global_assignment -name EDA_TIME_SCALE "1 ps" -section_id eda_simulation
+set_global_assignment -name EDA_OUTPUT_DATA_FORMAT "VERILOG HDL" -section_id eda_simulation
+set_global_assignment -name SDC_FILE GISA_CPU.sdc
+set_global_assignment -name VERILOG_FILE v/defines.v
+set_global_assignment -name VERILOG_FILE v/GISA_CPU_onboard.v
+set_global_assignment -name VERILOG_FILE v/GISA_CPU.v
+set_global_assignment -name VERILOG_FILE v/five_stage/fetch.v
+set_global_assignment -name VERILOG_FILE v/five_stage/decode.v
+set_global_assignment -name VERILOG_FILE v/five_stage/execute.v
+set_global_assignment -name VERILOG_FILE v/five_stage/memory.v
+set_global_assignment -name VERILOG_FILE v/five_stage/write_back.v
+set_global_assignment -name VERILOG_FILE v/instr_decoder.v
+set_global_assignment -name VERILOG_FILE v/computation/ALU.v
+set_global_assignment -name VERILOG_FILE v/computation/adder_subtractor.v
+set_global_assignment -name VERILOG_FILE v/computation/shifter_rotator.v
+set_global_assignment -name SYSTEMVERILOG_FILE v/computation/pipelined_multiplier/multiplier.sv
+set_global_assignment -name SYSTEMVERILOG_FILE v/computation/pipelined_multiplier/mul_pipeline.sv
+set_global_assignment -name SYSTEMVERILOG_FILE v/computation/pipelined_multiplier/ppgen_level.sv
+set_global_assignment -name SYSTEMVERILOG_FILE v/computation/pipelined_multiplier/ppacc_level.sv
+set_global_assignment -name VERILOG_FILE v/computation/adder_64b.v
+set_global_assignment -name VERILOG_FILE v/memory/reg_file.v
+set_global_assignment -name PWRMGT_VOLTAGE_OUTPUT_FORMAT "LINEAR FORMAT"
+set_global_assignment -name PWRMGT_LINEAR_FORMAT_N "-12"
+set_global_assignment -name VERILOG_FILE v/memory/imem.v
+set_global_assignment -name VERILOG_FILE v/memory/dmem.v
+set_global_assignment -name VERILOG_FILE v/pipeline.v
+set_global_assignment -name VERILOG_FILE v/branch_predictor.v
+set_global_assignment -name IP_FILE ip/imem_ram_1port.ip
+set_global_assignment -name IP_FILE ip/dmem_ram_1port.ip
+set_global_assignment -name IP_FILE ip/pll.ip
+set_global_assignment -name VERILOG_FILE v/GISA_CPU_tb.v
+set_global_assignment -name EDA_TEST_BENCH_TOP_MODULE GISA_CPU_tb -section_id testbenchSet
+set_global_assignment -name EDA_TEST_BENCH_FILE v/GISA_CPU_tb.v -section_id testbenchSet
+set_instance_assignment -name PARTITION_COLOUR 4294941637 -to GISA_CPU -entity GISA_CPU
+set_global_assignment -name ENABLE_SIGNALTAP OFF
+set_global_assignment -name USE_SIGNALTAP_FILE stp/stp1.stp
+set_global_assignment -name BOARD default
+set_location_assignment PIN_C11 -to button[1] -comment IOBANK_6D
+set_location_assignment PIN_C8 -to button[0] -comment IOBANK_6D
+set_location_assignment PIN_DK24 -to switch[0] -comment IOBANK_2A_T
+set_location_assignment PIN_DF27 -to switch[3] -comment IOBANK_2A_T
+set_location_assignment PIN_DD27 -to switch[2] -comment IOBANK_2A_T
+set_location_assignment PIN_DD24 -to switch[1] -comment IOBANK_2A_T
+set_location_assignment PIN_DP30 -to led[7] -comment IOBANK_2A_T
+set_location_assignment PIN_DJ27 -to led[6] -comment IOBANK_2A_T
+set_location_assignment PIN_DP25 -to led[5] -comment IOBANK_2A_T
+set_location_assignment PIN_DN25 -to led[4] -comment IOBANK_2A_T
+set_location_assignment PIN_DP23 -to led[3] -comment IOBANK_2A_T
+set_location_assignment PIN_DN22 -to led[2] -comment IOBANK_2A_T
+set_location_assignment PIN_DJ32 -to led[1] -comment IOBANK_2A_T
+set_location_assignment PIN_DF35 -to led[0] -comment IOBANK_2A_T
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to button[0] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to button[1] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to button -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to led[0] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to led[1] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to led[2] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to led[3] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to led[5] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to led[4] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to led[6] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to led[7] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to led -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to switch[3] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to switch[2] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to switch[1] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to switch[0] -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "1.1-V" -to switch -entity GISA_CPU_onboard
+set_global_assignment -name PROJECT_IP_REGENERATION_POLICY NEVER_REGENERATE_IP
+set_location_assignment PIN_DJ35 -to CLOCK0_50 -comment IOBANK_2A_T
+set_instance_assignment -name IO_STANDARD "1.1-V" -to CLOCK0_50 -entity GISA_CPU_onboard
