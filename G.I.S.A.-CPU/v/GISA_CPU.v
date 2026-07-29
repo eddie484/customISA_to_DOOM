@@ -90,7 +90,7 @@
 	wire [1:0] dmsize_DMEM;
 	wire dmen_DMEM, dmrw_DMEM, dmsext_DMEM;
 	
-	wire [7:0] uart_char;
+	wire [32:0] uart_char;
 	
 	
 	pipereg_M PR_M (clk, nRESET, bubble_M, icode_E, load_E, dmen_E, dmrw_E, lk_E, valE_E, wdata_E, dmsize_E, dmsext_E, PCplus4_E, rD_E, wben_E, icode_M, load_M, lk_M, valE_M, dmsize_M, dmsext_M, PCplus4_M, rD_M, wben_M, valE_DMEM, wdata_DMEM, dmsize_DMEM, dmen_DMEM, dmrw_DMEM, dmsext_DMEM);
@@ -98,7 +98,7 @@
 	memory M (clk, nRESET, load_M, lk_M, valE_M, dmsize_M, dmsext_M, PCplus4_M, valE_DMEM, wdata_DMEM, dmsize_DMEM, dmen_DMEM, dmrw_DMEM, dmsext_DMEM, valM_DMEM);
 	uart_wrapper uart (clk, nRESET, dmrw_DMEM, dmen_DMEM, valE_DMEM, wdata_DMEM, rdx, tdx, uart_char);
 	
-	assign valM_M = (valE_M == `MEMM_UART) ? {24'b0, uart_char} : valM_DMEM;
+	assign valM_M = (valE_M == `MEMM_UART) ? uart_char : valM_DMEM;
 	assign fwd_M = lk_M ? PCplus4_M : (load_M ? valM_M : valE_M);
 
 	
