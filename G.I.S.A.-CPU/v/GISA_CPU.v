@@ -1,9 +1,11 @@
 `include "defines.v"
 
-(* noprune *) (* keep_hierarchy *) module GISA_CPU (clk, nRESET, reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15);
+(* noprune *) (* keep_hierarchy *) module GISA_CPU (clk, nRESET, rdx, tdx, reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15);
 	
 	input clk, nRESET;
+	input rdx;
 	
+	output tdx;
 	output [31:0] reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15;
 	
 
@@ -79,7 +81,7 @@
 	
 	// ----- Memory Level -----
 	
-	wire [31:0] valE_M, valM_M, PCplus4_M;
+	wire [31:0] valE_M, valM_DMEM, valM_M, PCplus4_M;
 	wire [5:0] icode_M;
 	wire [1:0] dmsize_M;
 	wire load_M, lk_M, dmsext_M;
@@ -88,12 +90,17 @@
 	wire [1:0] dmsize_DMEM;
 	wire dmen_DMEM, dmrw_DMEM, dmsext_DMEM;
 	
+	wire [7:0] uart_char;
+	
 	
 	pipereg_M PR_M (clk, nRESET, bubble_M, icode_E, load_E, dmen_E, dmrw_E, lk_E, valE_E, wdata_E, dmsize_E, dmsext_E, PCplus4_E, rD_E, wben_E, icode_M, load_M, lk_M, valE_M, dmsize_M, dmsext_M, PCplus4_M, rD_M, wben_M, valE_DMEM, wdata_DMEM, dmsize_DMEM, dmen_DMEM, dmrw_DMEM, dmsext_DMEM);
 
-	memory M (clk, nRESET, load_M, lk_M, valE_M, dmsize_M, dmsext_M, PCplus4_M, valE_DMEM, wdata_DMEM, dmsize_DMEM, dmen_DMEM, dmrw_DMEM, dmsext_DMEM, valM_M, fwd_M);
-
+	memory M (clk, nRESET, load_M, lk_M, valE_M, dmsize_M, dmsext_M, PCplus4_M, valE_DMEM, wdata_DMEM, dmsize_DMEM, dmen_DMEM, dmrw_DMEM, dmsext_DMEM, valM_DMEM);
+	uart_wrapper uart (clk, nRESET, dmrw_DMEM, dmen_DMEM, valE_DMEM, wdata_DMEM, rdx, tdx, uart_char);
 	
+	assign valM_M = (valE_M == `MEMM_UART) ? {24'b0, uart_char} : valM_DMEM;
+	assign fwd_M = lk_M ? PCplus4_M : (load_M ? valM_M : valE_M);
+
 	
 	// ----- Write Level -----	
 	

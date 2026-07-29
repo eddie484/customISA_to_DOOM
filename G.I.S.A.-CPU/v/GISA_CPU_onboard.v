@@ -1,10 +1,12 @@
-(* noprune *) module GISA_CPU_onboard (CLOCK0_50, switch, button, led);
+(* noprune *) module GISA_CPU_onboard (CLOCK0_50, switch, button, rdx, tdx, led);
 	
 	input CLOCK0_50;
 	input [3:0] switch;
 	input [1:0] button;
+	input rdx;
 	
 	output [7:0] led;
+	output tdx;
 	
 	wire [31:0] reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15;
 
@@ -17,9 +19,24 @@
 	
 	pll pll_module(.refclk(CLOCK0_50), .rst(!pll_RESET), .locked(locked), .outclk_0(clk));
 	
-	GISA_CPU GISA_CPU_module (clk, nRESET, reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15);
+	GISA_CPU GISA_CPU_module (clk, nRESET, rdx, tdx, reg_0, reg_1, reg_2, reg_3, reg_4, reg_5, reg_6, reg_7, reg_8, reg_9, reg_10, reg_11, reg_12, reg_13, reg_14, reg_15);
 	
-	// ----- OnBoard Logic -----
+	
+	
+	
+	
+	
+/* ****************************************
+*******************************************
+*******************************************
+***********                     ***********
+***********    OnBoard Logic    ***********
+***********                     ***********
+*******************************************
+*******************************************
+**************************************** */
+
+	// ----- LED Debugging -----
 	
 	wire [31:0] selected_reg;
 	wire [7:0] selected_bit;
@@ -43,4 +60,9 @@
 
 	assign selected_bit = (selected_reg >> (button_not * 8));
 	assign led = ~selected_bit;
+	
+	
+	
+	
+	
 endmodule	

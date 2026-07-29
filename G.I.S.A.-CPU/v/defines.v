@@ -67,3 +67,7 @@
 `define GT 4'b1100
 `define LE 4'b1101
 `define AL 4'b1110
+
+
+// Define Memory Map
+`define MEMM_UART 32'hFFF0_0000

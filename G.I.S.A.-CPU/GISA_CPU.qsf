@@ -60,6 +60,7 @@ set_global_assignment -name VERILOG_FILE v/memory/imem.v
 set_global_assignment -name VERILOG_FILE v/memory/dmem.v
 set_global_assignment -name VERILOG_FILE v/pipeline.v
 set_global_assignment -name VERILOG_FILE v/branch_predictor.v
+set_global_assignment -name VERILOG_FILE v/uart/uart.v
 set_global_assignment -name IP_FILE ip/imem_ram_1port.ip
 set_global_assignment -name IP_FILE ip/dmem_ram_1port.ip
 set_global_assignment -name IP_FILE ip/pll.ip
@@ -104,3 +105,8 @@ set_instance_assignment -name IO_STANDARD "1.1-V" -to switch -entity GISA_CPU_on
 set_global_assignment -name PROJECT_IP_REGENERATION_POLICY NEVER_REGENERATE_IP
 set_location_assignment PIN_DJ35 -to CLOCK0_50 -comment IOBANK_2A_T
 set_instance_assignment -name IO_STANDARD "1.1-V" -to CLOCK0_50 -entity GISA_CPU_onboard
+set_global_assignment -name VERILOG_FILE v/uart/uart_wrapper.v
+set_location_assignment PIN_BR19 -to rdx -comment IOBANK_6E
+set_location_assignment PIN_CJ1 -to tdx -comment IOBANK_6F
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to tdx -entity GISA_CPU_onboard
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to rdx -entity GISA_CPU_onboard
