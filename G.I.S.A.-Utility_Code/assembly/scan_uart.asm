@@ -11,7 +11,7 @@ wait_until_receive_uart:
     LDR R0 R7 #0
 	CMPIS R0 #256
 	BEQ wait_until_receive_uart
-	
+
 	MOV R14 R13
 	LDR R13 R14 #-44
 	LDR R15 R14 #-40
