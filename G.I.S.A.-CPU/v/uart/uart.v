@@ -1,4 +1,4 @@
-module uart (clk, nRESET, rdx, data_in, send, tdx, data_out, outen);
+module uart (clk, nRESET, rdx, data_in, send, tdx, data_out, outen, tdx_busy);
 	
 	input clk, nRESET;
 	input rdx, send;
@@ -6,6 +6,7 @@ module uart (clk, nRESET, rdx, data_in, send, tdx, data_out, outen);
 	
 	output reg [7:0] data_out;
 	output reg outen, tdx;
+	output tdx_busy;
 	
 	reg [3:0] r_state;
 	reg [3:0] t_state;
@@ -23,6 +24,8 @@ module uart (clk, nRESET, rdx, data_in, send, tdx, data_out, outen);
 	localparam DATA_5 = 4'b1101;
 	localparam DATA_6 = 4'b1110;
 	localparam DATA_7 = 4'b1111;
+	
+	assign tdx_busy = (t_state != IDLE);
 	
 	
 	always @(posedge clk or negedge nRESET) begin

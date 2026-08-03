@@ -6,6 +6,11 @@ LABEL_1:
 	ADDI R14 R13 #-56
 
 	MOVH R7 #65535
+wait_until_tdx_free:
+	LDR R0 R7 #4
+	CMPIS R0 #1
+	BEQ wait_until_tdx_free
+
 	STR R4 R7 #0
 
 	MOVI R0 #0

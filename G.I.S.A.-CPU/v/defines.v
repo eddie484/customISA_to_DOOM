@@ -71,3 +71,4 @@
 
 // Define Memory Map
 `define MEMM_UART 32'hFFFF_0000
+`define MEMM_UART_STATUS 32'hFFFF_0004
