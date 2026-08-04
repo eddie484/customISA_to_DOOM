@@ -31,7 +31,7 @@
 #define OP_OR           20  // |
 #define OP_XOR          21  // ^
 #define OP_SHL          22  // <<
-#define OP_LSR          23  // >>, 추후 signed/unsigned 타입 추가시 LSR, ASR 구분할 것.
+#define OP_ASR          23  // >>, 추후 signed/unsigned 타입 추가시 LSR, ASR 구분할 것.
 
 #define OP_LOGIC_NOT    24  // !
 #define OP_LOGIC_AND    25  // &&
@@ -54,7 +54,7 @@
 #define OP_OREQ         40
 #define OP_XOREQ        41
 #define OP_SHLEQ        42
-#define OP_LSREQ        43
+#define OP_ASREQ        43
 
 #define OP_INCREMENT    44
 #define OP_PRE_INCRE    45
@@ -181,8 +181,8 @@
 #define ASM_DIVU        410
 #define ASM_MODU        412
 #define ASM_SHL         424
-#define ASM_ASR         425
-#define ASM_LSR         426
+#define ASM_LSR         425
+#define ASM_ASR         426
 #define ASM_ROL         427
 #define ASM_ROR         428
 #define ASM_AND         433

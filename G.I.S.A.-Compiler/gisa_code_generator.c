@@ -378,8 +378,8 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
                     x1->token.token_number = ASM_SHL;
                     break;
                     
-                case OP_LSR:
-                    x1->token.token_number = ASM_LSR;
+                case OP_ASR:
+                    x1->token.token_number = ASM_ASR;
                     break;
                     
                 case TAG_CMP:

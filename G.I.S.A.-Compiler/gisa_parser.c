@@ -49,9 +49,9 @@
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "PN_COMMA" <exp> <arg> | ε
     <unary_op> ::= "OP_TILDE" | "OP_MINUS" | "OP_LOGIC_NOT" | "OP_INCREMENT" | "OP_DECREMENT"
-    <binary_op> ::= "OP_MINUS" | "OP_ADD" | "OP_MUL" | "OP_DIV" | "OP_MOD" | "OP_AND" | "OP_OR" | "OP_XOR" | "OP_SHL" | "OP_LSR"
+    <binary_op> ::= "OP_MINUS" | "OP_ADD" | "OP_MUL" | "OP_DIV" | "OP_MOD" | "OP_AND" | "OP_OR" | "OP_XOR" | "OP_SHL" | "OP_ASR"
                     "OP_LOGIC_AND" | "OP_LOGIC_OR" | "OP_EQ" | "OP_NE" | "OP_LT" | "OP_GT" | "OP_LE" | "OP_GE" | "OP_ASSIGN"
-                    "OP_ADDEQ" | "OP_SUBEQ" | "OP_MULEQ" | "OP_DIVEQ" | "OP_MODEQ" | "OP_ANDEQ" | "OP_OREQ" | "OP_XOREQ" | "OP_SHLEQ" | "OP_LSREQ"
+                    "OP_ADDEQ" | "OP_SUBEQ" | "OP_MULEQ" | "OP_DIVEQ" | "OP_MODEQ" | "OP_ANDEQ" | "OP_OREQ" | "OP_XOREQ" | "OP_SHLEQ" | "OP_ASREQ"
 
     <program> ::= <func_declr> <program> | ε
     <func_declr> ::= 2 0 5 <param_list> 6 <func_content>
@@ -174,7 +174,7 @@ static const int priority_table[52] = {
     [OP_OR] = 30,
     [OP_XOR] = 40,
     [OP_SHL] = 80,
-    [OP_LSR] = 80,
+    [OP_ASR] = 80,
     [OP_LOGIC_AND] = 20,
     [OP_LOGIC_OR] = 15,
     [OP_EQ] = 60,
@@ -193,7 +193,7 @@ static const int priority_table[52] = {
     [OP_OREQ] = 5,
     [OP_XOREQ] = 5,
     [OP_SHLEQ] = 5,
-    [OP_LSREQ] = 5,
+    [OP_ASREQ] = 5,
     [OP_QUESTION] = 10
 };
 
@@ -1001,7 +1001,7 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
         Node * left = p_nt_factor(lex_input);
         
         while (((first(nextSymbol.token_number, NT_BINARY_OP)) || nextSymbol.token_number == OP_QUESTION) && (priority_table[nextSymbol.token_number] >= min_priority)) {
-            if (nextSymbol.token_number >= OP_ASSIGN && nextSymbol.token_number <= OP_LSREQ) {
+            if (nextSymbol.token_number >= OP_ASSIGN && nextSymbol.token_number <= OP_ASREQ) {
                 int op_priority = priority_table[nextSymbol.token_number];
                 Node * operator = p_nt_binary_op(lex_input);
                 Node * right = p_nt_exp(lex_input, op_priority);
@@ -1174,7 +1174,7 @@ Node * p_nt_binary_op(Lexer_result lex_input){      // <binary_op> ::= "OP_ADD" 
     Node * x1;
 
     switch (nextSymbol.token_number) {
-        case OP_ADD: case OP_MUL: case OP_DIV: case OP_MOD: case OP_AND: case OP_OR: case OP_XOR: case OP_SHL: case OP_LSR: case OP_LOGIC_AND: case OP_LOGIC_OR: case OP_EQ: case OP_NE: case OP_LT: case OP_GT: case OP_LE: case OP_GE: case OP_ASSIGN: case OP_ADDEQ: case OP_SUBEQ: case OP_MULEQ: case OP_DIVEQ: case OP_MODEQ: case OP_ANDEQ: case OP_OREQ: case OP_XOREQ: case OP_SHLEQ: case OP_LSREQ: case OP_QUESTION: case OP_COLON:
+        case OP_ADD: case OP_MUL: case OP_DIV: case OP_MOD: case OP_AND: case OP_OR: case OP_XOR: case OP_SHL: case OP_ASR: case OP_LOGIC_AND: case OP_LOGIC_OR: case OP_EQ: case OP_NE: case OP_LT: case OP_GT: case OP_LE: case OP_GE: case OP_ASSIGN: case OP_ADDEQ: case OP_SUBEQ: case OP_MULEQ: case OP_DIVEQ: case OP_MODEQ: case OP_ANDEQ: case OP_OREQ: case OP_XOREQ: case OP_SHLEQ: case OP_ASREQ: case OP_QUESTION: case OP_COLON:
             x1 = p_terminal(lex_input, nextSymbol.token_number);
             return x1;
         

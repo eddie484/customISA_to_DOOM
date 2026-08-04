@@ -26,7 +26,7 @@
     OP_OR           15  // |
     OP_XOR          16  // ^
     OP_SHL          17  // <<
-    OP_LSR          18  // >>
+    OP_ASR          18  // >>
 
     OP_LOGIC_NOT    24  // !
     OP_LOGIC_AND    25  // &&
@@ -710,7 +710,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
             } else if (cur_state == 20) {
                 if (buf[cur_index] == '>') {    // >>=인 경우
                     if (buf[cur_index + 1] == '=') {
-                        lexeme[lexeme_count].token_number = OP_LSREQ;
+                        lexeme[lexeme_count].token_number = OP_ASREQ;
                         lexeme[lexeme_count].token_value = 0;
 
                         printf("<%d, %d>, >>=\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
@@ -722,7 +722,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                         cur_index = 0;
 
                     } else {
-                        lexeme[lexeme_count].token_number = OP_LSR;
+                        lexeme[lexeme_count].token_number = OP_ASR;
                         lexeme[lexeme_count].token_value = 0;
 
                         printf("<%d, %d>, >>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
