@@ -384,13 +384,18 @@ Node * get_type_tree_from_func_call(Node * ident_node) {
             Node * param_node_type = NULL;
 
             if (param_node->token.token_number == NT_EXP) {
-                if (symbol_finder_from_ident_node(param_node->son)->is_func == 1) {
-                    param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree->son;
-                } else {
-                    param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree;
-                }
+                if (param_node->son->token.token_number == IDENT) {
+                    if (symbol_finder_from_ident_node(param_node->son)->is_func == 1) {
+                        param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree->son;
+                    } else {
+                        param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree;
+                    }
 
-                param_node_type = copy_tree(param_return_type);
+                    param_node_type = copy_tree(param_return_type);
+                } else {
+                    param_node_type = node_maker(NULL, NULL, KW_INT, 0);
+                }
+                
             } else if (param_node->token.token_number == NUM_INT) {
                 param_node_type = node_maker(NULL, NULL, KW_INT, 0);
             } else {
