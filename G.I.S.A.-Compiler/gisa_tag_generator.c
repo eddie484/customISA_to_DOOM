@@ -789,9 +789,11 @@ Node * line_for(Node * ast, int temp_in_rA, int temp_in_rB)
 
     if (ast->brother->token.token_number != NT_FOR_EXP) {
         Node * n3 = tag_nt_instr_interpreting(ast->brother, 0, 0);     // for 인자2 수행
+        Node * n_cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value, NUM_INT, lexval_manager ("0"));  // 반복 조건을 0과 비교, setcc
         Node * n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);   // condition이 false일 경우. (0과 eq) for 끝으로 이동한다.
         n2->brother = n3;
-        n3->brother = n4;
+        n3->brother = n_cmp;
+        n_cmp->brother = n4;
         n4->brother = n5;
     } else {
         n2->brother = n5;
