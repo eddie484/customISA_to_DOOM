@@ -211,11 +211,16 @@ Node * tag_nt_param_list(Node * ast){
 Node * tag_nt_block(Node * ast, int temp_in_rA, int temp_in_rB){
     if (ast->token.token_number == NT_BLOCK) {
         printf("Processing: tag_nt_block\n");
-        Node * x1 = tag_nt_instr(ast->son, temp_in_rA, temp_in_rB);
+        if (ast->son != NULL) {
+            Node * x1 = tag_nt_instr(ast->son, temp_in_rA, temp_in_rB);
 
-        Node * n = node_maker(x1, NULL, TAG_BLOCK, 0);
+            Node * n = node_maker(x1, NULL, TAG_BLOCK, 0);
 
-        return n;
+            return n;
+        } else {
+            return node_maker(NULL, NULL, TAG_NOP, 0);
+        }
+        
     } else {
         printf("AST to TAG 과정에서 오류 발생: NT_BLOCK node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", ast->token.token_number);
         exit(1);
@@ -243,10 +248,6 @@ Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB){
             }
             
             return NULL;
-        }
-
-        if (ast->brother != NULL) {
-            Node * n1 = tag_nt_instr(ast->brother, temp_in_rA, temp_in_rB);
         }
 
     } else {
@@ -455,8 +456,14 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         return n;
 
     } else if (ast->token.token_number == NT_CONTENT) {
-        Node * n = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);   
-        return n;
+        if (ast->son != NULL) {
+            Node * n = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);   
+            return n;
+        } else {
+            Node * n = node_maker(NULL, NULL, TAG_NOP, 0);
+            return n;
+        }
+        
     } else if (ast->token.token_number == NT_BLOCK) {
         Node * n = tag_nt_block(ast, temp_in_rA, temp_in_rB);   
         return n;

@@ -252,10 +252,15 @@ Node * asm_pass1_nt_func_call(Node * tag){
 Node * asm_pass1_nt_block(Node * tag){
     if (tag->token.token_number == TAG_BLOCK) {
         printf("Processing: asm_pass1_nt_block\n");
-        Node * x1 = asm_pass1_nt_instr(tag->son);
-        Node * n = node_maker(x1, NULL, ASM_BLOCK, 0);    // Node로 감싸지 않으면 brother로 묶여있던 ASM_INSTR이 끊기는 문제 발생.
+        if (tag->son != NULL) {
+            Node * x1 = asm_pass1_nt_instr(tag->son);
+            Node * n = node_maker(x1, NULL, ASM_BLOCK, 0);    // Node로 감싸지 않으면 brother로 묶여있던 ASM_INSTR이 끊기는 문제 발생.
 
-        return n;
+            return n;
+        } else {
+            return NULL;
+        }
+        
     } else {
         printf("TAG to asm tree pass1 과정에서 오류 발생: TAG_BLOCK node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
         exit(1);
@@ -265,7 +270,11 @@ Node * asm_pass1_nt_block(Node * tag){
 Node * asm_pass1_nt_instr(Node * tag){
     if (tag->token.token_number == TAG_INSTR) {
         printf("Processing: asm_pass1_nt_instr\n");
-        Node * x1 = asm_pass1_nt_instr_brother(tag->son);
+        Node * x1 = NULL;
+        if (tag->son != NULL) {
+            x1 = asm_pass1_nt_instr_brother(tag->son);
+        }
+        
         Node * n = node_maker(x1, NULL, ASM_INSTR, 0);
 
         if (tag->brother != NULL) {
