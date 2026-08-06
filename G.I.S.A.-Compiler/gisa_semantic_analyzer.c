@@ -550,7 +550,7 @@ void ident_symbolizer(Node * node) {
         node->token.token_value = symbol_id;
         
     } else if (node->token.token_number == OP_PRE_INCRE || node->token.token_number == OP_PRE_DECRE) {
-        if (node->brother->token.token_number != IDENT && node->brother->token.token_number != SEM_SYMBOL) {
+        if (node->brother->son->token.token_number != IDENT && node->brother->son->token.token_number != SEM_SYMBOL) {
             printf("오류: OP_PRE_INCRE/OP_PRE_DECRE 연산자의 인자로 변수가 아닌 노드 <%d, %d>를 사용하려 합니다. 종료합니다.\n", node->brother->token.token_number, node->brother->token.token_value);
             exit(1);    // 미선언 변수 사용 시도한 경우.
         }
