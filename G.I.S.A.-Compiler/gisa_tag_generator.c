@@ -833,29 +833,18 @@ Node * line_for(Node * ast, int temp_in_rA, int temp_in_rB)
 
 Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB) 
 {
+    Node * cond = tag_nt_instr_interpreting(ast->son, 0, 0);    // condition 수행
     Node * n1_tail = node_maker(NULL, NULL, TAG_NOP, 0);
-    Node * n1 = node_maker(n1_tail, NULL, TAG_LINE_SET, 0);
-    for (int i = 0; i < case_table_stack_saving_for_list[ast->token.token_value]; i++) {
+    Node * n1 = node_maker(cond, NULL, TAG_LINE_SET, 0);
+    cond->brother = n1_tail;
+    for (int i = 0; i < case_table_stack_saving_for_list[ast->token.token_value]; i++) {    // condition의 결과와 case들을 비교하는 반복문
         printf("DEBUG SWITCH CASE LOOP: I = %d, ast->token.token_value = %d\n\n\n", i, ast->token.token_value);
 
         if (case_table_list[ast->token.token_value][i]->is_default == 0) {
-            printf("asdfnn\n\n\n");
-            Node * cmp = NULL;
-            if (ast->son->token.token_number == NUM_INT) {
-                Node * mov = line_maker(TAG_MOV, TAG_TEMP, temp_count++, TAG_TEMP, 0, NUM_INT, ast->son->token.token_value);
-                mov->token.token_value = mov->son->brother->token.token_value;        
-                cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, mov->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
-                n1_tail->brother = mov;
-                mov->brother = cmp;
-
-            } else if (ast->son->token.token_number == NT_EXP) {
-                Node * cond = tag_nt_instr_interpreting(ast->son, 0, 0);
-                cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, cond->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
-                n1_tail->brother = cond;
-                cond->brother = cmp;
-
-            }
+            Node * cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, cond->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
             Node * branch = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, case_table_list[ast->token.token_value][i]->id);
+
+            n1_tail->brother = cmp;
             cmp->brother = branch;
             n1_tail = branch;
         }
@@ -872,7 +861,7 @@ Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB)
 
     Node * n4 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: switch_end
     n4->token.token_value = n4->son->brother->token.token_value;
-    Node * n2 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n4->token.token_value);
+    Node * n2 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n4->token.token_value);   // condition에 맞는 case가 하나도 없을 시, 본문을 수행하지 않고 switch 종료.
     Node * n3 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, n4->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
 
     n1->brother = n2;
