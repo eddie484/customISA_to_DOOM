@@ -252,7 +252,7 @@ Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB){
 
     } else if (ast->token.token_number == NT_FUNC_DECLR) {
         printf("Processing: tag_nt_instr, ast: NT_FUNC_DECLR\n");
-        
+
         if (ast->brother != NULL) {
             Node * n1 = tag_nt_instr(ast->brother, temp_in_rA, temp_in_rB);
             return n1;
@@ -840,9 +840,20 @@ Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB)
 
         if (case_table_list[ast->token.token_value][i]->is_default == 0) {
             printf("asdfnn\n\n\n");
-            Node * cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, ast->son->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
+            Node * cmp = NULL;
+            if (ast->son->token.token_number == NUM_INT) {
+                Node * mov = line_maker(TAG_MOV, TAG_TEMP, temp_count++, TAG_TEMP, 0, NUM_INT, ast->son->token.token_value);
+                mov->token.token_value = mov->son->brother->token.token_value;        
+                cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, mov->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
+                n1_tail->brother = mov;
+                mov->brother = cmp;
+
+            } else {
+                cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, ast->son->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
+                n1_tail->brother = cmp;
+
+            }
             Node * branch = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, case_table_list[ast->token.token_value][i]->id);
-            n1_tail->brother = cmp;
             cmp->brother = branch;
             n1_tail = branch;
         }
