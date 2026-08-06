@@ -848,9 +848,11 @@ Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB)
                 n1_tail->brother = mov;
                 mov->brother = cmp;
 
-            } else {
-                cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, ast->son->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
-                n1_tail->brother = cmp;
+            } else if (ast->son->token.token_number == NT_EXP) {
+                Node * cond = tag_nt_instr_interpreting(ast->son, 0, 0);
+                cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, cond->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
+                n1_tail->brother = cond;
+                cond->brother = cmp;
 
             }
             Node * branch = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, case_table_list[ast->token.token_value][i]->id);
@@ -871,7 +873,7 @@ Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB)
     Node * n4 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: switch_end
     n4->token.token_value = n4->son->brother->token.token_value;
     Node * n2 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n4->token.token_value);
-    Node * n3 = tag_nt_instr_interpreting(ast->son->brother, 0, n4->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
+    Node * n3 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, n4->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
 
     n1->brother = n2;
     n2->brother = n3;
