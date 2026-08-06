@@ -763,6 +763,7 @@ int case_table_stack_count;
 
 int * case_table_limit;
 int * case_table_count;
+int * case_table_stack_saving_for_list;
 
 Switch_info *** case_table_list;
 Switch_info *** case_table_stack;
@@ -788,12 +789,14 @@ void push_switch() {
 
 int pop_switch() {
     printf("Popping\n");
-    case_table_list[case_table_list_count++] = case_table_stack[--case_table_stack_count];
+    case_table_stack_saving_for_list[case_table_list_count] = case_table_count[--case_table_stack_count];
+    case_table_list[case_table_list_count++] = case_table_stack[case_table_stack_count];
     case_table_stack[case_table_stack_count] = NULL;
     
     if (case_table_list_count == case_table_list_limit) {
         case_table_list_limit = case_table_list_limit * 2;
         case_table_list = realloc(case_table_list, sizeof(Switch_info**) * case_table_list_limit);
+        case_table_stack_saving_for_list = realloc(case_table_stack_saving_for_list, sizeof(Switch_info**) * case_table_list_limit);
     }
 
     if ((case_table_stack_count <= case_table_stack_limit / 4) && (case_table_stack_count > 0)) {
@@ -1163,7 +1166,8 @@ Node * semantic_analyzer(Node * parse_input, char * symbast_name)
     case_table_stack_count = 0;
     case_table_limit = malloc(sizeof(int) * case_table_stack_limit);
     case_table_count = malloc(sizeof(int) * case_table_stack_limit);
-    case_table_list = calloc(case_table_stack_limit, sizeof(Switch_info**));
+    case_table_stack_saving_for_list = malloc(sizeof(int) * case_table_list_limit);
+    case_table_list = calloc(case_table_list_limit, sizeof(Switch_info**));
     case_table_stack = calloc(case_table_stack_limit, sizeof(Switch_info**));
 
     

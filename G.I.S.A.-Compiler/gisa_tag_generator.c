@@ -835,7 +835,7 @@ Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB)
 {
     Node * n1_tail = node_maker(NULL, NULL, TAG_NOP, 0);
     Node * n1 = node_maker(n1_tail, NULL, TAG_LINE_SET, 0);
-    for (int i = 0; i < case_table_count[ast->token.token_value]; i++) {
+    for (int i = 0; i < case_table_stack_saving_for_list[ast->token.token_value]; i++) {
         printf("DEBUG SWITCH CASE LOOP: I = %d, ast->token.token_value = %d\n\n\n", i, ast->token.token_value);
 
         if (case_table_list[ast->token.token_value][i]->is_default == 0) {
@@ -858,7 +858,7 @@ Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB)
             n1_tail = branch;
         }
     }
-    for (int i = 0; i < case_table_count[ast->token.token_value]; i++) {
+    for (int i = 0; i < case_table_stack_saving_for_list[ast->token.token_value]; i++) {
         if (case_table_list[ast->token.token_value][i]->is_default == 1) {
             Node * branch = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, case_table_list[ast->token.token_value][i]->id);
             n1_tail->brother = branch;

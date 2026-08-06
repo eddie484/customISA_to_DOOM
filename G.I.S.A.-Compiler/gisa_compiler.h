@@ -291,7 +291,7 @@ extern int temp_count;
 extern Lexeme_value * lex_val_table;
 extern int symbol_id_count, label_id_count;
 extern Switch_info *** case_table_list;
-extern int * case_table_count;
+extern int * case_table_stack_saving_for_list;
 extern Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node);
 
 

@@ -8,6 +8,7 @@ switch문의 조건검사.
 ### 메모
 
 brother가 있다면 컨테이너로 감싸라.
+chapter_8/valid/empty_loop_body.c와 chapter_9/valid/stack_arguments/test_for_memory_leaks.c는 ISS에서 테스트 불가. 몇억번의 명령어 수행이 필요한 테스트케이스라 ISS로는 너무 오랜 시간이 걸린다.(대충 따져봐도 며칠은 돌려야 할듯.) 하지만 이런 테스트도 onboard에 올려 돌려보니 대략 몇십초만에 완료된다!
 
 ### 구현이 필요한 별도의 기능
 간단한 링커
@@ -28,5 +29,5 @@ cpu에서 돌아가는 간단한 프로그램 만들기!
 챕터5 5개
 챕터6 3개
 챕터7 0개
-챕터8 14개
+챕터8 12개
 챕터9 0개
