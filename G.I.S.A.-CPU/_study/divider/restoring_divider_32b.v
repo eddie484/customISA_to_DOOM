@@ -13,15 +13,14 @@ module restoring_divider(clk, nRESET, dividend_in, divisor_in, div_on_in, quotie
 	reg [64:0] p;
 	reg [31:0] d, q;
 	reg [5:0] m;
-	reg [2:0] div_state;
+	reg [1:0] div_state;
 	reg busy;
 	
 	
-	localparam IDLE = 3'b000;
-	localparam START = 3'b001;
-	localparam CAL = 3'b010;
-	localparam RESTORE = 3'b011;
-	localparam END = 3'b100;
+	localparam IDLE = 2'b00;
+	localparam CAL = 2'b01;
+	localparam RESTORE = 2'b10;
+	localparam END = 2'b11;
 	
 	
 	assign next_p = {p[63:31] - d, p[30:0], 1'b0};
@@ -29,6 +28,13 @@ module restoring_divider(clk, nRESET, dividend_in, divisor_in, div_on_in, quotie
 	
 	always @(posedge clk) begin
 		if (!nRESET) begin
+			quotient_out <= 32'b0;
+			remainder_out <= 32'b0;
+			fin_out <= 1'b0;
+			p <= 65'b0;
+			d <= 32'b0;
+			q <= 32'b0;
+			m <= 6'b0;
 			div_state <= IDLE;
 			busy <= 1'b0;
 
@@ -38,17 +44,19 @@ module restoring_divider(clk, nRESET, dividend_in, divisor_in, div_on_in, quotie
 					fin_out <= 1'b0;
 					busy <= 1'b0;
 					if (div_on_in == 1) begin
-						div_state <= START;
+						if (divisor_in == 32'b0) begin
+							fin_out <= 1'b1;
+							quotient_out <= 32'b0;
+							remainder_out <= 32'b0;
+						end else begin
+							div_state <= CAL;
+							busy <= 1'b1;
+							p <= {33'b0, dividend_in};
+							d <= divisor_in;
+							q <= 32'b0;
+							m <= 6'b0;
+						end
 					end
-				end
-				
-				START: begin
-					busy <= 1'b1;
-					p <= {33'b0, dividend_in};
-					d <= divisor_in;
-					q <= 32'b0;
-					m <= 5'b0;
-					div_state <= CAL;
 				end
 				
 				CAL: begin
@@ -80,6 +88,8 @@ module restoring_divider(clk, nRESET, dividend_in, divisor_in, div_on_in, quotie
 					remainder_out <= p[63:32];
 					div_state <= IDLE;
 				end
+				
+				default: div_state <= IDLE;
 			endcase
 		end
 	end
