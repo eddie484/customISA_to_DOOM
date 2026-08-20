@@ -1,22 +1,22 @@
 `include "defines.v"
 
 
-(* keep_hierarchy *) module pipeline_controller (icode_D, icode_E, rA_D, rB_D, rD_E, mispred_E, mul_finished_E, stall_F, stall_D, stall_E, bubble_D, bubble_E, bubble_M);
+(* keep_hierarchy *) module pipeline_controller (icode_D, icode_E, rA_D, rB_D, rD_E, mispred_E, cal_finished_E, stall_F, stall_D, stall_E, bubble_D, bubble_E, bubble_M);
 
 	input [5:0] icode_D, icode_E;
 	input [3:0] rA_D, rB_D, rD_E;
-	input mispred_E, mul_finished_E;
+	input mispred_E, cal_finished_E;
 	
 	(* keep *) output stall_F, stall_D, stall_E;
 	(* keep *) output bubble_D, bubble_E, bubble_M;
 	
 	
-	assign stall_F = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX) && (!mul_finished_E));
-	assign stall_D = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX) && (!mul_finished_E));
-	assign stall_E = ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX) && (!mul_finished_E));
+	assign stall_F = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX || icode_E == `DIV || icode_E == `DIVU || icode_E == `MOD || icode_E == `MODU) && (!cal_finished_E));
+	assign stall_D = ((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX || icode_E == `DIV || icode_E == `DIVU || icode_E == `MOD || icode_E == `MODU) && (!cal_finished_E));
+	assign stall_E = ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX || icode_E == `DIV || icode_E == `DIVU || icode_E == `MOD || icode_E == `MODU) && (!cal_finished_E));
 	assign bubble_D = (mispred_E || (icode_D == `JMP)) && (!stall_D);
 	assign bubble_E = (((icode_E == `LDR || icode_E == `LDRB || icode_E == `LDRSB || icode_E == `LDRH || icode_E == `LDRSH) && (rD_E == rA_D || rD_E == rB_D)) || mispred_E) && (!stall_E);
-	assign bubble_M = ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX) && (!mul_finished_E));
+	assign bubble_M = ((icode_E == `MUL || icode_E == `MULH || icode_E == `MULHU || icode_E == `MULFX || icode_E == `DIV || icode_E == `DIVU || icode_E == `MOD || icode_E == `MODU) && (!cal_finished_E));
 endmodule
 
 

@@ -20,10 +20,10 @@
 	
 	wire [5:0] icode_D, icode_E;
 	wire [3:0] rA_D, rB_D, rD_E;
-	wire mispred_E, mul_finished_E;
+	wire mispred_E, cal_finished_E;
 	
 	
-	pipeline_controller pipecon_module (icode_D, icode_E, rA_D, rB_D, rD_E, mispred_E, mul_finished_E, stall_F, stall_D, stall_E, bubble_D, bubble_E, bubble_M);
+	pipeline_controller pipecon_module (icode_D, icode_E, rA_D, rB_D, rD_E, mispred_E, cal_finished_E, stall_F, stall_D, stall_E, bubble_D, bubble_E, bubble_M);
 	
 	
 	
@@ -75,7 +75,7 @@
 	
 	pipereg_E PR_E (clk, nRESET, stall_E, bubble_E, icode_D, load_D, dmen_D, dmrw_D, aluop_D, sign_D, mulsel_D, lk_D, valA_D, valB_D, wdata_D, dmsize_D, dmsext_D, setcc_D, cond_D, branch_D, PCplus4_D, rD_D, wben_D, icode_E, load_E, dmen_E, dmrw_E, aluop_E, sign_E, mulsel_E, lk_E, valA_E, valB_E, wdata_E, dmsize_E, dmsext_E, setcc_E, cond_E, branch_E, PCplus4_E, rD_E, wben_E);
 	
-	execute E (clk, nRESET, aluop_E, sign_E, mulsel_E, lk_E, valA_E, valB_E, setcc_E, cond_E, branch_E, PCplus4_E, valE_E, mispred_E, fwd_E, mul_finished_E);
+	execute E (clk, nRESET, aluop_E, sign_E, mulsel_E, lk_E, valA_E, valB_E, setcc_E, cond_E, branch_E, PCplus4_E, valE_E, mispred_E, fwd_E, cal_finished_E);
 
 	
 	

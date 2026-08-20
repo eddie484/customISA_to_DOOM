@@ -50,7 +50,7 @@
 	assign dmen_out = load || store;
 	assign dmrw_out = store;
 	assign dmsext_out =  (icode == `LDRSB || icode == `LDRSH);
-	assign wben_out =(icode != `CMP && icode != `BCHK) && !store && !branch && !(jump && !mode_B);
+	assign wben_out = (icode != `CMP && icode != `BCHK && icode != `KILL) && !store && !branch && !(jump && !mode_B);
 	
 
 	

@@ -6,7 +6,7 @@
 	NZCV reg를 이용해 연산 결과의 상태를 기록한다.
 */
 
-(* keep_hierarchy *) module execute (clk, nRESET, aluop_in, sign_in, mulsel_in, lk_in, valA_in, valB_in, setcc_in, cond_in, branch_in, PCplus4_in, valE_out, mispred_out, fwd_out, mul_finished_out);
+(* keep_hierarchy *) module execute (clk, nRESET, aluop_in, sign_in, mulsel_in, lk_in, valA_in, valB_in, setcc_in, cond_in, branch_in, PCplus4_in, valE_out, mispred_out, fwd_out, cal_finished_out);
 
 	input clk, nRESET;
 	input [31:0] valA_in, valB_in, PCplus4_in;
@@ -16,13 +16,13 @@
 	
 	(* keep *) output [31:0] valE_out, fwd_out;
 	(* keep *) output reg mispred_out;
-	output mul_finished_out;
+	output cal_finished_out;
 	
 	wire [3:0] alucc, nzcv;
 	reg taken;
 	
 	
-	ALU ALU_module (clk, nRESET, valA_in, valB_in, sign_in, aluop_in, mulsel_in, valE_out, alucc, mul_finished_out);
+	ALU ALU_module (clk, nRESET, valA_in, valB_in, sign_in, aluop_in, mulsel_in, valE_out, alucc, cal_finished_out);
 	nzcv_reg nzcv_module (clk, nRESET, alucc, setcc_in, nzcv);
 	
 	assign fwd_out = lk_in ? PCplus4_in : valE_out;

@@ -1,4 +1,6 @@
-(* keep_hierarchy *) module ALU (clk, nRESET, valA, valB, signed_sig, aluop, mulsel, valE, alucc, mul_finished_out);
+`include "../defines.v"
+
+(* keep_hierarchy *) module ALU (clk, nRESET, valA, valB, signed_sig, aluop, mulsel, valE, alucc, cal_finished_out);
 
 	 input clk, nRESET;
     input [31:0] valA, valB;
@@ -8,9 +10,10 @@
 
     (* keep *) output reg [31:0] valE;
     (* keep *) output [3:0] alucc;
-	 output mul_finished_out;
+	 (* keep *) output cal_finished_out;
 
-    (* keep *) wire isSub, isMul, isMod;
+    (* keep *) wire isSub, isMul, isDiv, isMod, divider_on;
+    (* keep *) wire mul_finished, div_finished;
     (* keep *) wire [1:0] sftmode;
 
     (* keep *) wire [31:0] adder_result;
@@ -19,7 +22,7 @@
     (* keep *) wire [63:0] multiplier_result;
     (* keep *) reg [31:0] multiplier_selected;
 
-    (* keep *) wire [31:0] divider_result;
+    (* keep *) wire [31:0] divider_result, moduler_result;
 
     (* keep *) wire [31:0] shifter_result;
     (* keep *) wire shifter_pushed;
@@ -27,14 +30,17 @@
     (* keep *) wire [31:0] and_result, or_result, xor_result, not_result;
 
     assign isSub = aluop[0];
-	 assign isMul = (aluop == 4'b0010);
-    assign isMod = aluop[2];
+	 assign isMul = (aluop == `mul);
+    assign isDiv = (aluop == `div);
+    assign isMod = (aluop == `mod);
+    assign divider_on = isDiv || isMod;
     assign sftmode = aluop[1:0];    // 00: ror, 01: shl, 10: shr, 11: rol
-
+    assign cal_finished_out = mul_finished || div_finished;
+	 
 
     adder_subtractor add_sub_module(valA, valB, isSub, adder_cout, adder_result);
-    multiplier mul_module(clk, nRESET, valA, valB, signed_sig, isMul, multiplier_result, mul_finished_out);
-    assign divider_result = 32'b0;//valA / valB;    // 개발해야함
+    multiplier mul_module(clk, nRESET, valA, valB, signed_sig, isMul, multiplier_result, mul_finished);
+	 divider div_module(clk, nRESET, valA, valB, divider_on, divider_result, moduler_result, div_finished, );
     shifter_rotator sft_module(valA, valB, sftmode, signed_sig, shifter_result, shifter_pushed);
 
     assign and_result = valA & valB;
@@ -56,7 +62,7 @@
             4'b0001: valE = adder_result;
             4'b0010: valE = multiplier_selected;
             4'b0011: valE = divider_result;
-            4'b0100: valE = divider_result;
+            4'b0100: valE = moduler_result;
             4'b0101: valE = shifter_result;
             4'b0110: valE = shifter_result;
             4'b0111: valE = shifter_result;
