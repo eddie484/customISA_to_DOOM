@@ -3,8 +3,8 @@ module rca_8b (a, b, c0, cout, sum);
 	input [7:0]a, b;
 	input c0;
 	
-	output cout;
-	output [7:0]sum;
+	(* keep *) output cout;
+	(* keep *) output [7:0]sum;
 	
 	wire [8:1] carry;
 	

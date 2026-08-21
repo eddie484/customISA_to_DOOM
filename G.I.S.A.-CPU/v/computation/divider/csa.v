@@ -1,7 +1,7 @@
 module csa (pp, sumin, cin, sumout, cout);
 
     input [34:0] pp, sumin, cin;
-    output [34:0] sumout, cout;
+    (* keep *) output [34:0] sumout, cout;
 	 
 	 wire [35:0] carry;
 	 assign carry[0] = 1'b0;

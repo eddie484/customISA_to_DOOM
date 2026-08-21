@@ -8,7 +8,7 @@ module pla (p, d, out);
 
 	input [6:0] p;
 	input [3:0] d;
-	output reg [2:0] out;
+	(* keep *) output reg [2:0] out;
 	
 	
 	always @(*) begin

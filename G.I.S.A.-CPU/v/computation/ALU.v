@@ -40,7 +40,7 @@
 
     adder_subtractor add_sub_module(valA, valB, isSub, adder_cout, adder_result);
     multiplier mul_module(clk, nRESET, valA, valB, signed_sig, isMul, multiplier_result, mul_finished);
-	 divider div_module(clk, nRESET, valA, valB, divider_on, divider_result, moduler_result, div_finished, );
+	 divider div_module(clk, nRESET, valA, valB, signed_sig, divider_on, divider_result, moduler_result, div_finished, );
     shifter_rotator sft_module(valA, valB, sftmode, signed_sig, shifter_result, shifter_pushed);
 
     assign and_result = valA & valB;

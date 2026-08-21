@@ -4,7 +4,7 @@
 	 input [5:0] valB;
     (* keep *) output [63:0] result;
 
-    (* keep *) wire [63:0] stage_0, stage_1, stage_2, stage_3, stage_4, stage_5;
+    wire [63:0] stage_0, stage_1, stage_2, stage_3, stage_4, stage_5;
     
     genvar i;
 

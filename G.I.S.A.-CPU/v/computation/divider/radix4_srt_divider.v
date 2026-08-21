@@ -4,30 +4,31 @@
 `define RADIX_P1 3'd4
 `define RADIX_P2 3'd5
 
-module divider(clk, nRESET, dividend_in, divisor_in, div_on_in, quotient_out, remainder_out, fin_out, busy_out);
+module divider(clk, nRESET, dividend_in, divisor_in, signed_sig_in, div_on_in, quotient_out, remainder_out, fin_out, busy_out);
 
 	input clk, nRESET;
 	input [31:0] dividend_in, divisor_in;
-	input div_on_in;
+	input signed_sig_in, div_on_in;
 	
 	(* keep *) output reg [31:0] quotient_out;
 	(* keep *) output [31:0] remainder_out;
 	(* keep *) output reg fin_out, busy_out;
 	
-	(* keep *) wire [63:0] dividend_shifted;
-	(* keep *) wire [34:0] using_rc, using_rs, using_rc_csa, result_rc, result_rs, multiplied_d, cpa_result;
-	(* keep *) wire [31:0] q_neg_sign, q_result, cpa_result_restored;
-	(* keep *) wire [31:0] divisor_shifted;
-	(* keep *) wire [7:0] apr_result;
-	(* keep *) wire [4:0] divisor_shift_amount_wire, next_m;
-	(* keep *) wire [2:0] cpa_carry;
-	(* keep *) wire [2:0] pla_result;
-	(* keep *) reg [34:0] r_carry, r_sum;
-	(* keep *) reg [31:0] remainder_shifted;
-	(* keep *) reg [31:0] q_pos, q_neg, d, pr_low;
-	(* keep *) reg [4:0] divisor_shift_amount_reg;
-	(* keep *) reg [4:0] m;
-	(* keep *) reg [1:0] div_state;
+	wire [63:0] dividend_shifted;
+	wire [34:0] using_rc, using_rs, using_rc_csa, result_rc, result_rs, multiplied_d, cpa_result;
+	wire [31:0] q_neg_sign, q_minus, q_sum, q_result, cpa_result_restored, remainder_minus, remainder_aftershift;
+	wire [31:0] divisor_shifted, dividend_minus, divisor_minus;
+	wire [7:0] apr_result;
+	wire [4:0] divisor_shift_amount_wire, next_m;
+	wire [2:0] cpa_carry;
+	wire [2:0] pla_result;
+	wire is_dividend_minus, is_divisor_minus, is_quotient_minus;
+	reg [34:0] r_carry, r_sum;
+	reg [31:0] remainder_shifted, dividend_absolute, divisor_absolute;
+	reg [31:0] q_pos, q_neg, d, pr_low;
+	reg [4:0] divisor_shift_amount_reg;
+	reg [4:0] m;
+	reg [1:0] div_state;
 
 	// 다음단 연산에 사용하기 위해 shift한 carry/sum
 	assign using_rc = (m == 5'b0) ? r_carry : {r_carry[32:0], 2'b0};
@@ -51,26 +52,38 @@ module divider(clk, nRESET, dividend_in, divisor_in, div_on_in, quotient_out, re
 	pla pla_module (apr_result[7:1], d[30:27], pla_result);
 	
 	// q값 구하기
-	adder_subtractor q_cal (q_pos, q_neg_sign, !cpa_result[34], ,q_result);
+	adder_subtractor q_cal (q_pos, q_neg_sign, !cpa_result[34], ,q_sum);
 	
 	// cpa_result가 음수일 경우 사용할 복구값 계산
 	adder_subtractor cpa_result_restoring (cpa_result[31:0], d, 1'b0, , cpa_result_restored);
 	assign q_neg_sign = (cpa_result[34] == 1'b1) ? ~q_neg : q_neg;
 
 	
+	// 입력 절댓값 처리
+	assign is_dividend_minus = signed_sig_in && dividend_in[31];
+	assign is_divisor_minus = signed_sig_in && divisor_in[31];
+	adder_subtractor dividend_minus_maker (32'b0, dividend_in, 1'b1, , dividend_minus);
+	adder_subtractor divisor_minus_maker (32'b0, divisor_in, 1'b1, , divisor_minus);
+	
 	// 입력 전처리 shift
-	msb_shifter msb_divisor (divisor_in, divisor_shifted, divisor_shift_amount_wire);
-	left_shifter_64b dividend_shifter ({32'b0, dividend_in}, {1'b0, divisor_shift_amount_wire}, dividend_shifted);	// 64b shifter 만들어 바꾸기
+	msb_shifter msb_divisor (divisor_absolute, divisor_shifted, divisor_shift_amount_wire);
+	left_shifter_64b dividend_shifter ({32'b0, dividend_absolute}, {1'b0, divisor_shift_amount_wire}, dividend_shifted);	// 64b shifter 만들어 바꾸기
 
 	// remainder의 후처리 shift
-	right_shifter_32b remainder_right_shifter (remainder_shifted, divisor_shift_amount_reg, 1'b0, remainder_out);
+	assign is_quotient_minus = is_dividend_minus ^ is_divisor_minus;
+	right_shifter_32b remainder_right_shifter (remainder_shifted, divisor_shift_amount_reg, 1'b0, remainder_aftershift);
+	adder_subtractor remainder_minus_maker (32'b0, remainder_aftershift, 1'b1, , remainder_minus);
+	adder_subtractor q_minus_maker (32'b0, q_sum, 1'b1, , q_minus);
+	assign remainder_out = is_dividend_minus ? remainder_minus : remainder_aftershift;
+	assign q_result = is_quotient_minus ? q_minus : q_sum;
 	
 	counter_32b counter (m, next_m);
 	
 	
 	localparam IDLE = 2'b00;
-	localparam CAL = 2'b01;
-	localparam END = 2'b10;
+	localparam SHIFT = 2'b01;
+	localparam CAL = 2'b10;
+	localparam END = 2'b11;
 	
 	
 	
@@ -93,18 +106,24 @@ module divider(clk, nRESET, dividend_in, divisor_in, div_on_in, quotient_out, re
 							quotient_out <= 32'b0;
 							remainder_shifted <= 32'b0;
 						end else begin
-							div_state <= CAL;
+							div_state <= SHIFT;
 							busy_out <= 1'b1;
 							r_carry <= 35'b0;
-							r_sum <= {3'b0, dividend_shifted[63:32]};
-							pr_low <= dividend_shifted[31:0];
-							d <= divisor_shifted;
-							divisor_shift_amount_reg <= divisor_shift_amount_wire;
+							dividend_absolute <= is_dividend_minus ? dividend_minus : dividend_in;
+							divisor_absolute <= is_divisor_minus ? divisor_minus : divisor_in;
 							q_pos <= 32'b0;
 							q_neg <= 32'b0;
 							m <= 5'b0;
 						end
 					end
+				end
+				
+				SHIFT: begin
+					r_sum <= {3'b0, dividend_shifted[63:32]};
+					pr_low <= dividend_shifted[31:0];
+					d <= divisor_shifted;
+					divisor_shift_amount_reg <= divisor_shift_amount_wire;
+					div_state <= CAL;
 				end
 
 				CAL: begin

@@ -1,8 +1,8 @@
 module msb_shifter (in, out, amount);
 
 	input [31:0] in;
-	output [31:0] out;
-	output [4:0] amount;
+	(* keep *) output [31:0] out;
+	(* keep *) output [4:0] amount;
 	
 	wire [31:0] s16 = (in[31:16] == 16'b0) ? {in[15:0], 16'b0} : in;
 	wire [31:0] s8 = (s16[31:24] == 8'b0) ? {s16[23:0], 8'b0} : s16;

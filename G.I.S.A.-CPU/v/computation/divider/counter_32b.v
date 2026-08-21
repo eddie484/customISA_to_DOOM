@@ -1,9 +1,9 @@
 (* keep_hierarchy *) module counter_32b (in, out);
 
 	input [4:0] in;
-	output [4:0] out;
+	(* keep *) output [4:0] out;
 	
-	(* keep *) wire [4:0] carry;
+	wire [4:0] carry;
 	
 	half_adder ha_0 (in[0], 1'b1, carry[0], out[0]);
 	half_adder ha_1 (in[1], carry[0], carry[1], out[1]);

@@ -3,9 +3,9 @@ module right_shifter_32b (valA, valB, signed_sig, result);
     input [31:0] valA;
 	 input [4:0] valB;
     input signed_sig;
-    output [31:0] result;
+    (* keep *) output [31:0] result;
 
-    (* keep *) wire [31:0] stage_0, stage_1, stage_2, stage_3, stage_4;
+    wire [31:0] stage_0, stage_1, stage_2, stage_3, stage_4;
     
     genvar i;
 
