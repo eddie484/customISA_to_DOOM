@@ -81,31 +81,37 @@
 
 #define PN_COMMA        62
 
+#define KW_STATIC       63
+#define KW_EXTERN       64
+
 
 #define NT_PROGRAM      100
 #define NT_FUNC_DECLR   101
-#define NT_PARAM_LIST   102
-#define NT_PARAM_MULTI  103
-#define NT_PARAM        104
-#define NT_FUNC_CONTENT 105
-#define NT_BLOCK        106
-#define NT_INSTR_LIST   107
-#define NT_INSTR        108
-#define NT_CONTENT      109
-#define NT_ELSE         110
-#define NT_LABEL        111
-#define NT_DECLR        112
-#define NT_VAR_DECLR    113
-#define NT_ASSIGN       114
-#define NT_FOR_INIT     115
-#define NT_FOR_EXP      116
-#define NT_EXP          117
-#define NT_FACTOR       118
-#define NT_POSTFIX      119
-#define NT_ARG_LIST     120
-#define NT_ARG          121
-#define NT_UNARY_OP     122
-#define NT_BINARY_OP    123
+#define NT_SPECIFIER_LIST   102
+#define NT_SPECIFIER   103
+#define NT_SPECIFIER_MULTI  104
+#define NT_PARAM_LIST   105
+#define NT_PARAM_MULTI  106
+#define NT_PARAM        107
+#define NT_FUNC_CONTENT 108
+#define NT_BLOCK        109
+#define NT_INSTR_LIST   110
+#define NT_INSTR        111
+#define NT_CONTENT      112
+#define NT_ELSE         113
+#define NT_LABEL        114
+#define NT_DECLR        115
+#define NT_VAR_DECLR    116
+#define NT_ASSIGN       117
+#define NT_FOR_INIT     118
+#define NT_FOR_EXP      119
+#define NT_EXP          120
+#define NT_FACTOR       121
+#define NT_POSTFIX      122
+#define NT_ARG_LIST     123
+#define NT_ARG          124
+#define NT_UNARY_OP     125
+#define NT_BINARY_OP    126
 
 #define NT_FUNCTION     130
 

@@ -254,7 +254,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                         cur_state = 3;
                     }
                 }
-                else if (((int)c >= 0 && (int)c <= 127) && lexing_state_table[(int)c]) {
+                else if (((int)c >= -128 && (int)c <= 127) && lexing_state_table[(int)c]) {
                     cur_state = lexing_state_table[(int)c];
                 }
                 else if (c == ' ') {
@@ -355,6 +355,14 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     //printf("CASE");
                 } else if (!strcmp(get_str, "default")) {
                     lexeme[lexeme_count].token_number = KW_DEFAULT;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("DEFAULT");
+                } else if (!strcmp(get_str, "static")) {
+                    lexeme[lexeme_count].token_number = KW_STATIC;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("DEFAULT");
+                } else if (!strcmp(get_str, "extern")) {
+                    lexeme[lexeme_count].token_number = KW_EXTERN;
                     lexeme[lexeme_count].token_value = 0;
                     //printf("DEFAULT");
                 } else {
