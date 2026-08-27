@@ -218,6 +218,8 @@ int follow(int input_token, int nt_set);
 Node * p_nt_program(Lexer_result lex_input);
 Node * p_nt_func_declr(Lexer_result lex_input);
 Node * p_nt_specifier_list_calling(Lexer_result lex_input);
+void finding_static(Node * node, Node * is_static);
+void finding_extern(Node * node, Node * is_static);
 Node * p_nt_specifier_list(Lexer_result lex_input);
 Node * p_nt_specifier(Lexer_result lex_input);
 Node * p_nt_specifier_multi(Lexer_result lex_input);
@@ -551,11 +553,90 @@ Node * p_nt_specifier_list_calling(Lexer_result lex_input) {
     if (first(nextSymbol.token_number, NT_SPECIFIER)) {
         printf("parsing: nt_specifier_list_covering\n");
         Node * x1 = p_nt_specifier_list(lex_input);
+        Node * x1_covering = node_maker(NULL, x1, NT_SPECIFIER_LIST, 0);
+
+        Node * is_static = node_maker(NULL, NULL, KW_STATIC, 0);
+        Node * is_extern = node_maker(NULL, NULL, KW_EXTERN, 0);
+        printf("IDENT의 STATIC이 정상적으로 사용되었는지 확인합니다.\n");
+        finding_static(x1_covering, is_static);
+        x1 = x1_covering->brother;
+        printf("IDENT의 STATIC이 정상적으로 사용되었습니다. 사용 횟수: %d\n", is_static->token.token_value);
         
-        Node * n = node_maker(x1, NULL, NT_SPECIFIER_LIST, 0);
+        printf("IDENT의 EXTERN이 정상적으로 사용되었는지 확인합니다.\n");
+        finding_extern(x1_covering, is_extern);
+        x1 = x1_covering->brother;
+        if (is_static->token.token_value && is_extern->token.token_value) {
+            printf ("ERROR: 하나의 선언에 STATIC과 EXTERN이 모두 포함되어 있습니다. 종료합니다.\n");
+            exit(1);
+        }
+        printf("IDENT의 EXTERN이 정상적으로 사용되었습니다. 사용 횟수: %d\n", is_extern->token.token_value);
+
+        if (x1 == NULL) {
+            printf("ERROR: 타입이 발견되지 않았습니다. 종료합니다.\n");
+            exit(1);
+        } else {
+            printf("IDENT의 타입이 존재합니다. 계속 진행합니다.\n");
+        }
+
+        is_static->brother = is_extern;
+        is_extern->brother = x1;
+        
+        Node * n = node_maker(is_static, NULL, NT_SPECIFIER_LIST, 0);
+
+        free(x1_covering);
 
         return n;
     } else error(2, nextSymbol);
+}
+
+void finding_static(Node * node, Node * is_static) {    // type를 확장해 type tree에 son이 나오게 된다면, son 탐색 추가해야 함.
+    if (node->brother != NULL) {
+        printf("노드 브라더 넘버: %d\n", node->brother->token.token_number);
+        if (node->brother->token.token_number == KW_STATIC) {
+            printf("STATIC KEYWORD가 발견되었습니다. 정상 사용인지 확인합니다.\n");
+            if (is_static->token.token_value == 0) {
+                is_static->token.token_value = 1;
+                if (node->brother->brother == NULL) {
+                    free(node->brother);
+                    node->brother = NULL;
+                } else {
+                    Node * static_brother = node->brother->brother;
+                    free(node->brother);
+                    node->brother = static_brother;
+                    finding_static(node->brother, is_static);
+                }
+            } else {
+                printf("ERROR: 두 개 이상의 static keyword가 발견되었습니다. 종료합니다.\n");
+                exit(1);
+            }
+        } else {
+            finding_static(node->brother, is_static);
+        };
+    }    
+}
+
+void finding_extern(Node * node, Node * is_extern) {    // type를 확장해 type tree에 son이 나오게 된다면, son 탐색 추가해야 함.
+    if (node->brother != NULL) {
+        if (node->brother->token.token_number == KW_EXTERN) {
+            if (is_extern->token.token_value == 0) {
+                is_extern->token.token_value = 1;
+                if (node->brother->brother == NULL) {
+                    free(node->brother);
+                    node->brother = NULL;
+                } else {
+                    Node * extern_brother = node->brother->brother;
+                    free(node->brother);
+                    node->brother = extern_brother;
+                    finding_extern(node->brother, is_extern);
+                }
+            } else {
+                printf("ERROR: 두 개 이상의 extern keyword가 발견되었습니다. 종료합니다.\n");
+                exit(1);
+            }
+        } else {
+            finding_extern(node->brother, is_extern);
+        };
+    }    
 }
 
 Node * p_nt_specifier_list(Lexer_result lex_input) {    // <specifier_list> ::= <specifier> <specifier_multi>
