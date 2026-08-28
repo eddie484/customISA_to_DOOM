@@ -258,7 +258,10 @@ typedef struct Symbol_info {
     Symbol_location location;
     int is_func;    // 0: 변수, 1: 함수
     int having_body; // (함수일 경우) 0: 선언만 완료된 상태, 1: 정의까지 완료. (변수일 경우 항상 0)
-    int is_linkage;
+    int is_linkage; // 0: linkage 없음, 1: 있음
+    int is_global;  // 0: global 아님, 1: global임
+    int init_option;    // 0: init 없음(일반변수 or 함수), 1: init_value로 초기값 확정, 2: 아직 모름, 3: 초기화 안함
+    int init_value; // init_option이 1인 경우만 활성화.
 } Symbol_info;
 
 typedef struct Label_info {

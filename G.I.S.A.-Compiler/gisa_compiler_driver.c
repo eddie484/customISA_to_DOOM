@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
             printf("Option --semantic: Semantic Analyzing finished. Program exit.\n");
 
             free(lexer_result.lexeme_list);
-            free(lexer_result.value_table);
+            free(lex_val_table);
             tree_malloc_cleaner(semantic_result);
 
 
@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
             printf("Option --tag: TAG Generating finished. Program exit.\n");
 
             free(lexer_result.lexeme_list);
-            free(lexer_result.value_table);
+            free(lex_val_table);
             tree_malloc_cleaner(semantic_result);
             tree_malloc_cleaner(tag_result);
 

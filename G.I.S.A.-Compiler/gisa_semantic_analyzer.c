@@ -299,6 +299,11 @@ int symbol_maker(Node * declr_node) {
                     printf("정상:이전에 선언된 함수의 타입과 같은 타입으로 선언되었습니다.\n");
                 }
 
+                if (func_table[j]->is_global == 1 && declr_node->son->son->token.token_value == 1) {
+                    printf("오류: 이전에 extern/키워드 없음으로 선언된 함수를 static으로 선언하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+
                 if (func_table[j]->having_body == 0) {  // 정의된적 없는 함수인 경우
                     if (ident_node->brother->brother != NULL && ident_node->brother->brother->token.token_number == NT_BLOCK) {
                         if (symbol_table_stack_count == 1) {
@@ -343,6 +348,8 @@ int symbol_maker(Node * declr_node) {
         symbol->is_func = 1;
         symbol->having_body = 0;
         symbol->is_linkage = 1;
+        symbol->init_option = 0;
+        symbol->init_value = 0;
 
         if (ident_node->brother->brother != NULL && ident_node->brother->brother->token.token_number == NT_BLOCK) {
             if (symbol_table_stack_count == 1) {
@@ -353,6 +360,12 @@ int symbol_maker(Node * declr_node) {
                 printf("오류: 스코프 베이스가 아닌 곳에서 함수 정의가 시도되었습니다.");
                 exit(1);
             }
+        }
+
+        if (declr_node->son->son->token.token_value == 1) { // static인 경우.
+            symbol->is_global = 0;
+        } else {
+            symbol->is_global = 1;
         }
 
         
@@ -383,11 +396,18 @@ int symbol_maker(Node * declr_node) {
         printf("\tLocation.Location: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.location);
         printf("\tIs Function: YES\n");
         if(symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->having_body == 1) {
-            printf("\tHaving Body: YES\n\n\n");
+            printf("\tHaving Body: YES\n");
         } else {
-            printf("\tHaving Body: NO\n\n\n");
+            printf("\tHaving Body: NO\n");
         }
         printf("\tIs Linkage: YES\n");
+        if(symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->is_global == 1) {
+            printf("\tIs Global: YES\n");
+        } else {
+            printf("\tIs Global: NO\n");
+        }
+        printf("\tInit Option: 0 (It's only about variation.)\n");
+        printf("\tInit Value: 0 (It's only about variation.)\n\n\n");
         
 
         return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
@@ -598,12 +618,8 @@ void ident_symbolizer(Node * node) {
             free(ident_node->brother);
 
             type_cleaner = node->son;
-            while (type_cleaner != ident_node) {
-                Node * n = type_cleaner->brother;
-                free(type_cleaner);
-                type_cleaner = n;
-            }
-            // node->son부터 ident_node 이전까지 free 하는 반복문
+            tree_malloc_cleaner(type_cleaner->son);
+            free(type_cleaner);
             free(ident_node);
 
             node->son = exp;
@@ -614,11 +630,8 @@ void ident_symbolizer(Node * node) {
             Node * type_cleaner;
             
             type_cleaner = node->son;
-            while (type_cleaner != ident_node) {
-                Node * n = type_cleaner->brother;
-                free(type_cleaner);
-                type_cleaner = n;
-            }
+            tree_malloc_cleaner(type_cleaner->son);
+            free(type_cleaner);
 
             free(ident_node->brother);
             free(ident_node);
@@ -667,7 +680,7 @@ void ident_symbolizer(Node * node) {
             Node * param_node_son = param_node->son;
             while (param_node_son != NULL) {
                 Node * n = param_node_son->brother;
-                free(param_node_son);
+                free(param_node_son);   // 봐야함. tree_malloc_cleaner가 아닐까?
                 param_node_son = n;
             }
 
