@@ -4,6 +4,7 @@
 
 int case_calculator (Node * node);
 Node * get_type_tree_from_var_declr(Node * declr_node, Node * ident_node);
+Node * get_type_tree_from_param_var_declr(Node * declr_node, Node * ident_node);
 Node * get_type_tree_from_func_declr(Node * declr_node, Node * ident_node);
 Node * get_type_tree_from_func_call(Node * ident_node);
 
@@ -42,6 +43,8 @@ int * symbol_table_list_inside_count;
 int func_table_limit;
 int func_table_count;
 Symbol_info ** func_table;
+
+int func_depth = 0;
 
 void push() {
     printf("Pushing Start. Current Table stack count: %d\n", symbol_table_stack_count);
@@ -98,6 +101,111 @@ int symbol_maker(Node * declr_node) {
 
     if (ident_node->brother == NULL || (ident_node->brother != NULL && ident_node->brother->token.token_number != NT_PARAM_LIST)) { // !!!변수 선언일 경우!!!
         printf("선언되는 IDENT는 변수입니다.\n");
+
+        // ***** linkage 변수 처리부분 시작!!! *****
+        if (declr_node->token.token_number == NT_VAR_DECLR && (func_depth == 0 || declr_node->son->son->brother->token.token_value == 1)) { // linkage가 있는 변수의 경우. (함수 깊이가 0 || EXTERN 키워드가 있음)
+            // 현재 스코프에 같은 이름의 변수가 있고 extern이 아닐 경우. 있다면 오류.
+            for (int j = 0; j <= symbol_table_count[symbol_table_stack_count - 1] - 1; j++) {        // 테이블 내부 순회
+                printf("DEBUG. j: %d\n", j);
+                if (symbol_table_stack[symbol_table_stack_count - 1][j] == NULL) {
+                    printf("DEBUG. Table[%d] is NULL. Break.\n", j);
+                    break;
+                } else if ((ident_node->token.token_value == symbol_table_stack[symbol_table_stack_count - 1][j]->name) && (symbol_table_stack[symbol_table_stack_count - 1][j]->is_linkage == 0)) {
+                    printf("오류: 이미 linkage가 없도록 선언된 Symbol Name <%d, %d>입니다. 종료합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
+                    exit(1);
+                }
+            }
+
+            for (int j = 0; j <= func_table_count - 1; j++) {        // 함수 테이블 순회 <- linkage table로 이름 바꿀것
+                printf("DEBUG. j: %d\n", j);
+                if (ident_node->token.token_value == func_table[j]->name) {
+                    if (func_table[j]->is_func == 1) {
+                        printf("오류: 이전에 함수로 선언된 Name입니다: Symbol Name <%d, %d>.\n", ident_node->token.token_number, ident_node->token.token_value);
+                        exit(1);
+                    }
+                    
+                    printf("이전에 선언된 적이 있는 linkage 변수입니다: Symbol Name <%d, %d>. 새로운 심볼을 생성하지 않고, 해당 변수의 심볼을 이용합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
+
+                    Node * input_node_typetree = get_type_tree_from_var_declr(declr_node, ident_node);
+                    if (compare_tree(input_node_typetree, func_table[j]->type_tree) == 0) {
+                        printf("오류: 이전에 선언된 linkage 변수의 타입과 다른 타입으로 선언되었습니다.\n");
+                        printf("이전에 선언된 linkage 변수의 타입 트리:\n");
+                        bin_tree_printer(func_table[j]->type_tree);
+                        printf("새로 선언된 linkage 변수의 타입 트리:\n");
+                        bin_tree_printer(input_node_typetree);
+                        tree_malloc_cleaner(input_node_typetree);
+                        exit(1);
+                    } else {
+                        tree_malloc_cleaner(input_node_typetree);
+                        printf("정상:이전에 선언된 linkage 변수의 타입과 같은 타입으로 선언되었습니다.\n");
+                    }
+
+                    symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = func_table[j];
+
+                    if (symbol_table_count[symbol_table_stack_count - 1] == symbol_table_limit[symbol_table_stack_count - 1]) {
+                        symbol_table_limit[symbol_table_stack_count - 1] = symbol_table_limit[symbol_table_stack_count - 1] * 2;
+                        symbol_table_stack[symbol_table_stack_count - 1] = realloc(symbol_table_stack[symbol_table_stack_count - 1], sizeof(Symbol_info*) * symbol_table_limit[symbol_table_stack_count - 1]);
+                    }
+
+                    return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
+                    // 이전에 선언된 linkage 변수 처리 끝.
+                }
+            }
+
+            printf("이전에 선언되지 않은 linkage 변수 Symbol Name <%d, %d>입니다. 새로운 심볼을 생성해 저장합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
+
+            // ***** 심볼 만들어 정보 채우기 *****
+            Symbol_info * symbol = malloc(sizeof(Symbol_info));
+            symbol->name = ident_node->token.token_value;
+            symbol->id = symbol_id_count++;
+            symbol->type_tree = get_type_tree_from_var_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
+            symbol->size = 4;               // 수정 및 처리가 필요할듯.
+            symbol->location.type = 0;
+            symbol->location.location = 0;
+            symbol->is_func = 0;
+            symbol->having_body = 0;
+            symbol->is_linkage = 1;
+
+            
+
+            // ***** 심볼을 테이블에 저장 *****
+            func_table[func_table_count++] = symbol;
+
+            if (func_table_count == func_table_limit) {
+                func_table_limit = func_table_limit * 2;
+                func_table = realloc(func_table, sizeof(Symbol_info*) * func_table_limit);
+            }
+
+            symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = func_table[func_table_count - 1];
+
+            if (symbol_table_count[symbol_table_stack_count - 1] == symbol_table_limit[symbol_table_stack_count - 1]) {
+                symbol_table_limit[symbol_table_stack_count - 1] = symbol_table_limit[symbol_table_stack_count - 1] * 2;
+                symbol_table_stack[symbol_table_stack_count - 1] = realloc(symbol_table_stack[symbol_table_stack_count - 1], sizeof(Symbol_info*) * symbol_table_limit[symbol_table_stack_count - 1]);
+            }
+
+            // ***** 저장한 심볼을 프린트하기 *****
+            printf("\n***** Symbol Making End. Made Symbol's info: *****\n");
+            printf("\tName: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->name);
+            printf("\tID: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id);
+            printf("\tType Tree:\n");
+            bin_tree_printer(symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->type_tree);
+            printf("\tSize: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->size);
+            printf("\tLocation.Type: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.type);
+            printf("\tLocation.Location: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.location);
+            printf("\tIs Function: NO\n");
+            printf("\tHaving Body: NO (It's only about function.)\n\n\n");
+            printf("\tIs Linkage: YES\n");
+
+            
+
+            return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
+        }
+        // ***** linkage 변수 처리부분 끝!!! *****
+
+
+
+        
+
         //ident_node->토큰밸류 와 같은 심볼네임이 있는지 현재 테이블 순회해 검토. 있다면 오류 발생.
         for (int j = 0; j <= symbol_table_count[symbol_table_stack_count - 1] - 1; j++) {        // 테이블 내부 순회
             printf("DEBUG. j: %d\n", j);
@@ -116,12 +224,17 @@ int symbol_maker(Node * declr_node) {
         Symbol_info * symbol = malloc(sizeof(Symbol_info));
         symbol->name = ident_node->token.token_value;
         symbol->id = symbol_id_count++;
-        symbol->type_tree = get_type_tree_from_var_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
+        if (declr_node->token.token_number == NT_PARAM) {
+            symbol->type_tree = get_type_tree_from_param_var_declr(declr_node, ident_node);
+        } else {
+            symbol->type_tree = get_type_tree_from_var_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
+        }
         symbol->size = 4;               // 위의 while문에서 typetree 만드는 함수도 만들어 호출하면 좋을것 같음.
         symbol->location.type = 0;
         symbol->location.location = 0;
         symbol->is_func = 0;
         symbol->having_body = 0;
+        symbol->is_linkage = 0;
 
         // ***** 심볼을 테이블에 저장 *****
         symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = symbol;
@@ -141,6 +254,7 @@ int symbol_maker(Node * declr_node) {
         printf("\tLocation.Location: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.location);
         printf("\tIs Function: NO\n");
         printf("\tHaving Body: NO (It's only about function.)\n\n\n");
+        printf("\tIs Linkage: NO\n");
 
         return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
         // 변수 선언 끝!
@@ -164,6 +278,11 @@ int symbol_maker(Node * declr_node) {
         for (int j = 0; j <= func_table_count - 1; j++) {        // 함수 테이블 순회
             printf("DEBUG. j: %d\n", j);
             if (ident_node->token.token_value == func_table[j]->name) {
+                if (func_table[j]->is_func == 0) {
+                    printf("오류: 이전에 linkage가 있는 변수로 선언된 Name입니다: Symbol Name <%d, %d>.\n", ident_node->token.token_number, ident_node->token.token_value);
+                    exit(1);
+                }
+
                 printf("이전에 선언된 적이 있는 함수입니다: Symbol Name <%d, %d>. 새로운 심볼을 생성하지 않고, 해당 함수의 심볼을 이용합니다.\n", ident_node->token.token_number, ident_node->token.token_value);
 
                 Node * input_node_typetree = get_type_tree_from_func_declr(declr_node, ident_node);
@@ -223,6 +342,7 @@ int symbol_maker(Node * declr_node) {
         symbol->location.location = 0;
         symbol->is_func = 1;
         symbol->having_body = 0;
+        symbol->is_linkage = 1;
 
         if (ident_node->brother->brother != NULL && ident_node->brother->brother->token.token_number == NT_BLOCK) {
             if (symbol_table_stack_count == 1) {
@@ -267,6 +387,7 @@ int symbol_maker(Node * declr_node) {
         } else {
             printf("\tHaving Body: NO\n\n\n");
         }
+        printf("\tIs Linkage: YES\n");
         
 
         return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
@@ -341,6 +462,13 @@ Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node) {
 
 Node * get_type_tree_from_var_declr(Node * declr_node, Node * ident_node) {
     // return_type-param1_type-param2_type-param3_type....
+    Node * type_tree = node_maker(NULL, NULL, declr_node->son->son->brother->brother->token.token_number, 0);
+
+    return type_tree;
+}
+
+Node * get_type_tree_from_param_var_declr(Node * declr_node, Node * ident_node) {
+    // return_type-param1_type-param2_type-param3_type....
     Node * type_tree = node_maker(NULL, NULL, declr_node->son->token.token_number, 0);
 
     return type_tree;
@@ -348,7 +476,7 @@ Node * get_type_tree_from_var_declr(Node * declr_node, Node * ident_node) {
 
 Node * get_type_tree_from_func_declr(Node * declr_node, Node * ident_node) {
     // return_type-param1_type-param2_type-param3_type....
-    Node * type_tree = node_maker(node_maker(NULL, NULL, declr_node->son->token.token_number, 0), NULL, SEM_TYPE, 0);
+    Node * type_tree = node_maker(node_maker(NULL, NULL, declr_node->son->son->brother->brother->token.token_number, 0), NULL, SEM_TYPE, 0);
     Node * type_tree_current = type_tree;
     Node * param_node = ident_node->brother->son;
     while (param_node != NULL) {
@@ -515,7 +643,12 @@ void ident_symbolizer(Node * node) {
             
 
     } else if (node->token.token_number == NT_FUNC_DECLR) {    
+        if (func_depth != 0 && node->son->son->token.token_value == 1) {
+            printf("ERROR: 블록 스코프에서 static 함수를 선언하고 있습니다. 종료합니다.\n");
+            exit(1);
+        }
         int symbol_id = symbol_maker(node);
+        func_depth++;
         Node * ident_node = node->son;
 
         while (ident_node->token.token_number != IDENT) {
@@ -588,7 +721,7 @@ void ident_symbolizer(Node * node) {
 
     }else if (node->token.token_number == NT_FUNC_DECLR) {    
         pop(); 
-
+        func_depth--;
     } 
     
 

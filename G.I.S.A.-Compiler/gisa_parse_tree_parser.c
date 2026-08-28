@@ -601,7 +601,7 @@ void finding_static(Node * node, Node * is_static) {    // type를 확장해 typ
                     Node * static_brother = node->brother->brother;
                     free(node->brother);
                     node->brother = static_brother;
-                    finding_static(node->brother, is_static);
+                    finding_static(node, is_static);
                 }
             } else {
                 printf("ERROR: 두 개 이상의 static keyword가 발견되었습니다. 종료합니다.\n");
@@ -625,7 +625,7 @@ void finding_extern(Node * node, Node * is_extern) {    // type를 확장해 typ
                     Node * extern_brother = node->brother->brother;
                     free(node->brother);
                     node->brother = extern_brother;
-                    finding_extern(node->brother, is_extern);
+                    finding_extern(node, is_extern);
                 }
             } else {
                 printf("ERROR: 두 개 이상의 extern keyword가 발견되었습니다. 종료합니다.\n");

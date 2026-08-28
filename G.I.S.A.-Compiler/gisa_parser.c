@@ -603,7 +603,7 @@ void finding_static(Node * node, Node * is_static) {    // type를 확장해 typ
                     Node * static_brother = node->brother->brother;
                     free(node->brother);
                     node->brother = static_brother;
-                    finding_static(node->brother, is_static);
+                    finding_static(node, is_static);
                 }
             } else {
                 printf("ERROR: 두 개 이상의 static keyword가 발견되었습니다. 종료합니다.\n");
@@ -627,7 +627,7 @@ void finding_extern(Node * node, Node * is_extern) {    // type를 확장해 typ
                     Node * extern_brother = node->brother->brother;
                     free(node->brother);
                     node->brother = extern_brother;
-                    finding_extern(node->brother, is_extern);
+                    finding_extern(node, is_extern);
                 }
             } else {
                 printf("ERROR: 두 개 이상의 extern keyword가 발견되었습니다. 종료합니다.\n");
@@ -1138,6 +1138,14 @@ Node * p_nt_for_init(Lexer_result lex_input){   // <for_init> ::= <declr> | <exp
 
         if (x1->token.token_number != NT_VAR_DECLR) {
             printf("ERROR: for 루프의 초기 선언으로 함수가 선언되었습니다. 종료합니다.\n");
+            exit(1);
+        }
+
+        if (x1->son->son->token.token_value == 1) {
+            printf("ERROR: for 루프의 초기 선언에 static 키워드가 있습니다. 종료합니다.\n");
+            exit(1);
+        } else if (x1->son->son->brother->token.token_value == 1) {
+            printf("ERROR: for 루프의 초기 선언에 extern 키워드가 있습니다. 종료합니다.\n");
             exit(1);
         }
         

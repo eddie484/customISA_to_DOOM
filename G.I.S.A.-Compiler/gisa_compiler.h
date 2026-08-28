@@ -258,6 +258,7 @@ typedef struct Symbol_info {
     Symbol_location location;
     int is_func;    // 0: 변수, 1: 함수
     int having_body; // (함수일 경우) 0: 선언만 완료된 상태, 1: 정의까지 완료. (변수일 경우 항상 0)
+    int is_linkage;
 } Symbol_info;
 
 typedef struct Label_info {
