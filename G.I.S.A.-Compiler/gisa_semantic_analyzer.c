@@ -140,6 +140,37 @@ int symbol_maker(Node * declr_node) {
                         printf("정상:이전에 선언된 linkage 변수의 타입과 같은 타입으로 선언되었습니다.\n");
                     }
 
+
+                    
+                    if ((declr_node->son->son->token.token_value == 1) && (func_table[j]->is_global == 1)) {
+                        printf("오류: 이전에 global == 1로 선언된 변수를 static으로 재선언(global == 0)했습니다. 종료합니다.\n");                            
+                        exit(1);
+                    } else if (((declr_node->son->son->token.token_value == 0) && (declr_node->son->son->brother->token.token_value == 0)) && (func_table[j]->is_global == 0)) {
+                        printf("오류: 이전에 global == 0로 선언된 변수를 키워드 없이 재선언(global == 1)했습니다. 종료합니다.\n");                            
+                        exit(1);
+                    }
+
+
+                    if((ident_node->brother->son != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // init_option = 1로 재선언한 경우 
+                        if (func_table[j]->init_option == 1) {
+                            printf("오류: 초기값이 확정된 변수를 재선언하며 다시 초기값을 설졍하려고 합니다. 종료합니다.\n");
+                            exit(1);
+                        } else {
+                            printf("이전 init_option이 %d이었던 변수의 초기값을 설정했습니다.\n", func_table[j]->init_option);
+                            func_table[j]->init_option = 1;
+                            func_table[j]->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                        }
+
+                    } else if (!(declr_node->son->son->brother->token.token_value == 1) && (ident_node->brother->son == NULL)) { // init_option = 1로 재선언한 경우 
+                        if (func_table[j]->init_option == 3) {
+                            printf("이전 init_option이 %d이었던 변수의 option을 2로 설정했습니다.\n", func_table[j]->init_option);
+                            func_table[j]->init_option = 2;
+                        }
+                    }
+                    
+
+
+
                     symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = func_table[j];
 
                     if (symbol_table_count[symbol_table_stack_count - 1] == symbol_table_limit[symbol_table_stack_count - 1]) {
@@ -165,6 +196,9 @@ int symbol_maker(Node * declr_node) {
             symbol->is_func = 0;
             symbol->having_body = 0;
             symbol->is_linkage = 1;
+            symbol->is_global = 0;
+            symbol->init_option = 0;
+            symbol->init_value = 0;
 
             
 
@@ -195,6 +229,66 @@ int symbol_maker(Node * declr_node) {
             printf("\tIs Function: NO\n");
             printf("\tHaving Body: NO (It's only about function.)\n\n\n");
             printf("\tIs Linkage: YES\n");
+
+
+            if (func_depth == 0) {  // 파일 스코프인 경우
+                if (declr_node->son->son->token.token_value == 1) { // static 키워드가 있는 경우
+                    symbol->is_global = 0;
+                    printf("\tIs Global: NO\n");
+                    if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
+                        symbol->init_option = 2;
+                        symbol->init_value = 0;
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
+                        symbol->init_option = 1;
+                        symbol->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                    } else {    // 초기값이 있지만 상수가 아닌경우
+                        printf("오류: static 키워드가 있는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
+                        exit(1);
+                    }
+
+                } else if (declr_node->son->son->brother->token.token_value == 1) { // extern 키워드가 있는 경우
+                    symbol->is_global = 1;
+                    printf("\tIs Global: YES\n");
+                    if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
+                        symbol->init_option = 3;
+                        symbol->init_value = 0;
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
+                        symbol->init_option = 1;
+                        symbol->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                    } else {    // 초기값이 있지만 상수가 아닌경우
+                        printf("오류: extern 키워드가 있는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
+                        exit(1);
+                    }          
+
+                } else {    // 키워드가 없는 경우
+                    symbol->is_global = 1;
+                    printf("\tIs Global: YES\n");
+                    if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
+                        symbol->init_option = 2;
+                        symbol->init_value = 0;
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
+                        symbol->init_option = 1;
+                        symbol->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                    } else {    // 초기값이 있지만 상수가 아닌경우
+                        printf("오류: 키워드가 없는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
+                        exit(1);
+                    }
+                }
+            } else {
+                symbol->is_global = 1;
+                printf("\tIs Global: YES\n");
+                if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
+                    symbol->init_option = 3;
+                    symbol->init_value = 0;
+                } else {    // 초기값이 있지만 상수가 아닌경우
+                    printf("오류: extern 키워드가 있는 블록 스코프 변수는 초기값을 가질 수 없습니다. 종료합니다.\n");
+                    exit(1);
+                }     
+                
+            }
+            
+            printf("\tInitial Option: %d\n", symbol->init_option);
+            printf("\tInitial Value: %d\n", symbol->init_value);
 
             
 
@@ -235,6 +329,21 @@ int symbol_maker(Node * declr_node) {
         symbol->is_func = 0;
         symbol->having_body = 0;
         symbol->is_linkage = 0;
+        symbol->is_global = 0;
+        if (declr_node->son->son != NULL && declr_node->son->son->token.token_value == 1) { // static 키워드가 있는 경우
+            symbol->init_option = 1;
+            if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
+                symbol->init_value = 0;
+            } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
+                symbol->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+            } else {    // 초기값이 있지만 상수가 아닌경우
+                printf("오류: static 키워드가 있는 블록 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
+                exit(1);
+            }
+        } else {
+            symbol->init_option = 0;
+            symbol->init_value = 0;
+        }
 
         // ***** 심볼을 테이블에 저장 *****
         symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = symbol;
