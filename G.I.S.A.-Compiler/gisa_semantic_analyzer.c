@@ -158,7 +158,7 @@ int symbol_maker(Node * declr_node) {
                         } else {
                             printf("이전 init_option이 %d이었던 변수의 초기값을 설정했습니다.\n", func_table[j]->init_option);
                             func_table[j]->init_option = 1;
-                            func_table[j]->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                            func_table[j]->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                         }
 
                     } else if (!(declr_node->son->son->brother->token.token_value == 1) && (ident_node->brother->son == NULL)) { // init_option = 1로 재선언한 경우 
@@ -240,7 +240,7 @@ int symbol_maker(Node * declr_node) {
                         symbol->init_value = 0;
                     } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
-                        symbol->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                        symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                     } else {    // 초기값이 있지만 상수가 아닌경우
                         printf("오류: static 키워드가 있는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                         exit(1);
@@ -254,7 +254,7 @@ int symbol_maker(Node * declr_node) {
                         symbol->init_value = 0;
                     } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
-                        symbol->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                        symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                     } else {    // 초기값이 있지만 상수가 아닌경우
                         printf("오류: extern 키워드가 있는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                         exit(1);
@@ -268,7 +268,7 @@ int symbol_maker(Node * declr_node) {
                         symbol->init_value = 0;
                     } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
-                        symbol->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                        symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                     } else {    // 초기값이 있지만 상수가 아닌경우
                         printf("오류: 키워드가 없는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                         exit(1);
@@ -335,7 +335,7 @@ int symbol_maker(Node * declr_node) {
             if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                 symbol->init_value = 0;
             } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
-                symbol->init_value = ident_node->brother->son->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
             } else {    // 초기값이 있지만 상수가 아닌경우
                 printf("오류: static 키워드가 있는 블록 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                 exit(1);
@@ -569,6 +569,7 @@ Symbol_info * symbol_finder_from_ident_node(Node * ident_node) {
 }
 
 Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node) {
+    printf("DEBUG: 심볼을 찾기 위해 심볼 테이블 리스트를 순회합니다.\n");
     for (int i = symbol_table_list_count - 1; i >= 0; i--) {      // 테이블 스택 순회
         for (int j = 0; j <= symbol_table_list_inside_count[i] - 1; j++) {        // 테이블 내부 순회
             if (symbol_table_list[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
@@ -584,7 +585,60 @@ Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node) {
         }
     }
 
+    printf("DEBUG: 심볼 테이블 리스트에서 심볼을 찾지 못했습니다. 심볼 테이블 스택을 순회합니다.\n");
+    for (int i = symbol_table_stack_count - 1; i >= 0; i--) {      // 테이블 스택 순회
+        for (int j = 0; j <= symbol_table_count[i] - 1; j++) {        // 테이블 내부 순회
+            if (symbol_table_stack[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
+                printf("DEBUG: symbol_table_stack[%d][%d] is NULL\n", i, j);
+                break;
+            } else if (symbol_node->token.token_value == symbol_table_stack[i][j]->id) {
+                printf("DEBUG: Symbol ID %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_node->token.token_value, i, j);
+
+                return symbol_table_stack[i][j];
+            }
+
+            printf("DEBUG: symbol_table_stack[%d][%d]'s name is %d\n", i, j, symbol_table_stack[i][j]->name);
+        }
+    }
+
     printf("오류: 선언되지 않은 Symbol Name %d을 사용하려 합니다. 종료합니다.\n", symbol_node->token.token_value);
+    exit(1);    // 미선언 변수 사용 시도한 경우.
+}
+
+Symbol_info * symbol_finder_from_symbol_id(int symbol_id) {
+    printf("DEBUG: 심볼을 찾기 위해 심볼 테이블 리스트를 순회합니다.\n");
+    for (int i = symbol_table_list_count - 1; i >= 0; i--) {      // 테이블 스택 순회
+        for (int j = 0; j <= symbol_table_list_inside_count[i] - 1; j++) {        // 테이블 내부 순회
+            if (symbol_table_list[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
+                printf("DEBUG: symbol_table_list[%d][%d] is NULL\n", i, j);
+                break;
+            } else if (symbol_id == symbol_table_list[i][j]->id) {
+                printf("DEBUG: Symbol ID %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_id, i, j);
+                
+                return symbol_table_list[i][j];
+            }
+
+            printf("DEBUG: symbol_table_list[%d][%d]'s name is %d\n", i, j, symbol_table_list[i][j]->name);
+        }
+    }
+
+    printf("DEBUG: 심볼 테이블 리스트에서 심볼을 찾지 못했습니다. 심볼 테이블 스택을 순회합니다.\n");
+    for (int i = symbol_table_stack_count - 1; i >= 0; i--) {      // 테이블 스택 순회
+        for (int j = 0; j <= symbol_table_count[i] - 1; j++) {        // 테이블 내부 순회
+            if (symbol_table_stack[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
+                printf("DEBUG: symbol_table_stack[%d][%d] is NULL\n", i, j);
+                break;
+            } else if (symbol_id == symbol_table_stack[i][j]->id) {
+                printf("DEBUG: Symbol ID %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_id, i, j);
+
+                return symbol_table_stack[i][j];
+            }
+
+            printf("DEBUG: symbol_table_stack[%d][%d]'s name is %d\n", i, j, symbol_table_stack[i][j]->name);
+        }
+    }
+
+    printf("오류: 선언되지 않은 Symbol ID %d을 사용하려 합니다. 종료합니다.\n", symbol_id);
     exit(1);    // 미선언 변수 사용 시도한 경우.
 }
 
@@ -710,7 +764,7 @@ void ident_symbolizer(Node * node) {
             ident_node = get_brother(ident_node);
         }
 
-        if (ident_node->brother->son != NULL) {    // 변수 선언 후 초기화하는 경우.
+        if ((ident_node->brother->son != NULL) && !(symbol_finder_from_symbol_id(symbol_id)->init_option == 1 || symbol_finder_from_symbol_id(symbol_id)->init_option == 2)) {    // 변수 선언 후 초기화하는 경우.
             Node * exp;
             Node * assign;
             Node * symbol;
@@ -742,7 +796,7 @@ void ident_symbolizer(Node * node) {
             tree_malloc_cleaner(type_cleaner->son);
             free(type_cleaner);
 
-            free(ident_node->brother);
+            tree_malloc_cleaner(ident_node->brother);
             free(ident_node);
 
             if (node->brother != NULL) {

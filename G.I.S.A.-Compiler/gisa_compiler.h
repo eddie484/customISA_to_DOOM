@@ -136,6 +136,8 @@
 #define TAG_BLOCK       313
 #define TAG_NOP         314
 #define TAG_FUNC_CALL   315
+#define TAG_GLOBAL      316
+#define TAG_STATIC_VAR  317
 
 #define COND_EQ         385
 #define COND_NE         386
@@ -303,6 +305,7 @@ extern int symbol_id_count, label_id_count;
 extern Switch_info *** case_table_list;
 extern int * case_table_stack_saving_for_list;
 extern Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node);
+extern Symbol_info * symbol_finder_from_symbol_id(int symbol_id);
 
 
 
