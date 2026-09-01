@@ -149,6 +149,10 @@ Node * get_brother(Node * node) {
 
 
 Node * copy_tree(Node * node) {
+    if (node == NULL) {
+        return NULL;
+    }
+
     Node * n = node_maker(NULL, NULL, node->token.token_number, node->token.token_value);
 
     if (node->son != NULL) {

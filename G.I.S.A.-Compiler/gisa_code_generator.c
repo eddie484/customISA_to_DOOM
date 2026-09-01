@@ -40,10 +40,14 @@ Node * asm_pass1_terminal(Node * tag){
 }
 
 Node * asm_pass1_nt_program(Node * tag){
-    if (tag->token.token_number == TAG_PROGRAM) {
+    if (tag->son->token.token_number == TAG_STATIC_LIST && tag->token.token_number == TAG_PROGRAM) {
         printf("Processing: asm_pass1_nt_program\n");
-        Node * x1 = asm_pass1_nt_function(tag->son);
+        Node * s = copy_tree(tag->son->son);
+        Node * x1 = node_maker(s, NULL, ASM_STATIC_LIST, 0);
+        Node * x2 = asm_pass1_nt_function(tag->son->brother);
         Node * n = node_maker(x1, NULL, ASM_PROGRAM, 0);
+
+        x1->brother = x2;
 
         return n;
     } else {
@@ -62,11 +66,13 @@ Node * asm_pass1_nt_function(Node * tag){
         
         printf("Processing: asm_pass1_nt_function\n");
         Node * x1 = asm_pass1_nt_instr_loop(tag->son);
-        Node * x2 = asm_pass1_nt_param_receive(tag->son->brother);
-        Node * x3 = asm_pass1_nt_block(tag->son->brother->brother);
+        Node * x2 = asm_pass1_nt_instr_loop(tag->son->brother);
+        Node * x3 = asm_pass1_nt_param_receive(tag->son->brother->brother);
+        Node * x4 = asm_pass1_nt_block(tag->son->brother->brother->brother);
 
         x1->brother = x2;
         x2->brother = x3;
+        x3->brother = x4;
 
         Node * n = node_maker(x1, brother_func, ASM_FUNCTION, tag->token.token_value);
 
@@ -283,6 +289,12 @@ Node * asm_pass1_nt_instr(Node * tag){
         }
 
         return n;
+    } else if (tag->token.token_number == TAG_NOP) {
+        if (tag->brother != NULL) {
+            return asm_pass1_nt_instr(tag->brother);
+        } else {
+            return NULL;
+        }
     } else {
         printf("TAG to asm tree pass1 과정에서 오류 발생: NT_CONTENT node를 처리해야 하지만, %d 노드가 입력되었습니다.\n", tag->token.token_number);
         exit(1);
@@ -301,7 +313,7 @@ Node * asm_pass1_nt_instr_brother(Node * tag) {
     } else {
         if (tag->brother != NULL) {
             return asm_pass1_nt_instr_brother(tag->brother);
-        }
+        } else return NULL;
     }
 
     if (tag->brother != NULL) {
@@ -421,6 +433,9 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
     } else if (tag->token.token_number == TAG_PARAM_LIST) {
         printf("DEBUG: 확인필요. TAG_PARAM_LIST가 호출됨!!!!\n\n");
         return NULL;    // 재귀 방식 문제로 인해 잘못 호출되는 것임. 원래는 시작라벨의 brother로, instr_loop에서 호출되면 안됨. 중간5의 문제와 같은 원인.
+    } else if (tag->token.token_number == TAG_GLOBAL) {
+        Node * n = node_maker(NULL, NULL, ASM_GLOBAL, tag->token.token_value);
+        return n;
     } else {
         printf("instr loop 중 잘못된 태그 토큰을 받았습니다: <%d, %d>\n", tag->token.token_number, tag->token.token_value);
         exit(1);
@@ -452,12 +467,18 @@ void asm_pass2_temp_to_stack(Node * node) {
     if (node->token.token_number == ASM_LINE) {
         // rD가 임시 레지스터일 경우
         if (node->son->brother->token.token_number == TAG_TEMP && node->son->brother->token.token_value != 0) { // rD
+            int temp_val = node->son->brother->token.token_value;
             if (node->son->token.token_number == ASM_STR || node->son->token.token_number == ASM_STRB || node->son->token.token_number == ASM_STRH) {   // rD가 값을 불러오는 역할을 하는 경우
                 int n = -(4 * node->son->brother->token.token_value);
                 char str[12];
                 snprintf(str, sizeof(str), "%d", n);
 
-                Node * original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                Node * original_line_node;
+                if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+                } else {
+                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                }
                 Node * son = original_line_node->son;
 
                 original_line_node->son = node->son;
@@ -477,7 +498,12 @@ void asm_pass2_temp_to_stack(Node * node) {
                 char str[12];
                 snprintf(str, sizeof(str), "%d", n);
 
-                Node * store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                Node * store_rD;
+                if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+                } else {
+                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                }
                 store_rD->brother = node->brother;
 
                 node->son->brother->token.token_number = ASM_REGISTER;
@@ -489,12 +515,17 @@ void asm_pass2_temp_to_stack(Node * node) {
 
         // rA가 임시변수일 경우
         if (node->son->brother->brother->token.token_number == TAG_TEMP && node->son->brother->brother->token.token_value != 0) { // rA
-
+            int temp_val = node->son->brother->brother->token.token_value;
             int n = -(4 * node->son->brother->brother->token.token_value);
             char str[12];
             snprintf(str, sizeof(str), "%d", n);
 
-            Node * original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+            Node * original_line_node;
+            if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+            } else {
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+            }
             Node * son = original_line_node->son;
 
             original_line_node->son = node->son;
@@ -512,12 +543,17 @@ void asm_pass2_temp_to_stack(Node * node) {
 
             // rA가 임시변수이면서, 동시에 rB가 임시변수일 경우
             if (original_line_node->son->brother->brother->brother->token.token_number == TAG_TEMP && original_line_node->son->brother->brother->brother->token.token_value != 0) { // rB
-
+                int temp_val = original_line_node->son->brother->brother->brother->token.token_value;
                 int n = -(4 * original_line_node->son->brother->brother->brother->token.token_value);
                 char str[12];
                 snprintf(str, sizeof(str), "%d", n);
 
-                Node * line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                Node * line_ldr_rb;
+                if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+                } else {
+                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                }
 
                 node->brother = line_ldr_rb;
                 line_ldr_rb->brother = original_line_node;
@@ -528,12 +564,17 @@ void asm_pass2_temp_to_stack(Node * node) {
 
         // rA가 임시변수가 아니고, rB가 임시변수일 경우
         } else if (node->son->brother->brother->brother->token.token_number == TAG_TEMP && node->son->brother->brother->brother->token.token_value != 0) { // rB
-
+            int temp_val = node->son->brother->brother->brother->token.token_value;
             int n = -(4 * node->son->brother->brother->brother->token.token_value);
             char str[12];
             snprintf(str, sizeof(str), "%d", n);
 
-            Node * original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+            Node * original_line_node;
+            if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+            } else {
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+            }
             Node * son = original_line_node->son;
 
             original_line_node->son = node->son;

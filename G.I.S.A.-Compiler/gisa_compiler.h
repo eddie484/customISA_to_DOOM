@@ -138,6 +138,7 @@
 #define TAG_FUNC_CALL   315
 #define TAG_GLOBAL      316
 #define TAG_STATIC_VAR  317
+#define TAG_STATIC_LIST 318
 
 #define COND_EQ         385
 #define COND_NE         386
@@ -169,6 +170,9 @@
 #define ASM_PROLOGUE    208
 #define ASM_EPILOGUE    209
 #define ASM_BLOCK       210
+#define ASM_STATIC_LIST 211
+#define ASM_GLOBAL      212
+#define ASM_PC_ADDR     213
 
 #define ASM_MOV         400
 #define ASM_ADD         401

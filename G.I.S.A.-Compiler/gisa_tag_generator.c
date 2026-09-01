@@ -84,7 +84,7 @@ Node * tag_symbol(Node * ast){
     if (symbol_finder_from_symbol_node(ast)->is_func == 0) {
         printf("심볼이 변수이다.\n");
         Node * n = line_maker(TAG_MOV, TAG_TEMP, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, ast->token.token_value);
-        n->token.token_value = n->son->brother->token.token_value;        
+        n->token.token_value = n->son->brother->token.token_value;      
                 
 
 
@@ -166,10 +166,10 @@ Node * tag_nt_function(Node * ast){
             Node * global;
             if (func_symbol->is_global == 1) {
                 printf("Processing: global 함수입니다.\n");
-                global = node_maker(NULL, NULL, TAG_GLOBAL, func_name);
+                global = node_maker(NULL, NULL, TAG_GLOBAL, 1);
             } else {
                 printf(" Processing: global이 아닌 함수입니다.\n");
-                global = node_maker(NULL, NULL, TAG_NOP, 0);
+                global = node_maker(NULL, NULL, TAG_GLOBAL, 0);
             }
 
             global->brother = func_start_label;
@@ -456,7 +456,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     // Symbol일 경우
     } else if (ast->token.token_number == SEM_SYMBOL) {
         printf("enter SEM_SYMBOL\n");
-        Node * n = node_maker(NULL, NULL, TAG_NOP, ast->token.token_value);
+        Node * n = node_maker(NULL, NULL, TAG_NOP, ast->token.token_value); // 심볼 ID를 기록해두는 라인.
                 
 
         printf("\tSYMBOL CALL. SYMBOL ID is %d.\n", n->token.token_value);
@@ -903,7 +903,7 @@ Node * static_list() {
         }
     }
 
-    Node * static_var_list = node_maker(static_var_start->brother, NULL, TAG_LINE, 0);
+    Node * static_var_list = node_maker(static_var_start->brother, NULL, TAG_STATIC_LIST, 0);
     free(static_var_start);
 
     return static_var_list;
@@ -946,12 +946,13 @@ Node * tag_generator(Node * parse_input, char * tagtree_name)
 
     tag_top = tag_nt_program(parse_input);
     tag_static_var = static_list();
-    tag_static_var->brother = tag_top;
+    tag_static_var->brother = tag_top->son;
+    tag_top->son = tag_static_var;
 
-    bin_tree_printer(tag_static_var);
-    bin_tree_file_printer(tag_static_var, taggenfp);
+    bin_tree_printer(tag_top);
+    bin_tree_file_printer(tag_top, taggenfp);
 
     printf("TAG Generating Finished.\n");
     fclose(taggenfp);
-    return tag_static_var;
+    return tag_top;
 }
