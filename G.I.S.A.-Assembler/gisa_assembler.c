@@ -5,15 +5,18 @@
 
 typedef struct {
     char name[50];
-    uint32_t line;
-} Label;
+    uint32_t number;
+} Name_Number_Set;
 
-Label labels [100];
+Name_Number_Set labels [1000];
+Name_Number_Set statics [1000];
 int labelcount = 0;
+int static_count = 0;
+int static_location = 0; // .data 영역에 저장하는 static var의 위치를 가리킨다.
 
 void labelput(char *labelname, uint32_t labelline){
     strcpy(labels[labelcount].name, labelname);
-    labels[labelcount].line = labelline;
+    labels[labelcount].number = labelline;
 
     printf("라벨 저장. 라벨 카운트: %d, 라벨 네임: %s, 라벨 라인: %d.\n", labelcount, labelname, labelline);
 
@@ -24,12 +27,35 @@ uint32_t labelget(char *labelname){
     int count = 0;
     while(count < labelcount){
         if (strcmp(labelname, labels[count].name) == 0){
-            return labels[count].line;
+            return labels[count].number;
         } else {
             count++;
         }
     }
     printf("선언되지 않은 라벨입니다: %s\n", labelname);
+    exit(1);
+}
+
+
+void staticput(char *static_name, uint32_t static_num){
+    strcpy(statics[static_count].name, static_name);
+    statics[static_count].number = static_num;
+
+    printf("라벨 저장. 라벨 카운트: %d, 라벨 네임: %s, 라벨 라인: %d.\n", static_count, static_name, static_num);
+
+    static_count++;
+}
+
+uint32_t staticget(char *static_name){
+    int count = 0;
+    while(count < static_count){
+        if (strcmp(static_name, statics[count].name) == 0){
+            return statics[count].number;
+        } else {
+            count++;
+        }
+    }
+    printf("선언되지 않은 정적변수입니다: %s\n", static_name);
     exit(1);
 }
 
@@ -75,6 +101,8 @@ int main(int argc, char *argv[])
     char **original_lines = NULL;   // 명령 어셈블리의 원본을 보존. 번역 후에도 손상되지 않은 어셈블리가 들어있다.
     uint32_t count = 0;     // 명령 어셈블리의 라인 수를 계산한다.
     int cap = 10;           // 문자열 배열의 크기를 의미한다.
+    int expanded_line_count = 0;    // 여러 줄의 바이너리로 변환되는 어셈블리 명령어의 해석에서, 현재 번역한 양을 기록한다.
+    int data_addr = 2048;   // .data영역의 시작 주소. 임시로 2048로 설정했다. 필요 시 변경할 것.
 
     lines = malloc(cap * sizeof(char *));               // 라인 수를 cap만큼으로, 문자열 배열 lines을 malloc한다.
     original_lines = malloc(cap * sizeof(char *));
@@ -85,6 +113,12 @@ int main(int argc, char *argv[])
         if (findcomment != NULL){       // ;이 있다면 ;를 줄바꿈으로, ; 다음 자리를 null로 바꾼다.
             findcomment[0] = '\n';      
             findcomment[1] = '\0';      
+        }
+
+        char *findr = strchr(buf, '\r');       // buf에서 ;를 찾아 이후 내용을 제거한다. 주석 처리를 담당.
+        if (findr != NULL){       // ;이 있다면 ;를 줄바꿈으로, ; 다음 자리를 null로 바꾼다.
+            findr[0] = '\n';      
+            findr[1] = '\0';      
         }
 
         char *findcomma = strchr(buf, ',');     // buf에서 ,를 찾아 space로 바꾼다. asm의 인자 구분자의 통일을 담당.
@@ -105,7 +139,11 @@ int main(int argc, char *argv[])
             continue;                             // 명령어 라인이 아니므로, 라인수 카운트 증가 및 어셈블리 로딩 없이 다음 라인으로 넘어간다.
         }
 
-        if (count >= cap) {         // 라인 수가 배열 크기 한계에 도달한다면
+        if (strstr(buf, ".global") != NULL) {   // .global name들을 등록할 곳. 이후 링커를 만들 때 내용을 구현할 것.
+            continue;
+        }
+
+        if (count >= cap - 2) {         // 라인 수가 배열 크기 한계에 도달한다면
             cap *= 2;               // 배열 크기 한계를 두배로 늘린다.
             lines = realloc(lines, cap * sizeof(char *));   // realloc를 통해 lines 배열 크기를 두배로 늘어난 cap에 맞춘다.
             original_lines = realloc(original_lines, cap * sizeof(char *));   
@@ -128,7 +166,7 @@ int main(int argc, char *argv[])
         count++;        // 다음 라인 처리를 위해 라인 수를 1 증가시킨다.
     }
 
-    printf("\n\n--- 어셈블리 불러오기 완료! ---\n\n\n", count, lines[count]);
+    printf("\n\n--- 어셈블리 불러오기 완료! ---\n\n\n");
 
 
 
@@ -1459,8 +1497,25 @@ int main(int argc, char *argv[])
             binary |= (rD << 20);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            binary |= (immB & 0x000fffffU);
+            if (token[0] != '#') {      // 라벨 branch인 경우
+                int static_location = staticget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = data_addr + static_location;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    binary |= (immB & 0x000fffffU);
+                } else {    // 20비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {      // 주소지정 branch인 경우
+                int immB = atoi(token + 1);
+                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    binary |= (immB & 0x000fffffU);
+                } else {    // 20비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
+                    exit(1);
+                }
+            }
 
         } else if (strcmp(token, "LDRR") == 0) {
             binary |= (0b10100001U << 24);
@@ -1646,10 +1701,31 @@ int main(int argc, char *argv[])
             binary |= (rB << 12);
             
             token = strtok(NULL, " \t\n");
-            int immB = atoi(token + 1);
-            int immBf = immB >> 12;
-            int immBb = immB & 0xFFF;
-            binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
+            if (token[0] != '#') {      // 라벨 branch인 경우
+                int static_location = staticget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = data_addr + static_location;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                int immBf = immB >> 12;
+                int immBb = immB & 0xFFF;
+                
+                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
+                } else {    // 20비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {      // 주소지정 branch인 경우
+                int immB = atoi(token + 1);
+                int immBf = immB >> 12;
+                int immBb = immB & 0xFFF;
+                
+                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
+                } else {    // 20비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
+                    exit(1);
+                }
+            }
 
         } else if (strcmp(token, "STRR") == 0) {
             binary |= (0b10110101U << 24);
@@ -2337,6 +2413,25 @@ int main(int argc, char *argv[])
             token = strtok(NULL, " \t\n");
             int immB = atoi(token + 1);
             binary |= (immB & 0x000fffffU);
+
+        } else if (strcmp(token, ".data") == 0) {
+            token = strtok(NULL, " \t\n");
+            char * static_name = strdup(token);
+            token = strtok(NULL, " \t\n");
+            int static_size = atoi(token);
+            token = strtok(NULL, " \t\n");
+            int static_value = atoi(token);
+            
+            binary |= (0b10110110U << 24);
+            binary |= (0x0001U << 12);
+            int addr = data_addr + static_location;
+            int immBf = addr >> 12;
+            int immBb = addr & 0xFFF;
+            binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
+
+            staticput(static_name, static_location);
+            static_location += static_size;
+            free(static_name);
 
         } else {
             printf ("Line %d에 정의되지 않은 명령어가 입력되었습니다: %s\n어셈블러를 종료합니다.\n", i, token);

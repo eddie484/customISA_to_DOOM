@@ -24,9 +24,20 @@ void asm_printer(Node * node, FILE * codeemitfp){
         case TAG_STATIC_VAR: {
             char * label_name = lexval_finder(node->token.token_value);
             Symbol_info * symbol = symbol_finder_from_symbol_name(node->token.token_value);
+            int init_value = atoi(lexval_finder(symbol->init_value));
+            if ((init_value << 12 >> 12) == init_value) {
+                printf("\tMOVI R1 #%d\n", init_value);
+                fprintf(codeemitfp, "\tMOVI R1 #%d\n", init_value);
+            } else {
+                printf("\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
+                fprintf(codeemitfp, "\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
+                printf("\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
+                fprintf(codeemitfp, "\tORI R1d R1 #%d\n", (init_value & 0x0000FFFF));
+            }
+
             if (symbol->init_option == 1) {
-                printf(".data DATA_%s %d %s\n", label_name, symbol->size, lexval_finder(symbol->init_value));
-                fprintf(codeemitfp, ".data DATA_%s %d %s\n", label_name, symbol->size, lexval_finder(symbol->init_value));
+                printf(".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
+                fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
             } else {
                 printf(".data DATA_%s %d 0\n", label_name, symbol->size);
                 fprintf(codeemitfp, ".data DATA_%s %d 0\n", label_name, symbol->size);
