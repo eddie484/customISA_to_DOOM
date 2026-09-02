@@ -137,8 +137,9 @@
 #define TAG_NOP         314
 #define TAG_FUNC_CALL   315
 #define TAG_GLOBAL      316
-#define TAG_STATIC_VAR  317
-#define TAG_STATIC_LIST 318
+#define TAG_GLOBAL_LIST 317
+#define TAG_STATIC_VAR  318
+#define TAG_STATIC_LIST 319
 
 #define COND_EQ         385
 #define COND_NE         386
@@ -171,8 +172,8 @@
 #define ASM_EPILOGUE    209
 #define ASM_BLOCK       210
 #define ASM_STATIC_LIST 211
-#define ASM_GLOBAL      212
-#define ASM_PC_ADDR     213
+#define ASM_GLOBAL_LIST 212
+#define ASM_DATA_AREA   213
 
 #define ASM_MOV         400
 #define ASM_ADD         401
@@ -310,6 +311,7 @@ extern Switch_info *** case_table_list;
 extern int * case_table_stack_saving_for_list;
 extern Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node);
 extern Symbol_info * symbol_finder_from_symbol_id(int symbol_id);
+extern Symbol_info * symbol_finder_from_symbol_name(int symbol_name);
 
 
 

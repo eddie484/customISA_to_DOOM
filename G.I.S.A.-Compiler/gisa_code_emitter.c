@@ -14,6 +14,27 @@ void asm_printer(Node * node, FILE * codeemitfp){
         case ASM_PROGRAM:
             break;
             
+        case TAG_GLOBAL: {
+            char * global_name = lexval_finder(node->token.token_value);
+            printf(".global %s\n", global_name);
+            fprintf(codeemitfp, ".global %s\n", global_name);
+            break;
+        }
+            
+        case TAG_STATIC_VAR: {
+            char * label_name = lexval_finder(node->token.token_value);
+            Symbol_info * symbol = symbol_finder_from_symbol_name(node->token.token_value);
+            if (symbol->init_option == 1) {
+                printf(".data DATA_%s %d %s\n", label_name, symbol->size, lexval_finder(symbol->init_value));
+                fprintf(codeemitfp, ".data DATA_%s %d %s\n", label_name, symbol->size, lexval_finder(symbol->init_value));
+            } else {
+                printf(".data DATA_%s %d 0\n", label_name, symbol->size);
+                fprintf(codeemitfp, ".data DATA_%s %d 0\n", label_name, symbol->size);
+            }
+            
+            break;
+        }
+            
         case ASM_FUNCTION: {
             char * label_name = lexval_finder(node->token.token_value);
             printf("%s:\n", label_name);
@@ -246,10 +267,15 @@ void asm_printer(Node * node, FILE * codeemitfp){
 
                 case ASM_LDR: {
                     if (1) {
-                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
-                        printf("\tLDR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
-                        fprintf(codeemitfp, "\tLDR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
-
+                        if (node->son->brother->brother->token.token_number == ASM_DATA_AREA) {
+                            printf("\tLDRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            fprintf(codeemitfp, "\tLDRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                        } else {
+                            char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                            printf("\tLDR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                            fprintf(codeemitfp, "\tLDR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        }
+                        
                     } else {
                         printf("LDR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
                     }
@@ -258,10 +284,15 @@ void asm_printer(Node * node, FILE * codeemitfp){
 
                 case ASM_STR: {
                     if (1) {
+                        if (node->son->brother->brother->token.token_number == ASM_DATA_AREA) {
+                            printf("\tSTRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            fprintf(codeemitfp, "\tSTRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                        } else {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tSTR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tSTR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
-
+                        }
+                        
                     } else {
                         printf("STR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
                     }

@@ -227,7 +227,7 @@ int symbol_maker(Node * declr_node) {
             printf("\tLocation.Type: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.type);
             printf("\tLocation.Location: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.location);
             printf("\tIs Function: NO\n");
-            printf("\tHaving Body: NO (It's only about function.)\n\n\n");
+            printf("\tHaving Body: NO (It's only about function.)\n");
             printf("\tIs Linkage: YES\n");
 
 
@@ -288,7 +288,7 @@ int symbol_maker(Node * declr_node) {
             }
             
             printf("\tInitial Option: %d\n", symbol->init_option);
-            printf("\tInitial Value: %d\n", symbol->init_value);
+            printf("\tInitial Value: %d\n\n\n", symbol->init_value);
 
             
 
@@ -362,8 +362,11 @@ int symbol_maker(Node * declr_node) {
         printf("\tLocation.Type: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.type);
         printf("\tLocation.Location: %d\n", symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->location.location);
         printf("\tIs Function: NO\n");
-        printf("\tHaving Body: NO (It's only about function.)\n\n\n");
+        printf("\tHaving Body: NO (It's only about function.)\n");
         printf("\tIs Linkage: NO\n");
+        printf("\tIs Global: NO\n");
+        printf("\tInitial Option: %d\n", symbol->init_option);
+        printf("\tInitial Value: %d\n\n\n", symbol->init_value);
 
         return symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1] - 1]->id;
         // 변수 선언 끝!
@@ -606,7 +609,7 @@ Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node) {
 }
 
 Symbol_info * symbol_finder_from_symbol_id(int symbol_id) {
-    printf("DEBUG: 심볼을 찾기 위해 심볼 테이블 리스트를 순회합니다.\n");
+    printf("DEBUG: id가 %d인 심볼을 찾기 위해 심볼 테이블 리스트를 순회합니다.\n", symbol_id);
     for (int i = symbol_table_list_count - 1; i >= 0; i--) {      // 테이블 스택 순회
         for (int j = 0; j <= symbol_table_list_inside_count[i] - 1; j++) {        // 테이블 내부 순회
             if (symbol_table_list[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
@@ -639,6 +642,43 @@ Symbol_info * symbol_finder_from_symbol_id(int symbol_id) {
     }
 
     printf("오류: 선언되지 않은 Symbol ID %d을 사용하려 합니다. 종료합니다.\n", symbol_id);
+    exit(1);    // 미선언 변수 사용 시도한 경우.
+}
+
+Symbol_info * symbol_finder_from_symbol_name(int symbol_name) {
+    printf("DEBUG: NAME이 %d인 심볼을 찾기 위해 심볼 테이블 리스트를 순회합니다.\n", symbol_name);
+    for (int i = symbol_table_list_count - 1; i >= 0; i--) {      // 테이블 스택 순회
+        for (int j = 0; j <= symbol_table_list_inside_count[i] - 1; j++) {        // 테이블 내부 순회
+            if (symbol_table_list[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
+                printf("DEBUG: symbol_table_list[%d][%d] is NULL\n", i, j);
+                break;
+            } else if (symbol_name == symbol_table_list[i][j]->name) {
+                printf("DEBUG: Symbol NAME %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_name, i, j);
+                
+                return symbol_table_list[i][j];
+            }
+
+            printf("DEBUG: symbol_table_list[%d][%d]'s name is %d\n", i, j, symbol_table_list[i][j]->name);
+        }
+    }
+
+    printf("DEBUG: 심볼 테이블 리스트에서 심볼을 찾지 못했습니다. 심볼 테이블 스택을 순회합니다.\n");
+    for (int i = symbol_table_stack_count - 1; i >= 0; i--) {      // 테이블 스택 순회
+        for (int j = 0; j <= symbol_table_count[i] - 1; j++) {        // 테이블 내부 순회
+            if (symbol_table_stack[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
+                printf("DEBUG: symbol_table_stack[%d][%d] is NULL\n", i, j);
+                break;
+            } else if (symbol_name == symbol_table_stack[i][j]->name) {
+                printf("DEBUG: Symbol NAME %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_name, i, j);
+
+                return symbol_table_stack[i][j];
+            }
+
+            printf("DEBUG: symbol_table_stack[%d][%d]'s name is %d\n", i, j, symbol_table_stack[i][j]->name);
+        }
+    }
+
+    printf("오류: 선언되지 않은 Symbol NAME %d을 사용하려 합니다. 종료합니다.\n", symbol_name);
     exit(1);    // 미선언 변수 사용 시도한 경우.
 }
 

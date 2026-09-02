@@ -40,14 +40,17 @@ Node * asm_pass1_terminal(Node * tag){
 }
 
 Node * asm_pass1_nt_program(Node * tag){
-    if (tag->son->token.token_number == TAG_STATIC_LIST && tag->token.token_number == TAG_PROGRAM) {
+    if (tag->token.token_number == TAG_PROGRAM) {
         printf("Processing: asm_pass1_nt_program\n");
-        Node * s = copy_tree(tag->son->son);
-        Node * x1 = node_maker(s, NULL, ASM_STATIC_LIST, 0);
-        Node * x2 = asm_pass1_nt_function(tag->son->brother);
+        Node * global_list = copy_tree(tag->son->son);
+        Node * x1 = node_maker(global_list, NULL, ASM_GLOBAL_LIST, 0);
+        Node * static_list = copy_tree(tag->son->brother->son);
+        Node * x2 = node_maker(static_list, NULL, ASM_STATIC_LIST, 0);
+        Node * x3 = asm_pass1_nt_function(tag->son->brother->brother);
         Node * n = node_maker(x1, NULL, ASM_PROGRAM, 0);
 
         x1->brother = x2;
+        x2->brother = x3;
 
         return n;
     } else {
@@ -66,13 +69,11 @@ Node * asm_pass1_nt_function(Node * tag){
         
         printf("Processing: asm_pass1_nt_function\n");
         Node * x1 = asm_pass1_nt_instr_loop(tag->son);
-        Node * x2 = asm_pass1_nt_instr_loop(tag->son->brother);
-        Node * x3 = asm_pass1_nt_param_receive(tag->son->brother->brother);
-        Node * x4 = asm_pass1_nt_block(tag->son->brother->brother->brother);
+        Node * x2 = asm_pass1_nt_param_receive(tag->son->brother);
+        Node * x3 = asm_pass1_nt_block(tag->son->brother->brother);
 
         x1->brother = x2;
         x2->brother = x3;
-        x3->brother = x4;
 
         Node * n = node_maker(x1, brother_func, ASM_FUNCTION, tag->token.token_value);
 
@@ -433,9 +434,6 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
     } else if (tag->token.token_number == TAG_PARAM_LIST) {
         printf("DEBUG: 확인필요. TAG_PARAM_LIST가 호출됨!!!!\n\n");
         return NULL;    // 재귀 방식 문제로 인해 잘못 호출되는 것임. 원래는 시작라벨의 brother로, instr_loop에서 호출되면 안됨. 중간5의 문제와 같은 원인.
-    } else if (tag->token.token_number == TAG_GLOBAL) {
-        Node * n = node_maker(NULL, NULL, ASM_GLOBAL, tag->token.token_value);
-        return n;
     } else {
         printf("instr loop 중 잘못된 태그 토큰을 받았습니다: <%d, %d>\n", tag->token.token_number, tag->token.token_value);
         exit(1);
@@ -475,7 +473,7 @@ void asm_pass2_temp_to_stack(Node * node) {
 
                 Node * original_line_node;
                 if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_INT, temp_val);
                 } else {
                     original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
                 }
@@ -500,7 +498,7 @@ void asm_pass2_temp_to_stack(Node * node) {
 
                 Node * store_rD;
                 if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_INT, temp_val);
                 } else {
                     store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
                 }
@@ -522,7 +520,7 @@ void asm_pass2_temp_to_stack(Node * node) {
 
             Node * original_line_node;
             if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_INT, temp_val);
             } else {
                 original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
             }
@@ -550,7 +548,7 @@ void asm_pass2_temp_to_stack(Node * node) {
 
                 Node * line_ldr_rb;
                 if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_INT, temp_val);
                 } else {
                     line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
                 }
@@ -571,7 +569,7 @@ void asm_pass2_temp_to_stack(Node * node) {
 
             Node * original_line_node;
             if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_PC_ADDR, 0, NUM_INT, lexval_manager (str));
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_INT, temp_val);
             } else {
                 original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
             }

@@ -81,7 +81,8 @@ Node * tag_terminal(Node * ast){
 
 Node * tag_symbol(Node * ast){
     printf("enter SEM_SYMBOL\n");
-    if (symbol_finder_from_symbol_node(ast)->is_func == 0) {
+    Symbol_info * symbol = symbol_finder_from_symbol_node(ast);
+    if (symbol->is_func == 0) {
         printf("심볼이 변수이다.\n");
         Node * n = line_maker(TAG_MOV, TAG_TEMP, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, ast->token.token_value);
         n->token.token_value = n->son->brother->token.token_value;      
@@ -97,7 +98,7 @@ Node * tag_symbol(Node * ast){
         Node * tag_arg_start = NULL;
         Node * tag_arg_last = NULL;
 
-        Node * n1 = node_maker(NULL, NULL, TAG_FUNC_CALL, symbol_finder_from_symbol_node(ast)->location.location);
+        Node * n1 = node_maker(NULL, NULL, TAG_FUNC_CALL, symbol->location.location);
 
         if (ast_arg_node != NULL) {     // 인자가 있는 함수
             tag_arg_start = tag_nt_instr_interpreting(ast_arg_node, 0, 0);
@@ -163,20 +164,20 @@ Node * tag_nt_function(Node * ast){
             Node * x1 = tag_nt_param_list(ast->son->brother->brother);
             Node * x2 = tag_nt_block(ast->son->brother->brother->brother, 0, 0);
 
-            Node * global;
+            /*Node * global;
             if (func_symbol->is_global == 1) {
                 printf("Processing: global 함수입니다.\n");
-                global = node_maker(NULL, NULL, TAG_GLOBAL, 1);
+                global = node_maker(NULL, NULL, TAG_GLOBAL, func_name);
             } else {
                 printf(" Processing: global이 아닌 함수입니다.\n");
                 global = node_maker(NULL, NULL, TAG_GLOBAL, 0);
             }
 
-            global->brother = func_start_label;
+            global->brother = func_start_label;*/
             func_start_label->brother = x1;
             x1->brother = x2;
 
-            Node * n = node_maker(global, brother_func, TAG_FUNCTION, func_name);
+            Node * n = node_maker(func_start_label, brother_func, TAG_FUNCTION, func_name);
 
             return n;
         }
@@ -909,6 +910,26 @@ Node * static_list() {
     return static_var_list;
 }
 
+Node * global_list() {
+    Node * static_var_start = node_maker(NULL, NULL, TAG_LINE, 0);
+    Node * static_var_current = static_var_start;
+
+    for (int i = 1; i < symbol_id_count; i++) {
+        Symbol_info * symbol = symbol_finder_from_symbol_id(i);
+        if ((symbol->is_global == 1) && (symbol->is_func == 1 || symbol->init_option == 1 || symbol->init_option == 2)) {
+            Node * static_var_node = node_maker(NULL, NULL, TAG_GLOBAL, symbol->name);
+
+            static_var_current->brother = static_var_node;
+            static_var_current = static_var_current->brother;
+        }
+    }
+
+    Node * static_var_list = node_maker(static_var_start->brother, NULL, TAG_GLOBAL_LIST, 0);
+    free(static_var_start);
+
+    return static_var_list;
+}
+
 
 
 
@@ -934,6 +955,7 @@ Node * tag_generator(Node * parse_input, char * tagtree_name)
 
     Node * tag_top;
     Node * tag_static_var;
+    Node * tag_global_sym;
 
 
     FILE *taggenfp = fopen(tagtree_name, "w");         // 처리 결과 ast를 저장할 파일 오픈
@@ -946,8 +968,10 @@ Node * tag_generator(Node * parse_input, char * tagtree_name)
 
     tag_top = tag_nt_program(parse_input);
     tag_static_var = static_list();
+    tag_global_sym = global_list();
     tag_static_var->brother = tag_top->son;
-    tag_top->son = tag_static_var;
+    tag_global_sym->brother = tag_static_var;
+    tag_top->son = tag_global_sym;
 
     bin_tree_printer(tag_top);
     bin_tree_file_printer(tag_top, taggenfp);
