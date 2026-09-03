@@ -22,8 +22,9 @@ void asm_printer(Node * node, FILE * codeemitfp){
         }
             
         case TAG_STATIC_VAR: {
-            char * label_name = lexval_finder(node->token.token_value);
-            Symbol_info * symbol = symbol_finder_from_symbol_name(node->token.token_value);
+            Symbol_info * symbol = symbol_finder_from_symbol_id(node->token.token_value);
+            char * label_name = lexval_finder(symbol->name);
+            int label_id = symbol->id;
             int init_value = atoi(lexval_finder(symbol->init_value));
             if ((init_value << 12 >> 12) == init_value) {
                 printf("\tMOVI R1 #%d\n", init_value);
@@ -32,16 +33,27 @@ void asm_printer(Node * node, FILE * codeemitfp){
                 printf("\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
                 fprintf(codeemitfp, "\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
                 printf("\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
-                fprintf(codeemitfp, "\tORI R1d R1 #%d\n", (init_value & 0x0000FFFF));
+                fprintf(codeemitfp, "\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
             }
 
-            if (symbol->init_option == 1) {
-                printf(".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
-                fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
+            if (symbol->is_global == 1) {
+                if (symbol->init_option == 1) {
+                    printf(".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
+                    fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
+                } else {
+                    printf(".data DATA_%s %d 0\n", label_name, symbol->size);
+                    fprintf(codeemitfp, ".data DATA_%s %d 0\n", label_name, symbol->size);
+                }
             } else {
-                printf(".data DATA_%s %d 0\n", label_name, symbol->size);
-                fprintf(codeemitfp, ".data DATA_%s %d 0\n", label_name, symbol->size);
+                if (symbol->init_option == 1) {
+                    printf(".data DATA_ID_%d %d %d\n", label_id, symbol->size, init_value);
+                    fprintf(codeemitfp, ".data DATA_ID_%d %d %d\n", label_id, symbol->size, init_value);
+                } else {
+                    printf(".data DATA_ID_%d %d 0\n", label_id, symbol->size);
+                    fprintf(codeemitfp, ".data DATA_ID_%d %d 0\n", label_id, symbol->size);
+                }
             }
+            
             
             break;
         }
@@ -279,8 +291,14 @@ void asm_printer(Node * node, FILE * codeemitfp){
                 case ASM_LDR: {
                     if (1) {
                         if (node->son->brother->brother->token.token_number == ASM_DATA_AREA) {
-                            printf("\tLDRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
-                            fprintf(codeemitfp, "\tLDRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            if (symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->is_global == 1) {
+                                printf("\tLDRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                                fprintf(codeemitfp, "\tLDRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            } else {
+                                printf("\tLDRI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                                fprintf(codeemitfp, "\tLDRI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                            }
+                            
                         } else {
                             char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                             printf("\tLDR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -296,8 +314,13 @@ void asm_printer(Node * node, FILE * codeemitfp){
                 case ASM_STR: {
                     if (1) {
                         if (node->son->brother->brother->token.token_number == ASM_DATA_AREA) {
-                            printf("\tSTRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
-                            fprintf(codeemitfp, "\tSTRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            if (symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->is_global == 1) {
+                                printf("\tSTRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                                fprintf(codeemitfp, "\tSTRI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            } else {
+                                printf("\tSTRI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                                fprintf(codeemitfp, "\tSTRI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                            }
                         } else {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tSTR R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);

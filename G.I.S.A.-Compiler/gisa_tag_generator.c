@@ -892,7 +892,7 @@ Node * static_list() {
     for (int i = 1; i < symbol_id_count; i++) {
         Symbol_info * symbol = symbol_finder_from_symbol_id(i);
         if (symbol->init_option == 1 || symbol->init_option == 2) {
-            Node * static_var_node = node_maker(NULL, NULL, TAG_STATIC_VAR, symbol->name);
+            Node * static_var_node = node_maker(NULL, NULL, TAG_STATIC_VAR, symbol->id);
             Node * static_var_node_is_global = node_maker(NULL, NULL, TAG_TEMP, symbol->is_global);
             Node * static_var_node_init_val = node_maker(NULL, NULL, TAG_TEMP, symbol->init_value);
 
