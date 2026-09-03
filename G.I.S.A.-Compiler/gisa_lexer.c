@@ -365,6 +365,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     lexeme[lexeme_count].token_number = KW_EXTERN;
                     lexeme[lexeme_count].token_value = 0;
                     //printf("DEFAULT");
+                } else if (!strcmp(get_str, "long")) {
+                    lexeme[lexeme_count].token_number = KW_LONG;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("DEFAULT");
                 } else {
                     lexeme[lexeme_count].token_number = IDENT;
                     lexeme[lexeme_count].token_value = lexval_manager (get_str);
@@ -384,8 +388,15 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 char get_num[cur_index + 1];
                 snprintf(get_num, cur_index + 1, "%s", buf);
 
-                lexeme[lexeme_count].token_number = NUM_INT;
-                lexeme[lexeme_count].token_value = lexval_manager(get_num);
+                if (get_num[cur_index - 1] == 'l' || get_num[cur_index - 1] == 'L') {
+                    get_num[cur_index - 1] = '\0';
+                    lexeme[lexeme_count].token_number = NUM_LONG;
+                    lexeme[lexeme_count].token_value = lexval_manager(get_num);
+                } else {
+                    lexeme[lexeme_count].token_number = NUM_INT;
+                    lexeme[lexeme_count].token_value = lexval_manager(get_num);
+                }
+                
 
                 printf("<%d, %d>, %s\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value, get_num);
                 fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);

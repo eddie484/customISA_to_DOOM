@@ -85,6 +85,10 @@
 #define KW_EXTERN       64
 
 
+#define NUM_LONG        65
+#define KW_LONG         66
+
+
 #define NT_PROGRAM      100
 #define NT_FUNC_DECLR   101
 #define NT_SPECIFIER_LIST   102
