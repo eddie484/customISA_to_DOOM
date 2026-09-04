@@ -318,7 +318,7 @@ int symbol_maker(Node * declr_node) {
         Symbol_info * symbol = malloc(sizeof(Symbol_info));
         symbol->name = ident_node->token.token_value;
         symbol->id = symbol_id_count++;
-        if (declr_node->token.token_number == NT_PARAM) {
+        if (declr_node->token.token_number == NT_PARAM_TYPE_LIST) {
             symbol->type_tree = get_type_tree_from_param_var_declr(declr_node, ident_node);
         } else {
             symbol->type_tree = get_type_tree_from_var_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
@@ -877,7 +877,7 @@ void ident_symbolizer(Node * node) {
         push();
 
         Node * param_node = ident_node->brother->son;
-        while (param_node != NULL && param_node->token.token_number == NT_PARAM && param_node->son->token.token_number != KW_VOID) {
+        while (param_node != NULL && param_node->token.token_number == NT_PARAM_TYPE_LIST && param_node->son->token.token_number != KW_VOID) {
             int param_node_id = symbol_maker(param_node);
 
             Node * param_node_son = param_node->son;
