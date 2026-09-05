@@ -2,12 +2,13 @@
     <program> ::= <declr> <program> | ε
     <func_declr> ::= <specifier_list> IDENT "(" <param_list> ")" <func_content>
     <specifier_list> ::= <specifier> <specifier_multi>
-    <specifier> ::= "int" | "long" | "static" | "extern"
+    <specifier> ::= <type> | "static" | "extern"
     <specifier_multi> ::= <specifier_list> | ε
+    <type> ::= "int" | "long"
     <param_list> ::= "void" | <param_type_list> IDENT <param_multi>
     <param_multi> ::= "," <param_type_list> IDENT <param_multi> | ε
     <param_type_list> ::= <param_type> <param_type_multi>
-    <param_type> ::= "int" | "long"
+    <param_type> ::= <type>
     <param_type_multi> ::= <param_type_list> | ε
     <func_content> ::= <block> | ";"
     <block> ::= "{" <instr_list> "}"
@@ -22,7 +23,7 @@
     <for_init> ::= <var_declr> | <exp> ";" | ";"
     <for_exp> ::= <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "?" <exp> ":" <exp>
-    <factor> ::= NUM_INT | NUM_LONG | IDENT <postfix> | <unary_op> <factor> | "(" <exp> ")"
+    <factor> ::= NUM_INT | NUM_LONG | IDENT <postfix> | <unary_op> <factor> | "(" <type> ")" <factor> | "(" <exp> ")"
     <postfix> ::= "++" | "--" | "(" <arg_list> ")" | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "," <exp> <arg> | ε
@@ -34,12 +35,13 @@
     <program> ::= <declr> <program> | ε
     <func_declr> ::= <specifier_list> IDENT "OPEN_PAREN" <param_list> "CLOSE_PAREN" <func_content>
     <specifier_list> ::= <specifier> <specifier_multi>
-    <specifier> ::= "KW_INT" | "KW_LONG" | "KW_STATIC" | "KW_EXTERN"
+    <specifier> ::= <type> | "KW_STATIC" | "KW_EXTERN"
     <specifier_multi> ::= <specifier_list> | ε
+    <type> ::= "KW_INT" | "KW_LONG"
     <param_list> ::= "KW_VOID" | <param_type_list> IDENT <param_multi>
     <param_multi> ::= "PN_COMMA" <param_type_list> IDENT <param_multi> | ε
     <param_type_list> ::= <param_type> <param_type_multi>
-    <param_type> ::= "KW_INT" | "KW_LONG"
+    <param_type> ::= <type>
     <param_type_multi> ::= <param_type_list> | ε
     <func_content> ::= <block> | "PN_SEMI"
     <block> ::= "OPEN_BRACE" <instr_list> "CLOSE_BRACE"
@@ -54,7 +56,7 @@
     <for_init> ::= <var_declr> | <exp> "PN_SEMI" | "PN_SEMI"
     <for_exp> ::= <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "OP_QUESTION" <exp> " OP_COLON" <exp>
-    <factor> ::= NUM_INT | NUM_LONG | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
+    <factor> ::= NUM_INT | NUM_LONG | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <type> "CLOSE_PAREN" <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
     <postfix> ::= "OP_INCREMENT" | "OP_DECREMENT" | "OPEN_PAREN" <arg_list> "CLOSE_PAREN" | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "PN_COMMA" <exp> <arg> | ε
@@ -66,12 +68,13 @@
     <program> ::= <declr> <program> | ε
     <func_declr> ::= <specifier_list> 0 5 <param_list> 6 <func_content>
     <specifier_list> ::= <specifier> <specifier_multi>
-    <specifier> ::= 2 | 66 | 63 | 64
+    <specifier> ::= <type> | 63 | 64
     <specifier_multi> ::= <specifier_list> | ε
+    <type> ::= 2 | 66
     <param_list> ::= 3 | <param_type_list> 0 <param_multi>
     <param_multi> ::= 62 <param_type_list> 0 <param_multi> | ε
     <param_type_list> ::= <param_type> <param_type_multi>
-    <param_type> ::= 2 | 66
+    <param_type> ::= <type>
     <param_type_multi> ::= <param_type_list> | ε
     <func_content> ::= <block> | 9
     <block> ::= 7 <instr_list> 8
@@ -86,7 +89,7 @@
     <for_init> ::= <var_declr> | <exp> 9 | 9
     <for_exp> ::= <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> 51 <exp> 52 <exp>
-    <factor> ::= 1 | 65 | 0 <postfix> | <unary_op> <factor> | 5 <exp> 6
+    <factor> ::= 1 | 65 | 0 <postfix> | <unary_op> <factor> | 5 <type> 6 <factor> | 5 <exp> 6
     <postfix> ::= 13 | 44 | 5 <arg_list> 6 | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= 62 <exp> <arg> | ε
@@ -102,6 +105,7 @@
 	FIRST(<specifier_list>) = {2, 63, 64, 66}
 	FIRST(<specifier>) = {2, 63, 64, 66}
 	FIRST(<specifier_multi>) = {2, 63, 64, 66, ε}
+	FIRST(<type>) = {2, 66}
 	FIRST(<param_list>) = {2, 3, 66}
 	FIRST(<param_multi>) = {62, ε}
 	FIRST(<param_type_list>) = {2, 66}
@@ -132,6 +136,7 @@
 	FOLLOW(<specifier_list>) = {0}
 	FOLLOW(<specifier>) = {0, 2, 63, 64, 66}
 	FOLLOW(<specifier_multi>) = {0}
+	FOLLOW(<type>) = {0, 2, 6, 63, 64, 66}
 	FOLLOW(<param_list>) = {6}
 	FOLLOW(<param_multi>) = {6}
 	FOLLOW(<param_type_list>) = {0}
@@ -228,9 +233,11 @@ Node * p_nt_func_declr(Lexer_result lex_input);
 Node * p_nt_specifier_list_calling(Lexer_result lex_input);
 void finding_static(Node * node, Node * is_static);
 void finding_extern(Node * node, Node * is_static);
+void type_placing_checking(Node * x1);
 Node * p_nt_specifier_list(Lexer_result lex_input);
 Node * p_nt_specifier(Lexer_result lex_input);
 Node * p_nt_specifier_multi(Lexer_result lex_input);
+Node * p_nt_type(Lexer_result lex_input);
 Node * p_nt_param_list(Lexer_result lex_input);
 Node * p_nt_param_multi(Lexer_result lex_input);
 Node * p_nt_param_type_list_calling(Lexer_result lex_input);
@@ -297,6 +304,9 @@ int first(int input_token, int nt_set){
         
         case NT_SPECIFIER_MULTI:
             return (input_token == 2 || input_token == 63 || input_token == 64 || input_token == 66);
+        
+        case NT_TYPE:
+            return (input_token == 2 || input_token == 66);
         
         case NT_PARAM_LIST:
             return (input_token == 2 || input_token == 3 || input_token == 66);
@@ -393,6 +403,9 @@ int follow(int input_token, int nt_set){
         
         case NT_SPECIFIER_MULTI:
             return (input_token == 0);
+        
+        case NT_TYPE:
+            return (input_token == 0 || input_token == 2 || input_token == 6 || input_token == 63 || input_token == 64 || input_token == 66);
         
         case NT_PARAM_LIST:
             return (input_token == 6);
@@ -600,19 +613,7 @@ Node * p_nt_specifier_list_calling(Lexer_result lex_input) {
         } else {
             printf("ERROR: IDENT의 타입이 존재합니다. 계속 진행합니다.\n");
 
-            if (x1->token.token_number == KW_INT && x1->brother == NULL) {
-                printf("ERROR: 타입은 INT 입니다. 계속 진행합니다.\n");
-            } else if ((x1->token.token_number == KW_LONG) || (((x1->brother != NULL) && ((x1->token.token_number == KW_INT && x1->brother->token.token_number == KW_LONG) || (x1->token.token_number == KW_LONG && x1->brother->token.token_number == KW_INT))) && x1->brother->brother == NULL)) {
-                printf("ERROR: 타입은 LONG 입니다. 계속 진행합니다.\n");
-                if (x1->brother != NULL) {
-                    free(x1->brother);
-                    x1->brother = NULL;
-                } 
-                x1->token.token_number = KW_LONG;
-            } else {
-                printf("ERROR: 잘못된 타입 배치가 이루어졌습니다. 종료합니다.\n");
-                exit(1);
-            }
+            type_placing_checking(x1);
 
         }
 
@@ -677,6 +678,22 @@ void finding_extern(Node * node, Node * is_extern) {    // type를 확장해 typ
     }    
 }
 
+void type_placing_checking(Node * x1) {
+    if (x1->token.token_number == KW_INT && x1->brother == NULL) {
+        printf("ERROR: 타입은 INT 입니다. 계속 진행합니다.\n");
+    } else if ((x1->token.token_number == KW_LONG && x1->brother == NULL) || (((x1->brother != NULL) && ((x1->token.token_number == KW_INT && x1->brother->token.token_number == KW_LONG) || (x1->token.token_number == KW_LONG && x1->brother->token.token_number == KW_INT))) && x1->brother->brother == NULL)) {
+        printf("ERROR: 타입은 LONG 입니다. 계속 진행합니다.\n");
+        if (x1->brother != NULL) {
+            free(x1->brother);
+            x1->brother = NULL;
+        } 
+        x1->token.token_number = KW_LONG;
+    } else {
+        printf("ERROR: 잘못된 타입 배치가 이루어졌습니다. 종료합니다.\n");
+        exit(1);
+    }
+}
+
 Node * p_nt_specifier_list(Lexer_result lex_input) {    // <specifier_list> ::= <specifier> <specifier_multi>
     if (first(nextSymbol.token_number, NT_SPECIFIER)) {
         printf("parsing: nt_specifier_list->nt_specifier\n");
@@ -690,14 +707,9 @@ Node * p_nt_specifier_list(Lexer_result lex_input) {    // <specifier_list> ::= 
 }
 
 Node * p_nt_specifier(Lexer_result lex_input) { // <specifier> ::= "int" | "long" | "static" | "extern"
-    if (nextSymbol.token_number == KW_INT) {
-        printf("parsing: nt_specifier->kw_int\n");
-        Node * x1 = p_terminal(lex_input, KW_INT);
-        
-        return x1;
-    } else if (nextSymbol.token_number == KW_LONG) {
-        printf("parsing: nt_specifier->kw_long\n");
-        Node * x1 = p_terminal(lex_input, KW_LONG);
+    if (first(nextSymbol.token_number, NT_TYPE)) {
+        printf("parsing: nt_specifier->nt_type\n");
+        Node * x1 = p_nt_type(lex_input);
         
         return x1;
     } else if (nextSymbol.token_number == KW_STATIC) {
@@ -725,6 +737,20 @@ Node * p_nt_specifier_multi(Lexer_result lex_input) {   // <specifier_multi> ::=
 
         return n;
     } else error(2, nextSymbol);
+}
+
+Node * p_nt_type(Lexer_result lex_input){      // <p_nt_type> ::= "KW_INT" | "KW_LONG"
+    if (nextSymbol.token_number == KW_INT) {
+        printf("parsing: nt_type->kw_int\n");
+        Node * x1 = p_terminal(lex_input, KW_INT);
+
+        return x1;
+    } else if (nextSymbol.token_number == KW_LONG) {
+        printf("parsing: nt_type->kw_long\n");
+        Node * x1 = p_terminal(lex_input, KW_LONG);
+
+        return x1;
+    } else error(3, nextSymbol);
 }
 
 Node * p_nt_param_list(Lexer_result lex_input){    // <param_list> ::= "void" | <param_type_list> IDENT <param_multi>
@@ -776,7 +802,7 @@ Node * p_nt_param_multi(Lexer_result lex_input){    // <param_multi> ::= "," <pa
 Node * p_nt_param_type_list_calling(Lexer_result lex_input) {
     if (first(nextSymbol.token_number, NT_PARAM_TYPE)) {
         printf("parsing: nt_specifier_list_covering\n");
-        Node * x1 = p_nt_specifier_list(lex_input);
+        Node * x1 = p_nt_param_type_list(lex_input);
 
         if (x1 == NULL) {
             printf("ERROR: 타입이 발견되지 않았습니다. 종료합니다.\n");
@@ -784,19 +810,7 @@ Node * p_nt_param_type_list_calling(Lexer_result lex_input) {
         } else {
             printf("IDENT의 타입이 존재합니다. 계속 진행합니다.\n");
 
-            if (x1->token.token_number == KW_INT && x1->brother == NULL) {
-                printf("타입은 INT 입니다. 계속 진행합니다.\n");
-            } else if ((x1->token.token_number == KW_LONG) || (((x1->brother != NULL) && ((x1->token.token_number == KW_INT && x1->brother->token.token_number == KW_LONG) || (x1->token.token_number == KW_LONG && x1->brother->token.token_number == KW_INT))) && x1->brother->brother == NULL)) {
-                printf("타입은 LONG 입니다. 계속 진행합니다.\n");
-                if (x1->brother != NULL) {
-                    free(x1->brother);
-                    x1->brother = NULL;
-                } 
-                x1->token.token_number = KW_LONG;
-            } else {
-                printf("ERROR: 잘못된 타입 배치가 이루어졌습니다. 종료합니다.\n");
-                exit(1);
-            }
+            type_placing_checking(x1);
 
         }
 
@@ -820,21 +834,15 @@ Node * p_nt_param_type_list(Lexer_result lex_input) {    // <p_nt_param_type_lis
     } else error(2, nextSymbol);
 }
 
-Node * p_nt_param_type(Lexer_result lex_input){      // <p_nt_param_type> ::= "KW_INT" | "long"
-    if (nextSymbol.token_number == KW_INT) {
-        printf("parsing: nt_param->kw_int\n");
-        Node * x1 = p_terminal(lex_input, KW_INT);
+Node * p_nt_param_type(Lexer_result lex_input){      // <p_nt_param_type> ::= <type>
+    if (first(nextSymbol.token_number, NT_TYPE)) {
+        printf("parsing: nt_param_type->nt_type\n");
+        Node * x1 = p_nt_type(lex_input);
         
-        Node * n = node_maker(x1, NULL, NT_PARAM_TYPE, 0);
+        //Node * n = node_maker(x1, NULL, NT_PARAM_TYPE, 0);
 
-        return n;
-    } else if (nextSymbol.token_number == KW_LONG) {
-        printf("parsing: nt_param->kw_long\n");
-        Node * x1 = p_terminal(lex_input, KW_LONG);
-        
-        Node * n = node_maker(x1, NULL, NT_PARAM_TYPE, 0);
-
-        return n;
+        //return n;
+        return x1;
     } else error(3, nextSymbol);
 }
 
@@ -1316,8 +1324,8 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
 Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | "NUM_LONG" | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
     if (nextSymbol.token_number == NUM_INT) {
         printf("parsing: nt_factor\n");
-        if (nextSymbol.token_value > 2147483647) {
-            if (nextSymbol.token_value > 9223372036854775807) {
+        if (atoi(lexval_finder(nextSymbol.token_value)) > 2147483647) {
+            if (atoi(lexval_finder(nextSymbol.token_value)) > 9223372036854775807) {
                 printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
                 exit(1);
             }
@@ -1334,7 +1342,7 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | "NU
         return n;
     } else if (nextSymbol.token_number == NUM_LONG) {
         printf("parsing: nt_factor\n");
-        if (nextSymbol.token_value > 9223372036854775807) {
+        if (atoi(lexval_finder(nextSymbol.token_value)) > 9223372036854775807) {
             printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
             exit(1);
         }
@@ -1363,7 +1371,21 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | "NU
         Node * n = node_maker(x1, NULL, NT_FACTOR, 0);
 
         return n;
-    } else if (nextSymbol.token_number == OPEN_PAREN) {
+    } else if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_TYPE)) {
+        printf("parsing: nt_factor\n");
+        Node * x1 = p_terminal(lex_input, OPEN_PAREN);
+        Node * x2 = p_nt_type(lex_input);
+        Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
+        Node * x4 = p_nt_factor(lex_input);
+
+        x1->brother = x2;
+        x2->brother = x3;
+        x3->brother = x4;
+        
+        Node * n = node_maker(x1, NULL, NT_FACTOR, 0);
+
+        return n;
+    } else if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_EXP)) {
         printf("parsing: nt_factor\n");
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
         Node * x2 = p_nt_exp(lex_input, 0);
