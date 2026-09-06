@@ -121,7 +121,7 @@
 #define NT_TYPE         129
 #define NT_CAST         130
 
-#define NT_FUNCTION     130
+#define NT_FUNCTION     140
 
 
 #define SEM_SYMBOL      150
