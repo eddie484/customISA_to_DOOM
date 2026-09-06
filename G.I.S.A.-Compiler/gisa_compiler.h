@@ -119,6 +119,7 @@
 #define NT_UNARY_OP     127
 #define NT_BINARY_OP    128
 #define NT_TYPE         129
+#define NT_CAST         130
 
 #define NT_FUNCTION     130
 
@@ -291,6 +292,7 @@ typedef struct Switch_info {
 
 
 int lexval_manager (char *name);
+char * lexval_finder (int table_num);
 int check_right_word_boundary(char right);
 Lexer_result lexer(char *prep_name, char *lex_name);
 Node * parser(Lexer_result lex_input, char *parse_name);

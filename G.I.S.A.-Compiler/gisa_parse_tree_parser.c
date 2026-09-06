@@ -23,7 +23,8 @@
     <for_init> ::= <var_declr> | <exp> ";" | ";"
     <for_exp> ::= <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "?" <exp> ":" <exp>
-    <factor> ::= NUM_INT | NUM_LONG | IDENT <postfix> | <unary_op> <factor> | "(" <type> ")" <factor> | "(" <exp> ")"
+    <factor> ::= NUM_INT | NUM_LONG | IDENT <postfix> | <unary_op> <factor> | "(" <cast> ")" <factor> | "(" <exp> ")"
+    <cast> ::= <type>
     <postfix> ::= "++" | "--" | "(" <arg_list> ")" | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "," <exp> <arg> | ε
@@ -56,7 +57,8 @@
     <for_init> ::= <var_declr> | <exp> "PN_SEMI" | "PN_SEMI"
     <for_exp> ::= <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "OP_QUESTION" <exp> " OP_COLON" <exp>
-    <factor> ::= NUM_INT | NUM_LONG | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <type> "CLOSE_PAREN" <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
+    <factor> ::= NUM_INT | NUM_LONG | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <cast> "CLOSE_PAREN" <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
+    <cast> ::= <type>
     <postfix> ::= "OP_INCREMENT" | "OP_DECREMENT" | "OPEN_PAREN" <arg_list> "CLOSE_PAREN" | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "PN_COMMA" <exp> <arg> | ε
@@ -89,7 +91,8 @@
     <for_init> ::= <var_declr> | <exp> 9 | 9
     <for_exp> ::= <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> 51 <exp> 52 <exp>
-    <factor> ::= 1 | 65 | 0 <postfix> | <unary_op> <factor> | 5 <type> 6 <factor> | 5 <exp> 6
+    <factor> ::= 1 | 65 | 0 <postfix> | <unary_op> <factor> | 5 <cast> 6 <factor> | 5 <exp> 6
+    <cast> ::= <type>
     <postfix> ::= 13 | 44 | 5 <arg_list> 6 | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= 62 <exp> <arg> | ε
@@ -611,10 +614,8 @@ Node * p_nt_specifier_list_calling(Lexer_result lex_input) {
             printf("ERROR: 타입이 발견되지 않았습니다. 종료합니다.\n");
             exit(1);
         } else {
-            printf("ERROR: IDENT의 타입이 존재합니다. 계속 진행합니다.\n");
-
+            printf("IDENT의 타입이 존재합니다. 계속 진행합니다.\n");
             type_placing_checking(x1);
-
         }
 
         is_static->brother = is_extern;
@@ -680,9 +681,9 @@ void finding_extern(Node * node, Node * is_extern) {    // type를 확장해 typ
 
 void type_placing_checking(Node * x1) {
     if (x1->token.token_number == KW_INT && x1->brother == NULL) {
-        printf("ERROR: 타입은 INT 입니다. 계속 진행합니다.\n");
+        printf("타입은 INT 입니다. 계속 진행합니다.\n");
     } else if ((x1->token.token_number == KW_LONG && x1->brother == NULL) || (((x1->brother != NULL) && ((x1->token.token_number == KW_INT && x1->brother->token.token_number == KW_LONG) || (x1->token.token_number == KW_LONG && x1->brother->token.token_number == KW_INT))) && x1->brother->brother == NULL)) {
-        printf("ERROR: 타입은 LONG 입니다. 계속 진행합니다.\n");
+        printf("타입은 LONG 입니다. 계속 진행합니다.\n");
         if (x1->brother != NULL) {
             free(x1->brother);
             x1->brother = NULL;
@@ -1374,9 +1375,11 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | "NU
     } else if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_TYPE)) {
         printf("parsing: nt_factor\n");
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
-        Node * x2 = p_nt_type(lex_input);
+        Node * type = p_nt_type(lex_input);
         Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x4 = p_nt_factor(lex_input);
+
+        Node * x2 = node_maker(type, NULL, NT_CAST, 0);
 
         x1->brother = x2;
         x2->brother = x3;
