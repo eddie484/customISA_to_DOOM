@@ -1348,8 +1348,10 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
 Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
     if (nextSymbol.token_number == NUM_INT) {
         printf("parsing: nt_factor\n");
-        if (atoi(lexval_finder(nextSymbol.token_value)) > 2147483647) {
-            if (atoi(lexval_finder(nextSymbol.token_value)) > 9223372036854775807) {
+        errno = 0;
+        long long val = strtoll(lexval_finder(nextSymbol.token_value), NULL, 10);
+        if ((val) > 2147483647) {
+            if (errno == ERANGE) {
                 printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
                 exit(1);
             }
@@ -1363,7 +1365,9 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
         return x1;
     } else if (nextSymbol.token_number == NUM_LONG) {
         printf("parsing: nt_factor\n");
-        if (atoi(lexval_finder(nextSymbol.token_value)) > 9223372036854775807) {
+        errno = 0;
+        strtoll(lexval_finder(nextSymbol.token_value), NULL, 10);
+        if (errno == ERANGE) {
             printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
             exit(1);
         }
@@ -1393,9 +1397,11 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
     } else if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_TYPE)) {
         printf("parsing: nt_factor\n");
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
-        Node * x2 = p_nt_type(lex_input);
+        Node * type = p_nt_type(lex_input);
         Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x4 = p_nt_factor(lex_input);
+
+        Node * x2 = node_maker(type, NULL, NT_CAST, 0);
 
         x2->brother = x4;
 
