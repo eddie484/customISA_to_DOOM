@@ -674,12 +674,22 @@ void func_typetree_validate(Node * symbol_node) {
                     Node * input_node_typetree_copy = symbol_node->brother->son;
                     Node * current_input_typetree = input_node_typetree_copy;
                     Node * func_typetree = func_node->type_tree->brother;
-                    if (current_input_typetree == NULL && func_typetree->son->token.token_number == KW_VOID) {
-                        printf("정상:이전에 선언된 함수의 인자와 같은 인자로 호출했습니다.\n");
+                    if (func_typetree->son->token.token_number == KW_VOID) {
+                        if (current_input_typetree == NULL) {
+                            printf("정상:이전에 선언된 함수의 인자와 같은 인자로 호출했습니다.\n");
+                        } else {
+                            printf("오류: 이전에 선언된 NULL 함수를 인자를 가진 함수로 호출하고 있습니다.\n");
+                            printf("이전에 선언된 함수의 인자 타입 트리:\n");
+                            bin_tree_printer(func_node->type_tree->brother);
+                            printf("호출하는 함수의 인자 타입 트리:\n");
+                            bin_tree_printer(input_node_typetree_copy);
+                            exit(1);
+                        }
+                        
                     } else {
                         while (current_input_typetree != NULL) {
                             if (func_typetree == NULL) {
-                                printf("오류: 이전에 선언된 함수의 인자 타입과 다른 개수의 인자들로 호출하고 있습니다.\n");
+                                printf("오류: 이전에 선언된 함수의 인자 타입보다 많은 개수의 인자들로 호출하고 있습니다.\n");
                                 printf("이전에 선언된 함수의 인자 타입 트리:\n");
                                 bin_tree_printer(func_node->type_tree->brother);
                                 printf("호출하는 함수의 인자 타입 트리:\n");
@@ -688,9 +698,11 @@ void func_typetree_validate(Node * symbol_node) {
                             }
 
                             if (compare_tree(current_input_typetree->son->son, func_typetree->son) == 0) {
-                                current_input_typetree->token.token_number = NT_CAST;
-                                tree_malloc_cleaner(current_input_typetree->son);
-                                current_input_typetree->son = copy_tree(func_typetree->son);
+                                Node * current_exp_content = current_input_typetree->son;
+                                Node * cast = node_maker(copy_tree(func_typetree->son), node_maker(current_exp_content, NULL, NT_EXP, 0), NT_CAST, 0);
+                                current_input_typetree->son = cast;
+                                current_input_typetree->token.token_number = NT_EXP;
+                                current_input_typetree->token.token_value = 0;
                             }
 
                             current_input_typetree = current_input_typetree->brother;
@@ -698,7 +710,7 @@ void func_typetree_validate(Node * symbol_node) {
 
                         }
                         if (func_typetree != NULL) {
-                            printf("오류: 이전에 선언된 함수의 인자 타입과 다른 개수의 인자들로 호출하고 있습니다.\n");
+                            printf("오류: 이전에 선언된 함수의 인자 타입보다 적은 개수의 인자들로 호출하고 있습니다.\n");
                             printf("이전에 선언된 함수의 인자 타입 트리:\n");
                             bin_tree_printer(func_node->type_tree->brother);
                             printf("호출하는 함수의 인자 타입 트리:\n");
@@ -1011,27 +1023,44 @@ void ident_symbolizer(Node * node) {
             
         } else if (node->son->token.token_number == NT_CAST) {
             // 그대로
-        } else if (node->son->token.token_number == OP_ADD || node->son->token.token_number == OP_SUB || node->son->token.token_number == OP_MUL || node->son->token.token_number == OP_DIV || node->son->token.token_number == OP_MOD || node->son->token.token_number == OP_AND || node->son->token.token_number == OP_OR || node->son->token.token_number == OP_XOR || node->son->token.token_number == OP_SHL || node->son->token.token_number == OP_ASR) {
+        } else if (node->son->token.token_number == OP_ADD || node->son->token.token_number == OP_SUB || node->son->token.token_number == OP_MUL || node->son->token.token_number == OP_DIV || node->son->token.token_number == OP_MOD || node->son->token.token_number == OP_AND || node->son->token.token_number == OP_OR || node->son->token.token_number == OP_XOR) {
             if (node->son->brother->son->son->token.token_number == KW_LONG && node->son->brother->brother->son->son->token.token_number == KW_INT) {
-                node->son->brother->brother->son->token.token_number = NT_CAST;
-                node->son->brother->brother->son->son->token.token_number = KW_LONG;
+                Node * previous_exp = node->son->brother->brother;
+                Node * cast = node_maker(node_maker(NULL, NULL, KW_LONG, 0), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->son->brother->brother = exp;
             } else if (node->son->brother->son->son->token.token_number == KW_INT && node->son->brother->brother->son->son->token.token_number == KW_LONG) {
-                node->son->brother->son->token.token_number = NT_CAST;
-                node->son->brother->son->son->token.token_number = KW_LONG;
+                Node * previous_exp = node->son->brother;
+                Node * cast = node_maker(node_maker(NULL, NULL, KW_LONG, 0), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->son->brother = exp;
             }
             Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
             
+        } else if (node->son->token.token_number == OP_SHL || node->son->token.token_number == OP_ASR) {
+            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+            type->brother = node->son;
+            node->son = type;
+            
         } else if (node->son->token.token_number == OP_EQ || node->son->token.token_number == OP_NE || node->son->token.token_number == OP_LT || node->son->token.token_number == OP_GT || node->son->token.token_number == OP_LE || node->son->token.token_number == OP_GE) {
-            Node * type = node_maker(node_maker(NULL, NULL, KW_INT, 0), NULL, SEM_TYPE, 0);
             if (node->son->brother->son->son->token.token_number == KW_LONG && node->son->brother->brother->son->son->token.token_number == KW_INT) {
-                node->son->brother->brother->son->token.token_number = NT_CAST;
-                node->son->brother->brother->son->son->token.token_number = KW_LONG;
+                Node * previous_exp = node->son->brother->brother;
+                Node * cast = node_maker(node_maker(NULL, NULL, KW_LONG, 0), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->son->brother->brother = exp;
             } else if (node->son->brother->son->son->token.token_number == KW_INT && node->son->brother->brother->son->son->token.token_number == KW_LONG) {
-                node->son->brother->son->token.token_number = NT_CAST;
-                node->son->brother->son->son->token.token_number = KW_LONG;
+                Node * previous_exp = node->son->brother;
+                Node * cast = node_maker(node_maker(NULL, NULL, KW_LONG, 0), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->son->brother = exp;
             }
+            Node * type = node_maker(node_maker(NULL, NULL, KW_INT, 0), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
             
@@ -1040,22 +1069,31 @@ void ident_symbolizer(Node * node) {
             type->brother = node->son;
             node->son = type;
             
-        } else if (node->son->token.token_number == OP_ASSIGN || node->son->token.token_number == OP_ADDEQ || node->son->token.token_number == OP_SUBEQ || node->son->token.token_number == OP_MULEQ || node->son->token.token_number == OP_DIVEQ || node->son->token.token_number == OP_MODEQ || node->son->token.token_number == OP_ANDEQ || node->son->token.token_number == OP_OREQ || node->son->token.token_number == OP_XOREQ || node->son->token.token_number == OP_SHLEQ || node->son->token.token_number == OP_ASREQ) {
+        } else if (node->son->token.token_number == OP_ASSIGN) {
             Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
             if (node->son->brother->son->son->token.token_number == KW_LONG && node->son->brother->brother->son->son->token.token_number == KW_INT) {
-                node->son->brother->brother->son->token.token_number = NT_CAST;
-                node->son->brother->brother->son->son->token.token_number = KW_LONG;
+                Node * previous_exp = node->son->brother->brother;
+                Node * cast = node_maker(node_maker(NULL, NULL, KW_LONG, 0), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->son->brother->brother = exp;
             }
             type->brother = node->son;
             node->son = type;
             
         } else if (node->son->token.token_number == OP_QUESTION) {
             if (node->son->brother->brother->son->son->token.token_number == KW_LONG && node->son->brother->brother->brother->son->son->token.token_number == KW_INT) {
-                node->son->brother->brother->brother->son->token.token_number = NT_CAST;
-                node->son->brother->brother->brother->son->son->token.token_number = KW_LONG;
+                Node * previous_exp = node->son->brother->brother->brother;
+                Node * cast = node_maker(node_maker(NULL, NULL, KW_LONG, 0), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->son->brother->brother->brother = exp;
             } else if (node->son->brother->brother->son->son->token.token_number == KW_INT && node->son->brother->brother->brother->son->son->token.token_number == KW_LONG) {
-                node->son->brother->brother->son->token.token_number = NT_CAST;
-                node->son->brother->brother->son->son->token.token_number = KW_LONG;
+                Node * previous_exp = node->son->brother->brother;
+                Node * cast = node_maker(node_maker(NULL, NULL, KW_LONG, 0), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->son->brother->brother = exp;
             }
             Node * type = node_maker(copy_tree(node->son->brother->brother->son->son), NULL, SEM_TYPE, 0);
             type->brother = node->son;
@@ -1523,7 +1561,7 @@ void switch_checker (Node * node) {
 
     } else if (node->token.token_number == KW_CASE) {
         if (switch_depth >= 1) {
-            int case_val = case_calculator(node->son);
+            int case_val = case_calculator(node->son->son->brother);
             int case_id = case_saver(case_val);
             node->token.token_value = case_id;
 
@@ -1592,6 +1630,58 @@ void label_connector (Node * node) {
 }
 
 
+
+
+
+
+
+/* *********************************************
+************************************************
+************************************************
+***********                          ***********
+***********    SYMBOL TABLE STACK    ***********
+***********                          ***********
+************************************************
+************************************************
+********************************************* */
+
+int reverting_compound_assign_amount = OP_ADDEQ - OP_ADD;
+
+void reverting_compound_assign(Node * node) {
+    // *** IN ***
+    if (node->token.token_number >= OP_ADDEQ && node->token.token_number <= OP_ASREQ) {
+        if (node->brother->son == NULL) {
+            printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->brother->token.token_number, node->brother->token.token_value);
+            exit(1);
+        }
+        Node * cal = node_maker(NULL, NULL, NT_EXP, 0);
+        Node * op = node_maker(NULL, NULL, node->token.token_number - reverting_compound_assign_amount, 0);
+        Node * val = node_maker(copy_tree(node->brother->son), node->brother->brother, NT_EXP, 0);
+
+        cal->son = op;
+        op->brother = val;
+
+        node->token.token_number = OP_ASSIGN;
+        node->brother->brother = cal;
+    }
+    
+
+
+    // *** CALL SON ***
+    if (node->son != NULL) {
+        reverting_compound_assign(node->son);
+    }
+
+
+    // *** OUT ***
+    
+
+
+    // *** CALL BROTHER ***
+    if (node->brother != NULL) {
+        reverting_compound_assign(node->brother);
+    }
+}
 
 
 
@@ -1666,6 +1756,7 @@ Node * semantic_analyzer(Node * parse_input, char * symbast_name)
     }
 
 
+    reverting_compound_assign(parse_input);
     symbolized_ast = parse_input;
     push();
     ident_symbolizer(symbolized_ast);
