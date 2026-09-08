@@ -151,7 +151,7 @@ int symbol_maker(Node * declr_node) {
                     }
 
 
-                    if((ident_node->brother->son != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // init_option = 1로 재선언한 경우 
+                    if((ident_node->brother->son != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // init_option = 1로 재선언한 경우 
                         if (func_table[j]->init_option == 1) {
                             printf("오류: 초기값이 확정된 변수를 재선언하며 다시 초기값을 설졍하려고 합니다. 종료합니다.\n");
                             exit(1);
@@ -238,7 +238,7 @@ int symbol_maker(Node * declr_node) {
                     if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                         symbol->init_option = 2;
                         symbol->init_value = 0;
-                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
                         symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                     } else {    // 초기값이 있지만 상수가 아닌경우
@@ -252,7 +252,7 @@ int symbol_maker(Node * declr_node) {
                     if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                         symbol->init_option = 3;
                         symbol->init_value = 0;
-                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
                         symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                     } else {    // 초기값이 있지만 상수가 아닌경우
@@ -266,7 +266,7 @@ int symbol_maker(Node * declr_node) {
                     if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                         symbol->init_option = 2;
                         symbol->init_value = 0;
-                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
                         symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                     } else {    // 초기값이 있지만 상수가 아닌경우
@@ -334,7 +334,7 @@ int symbol_maker(Node * declr_node) {
             symbol->init_option = 1;
             if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                 symbol->init_value = 0;
-            } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == 1)) { // 초기값이 상수인 경우
+            } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // 초기값이 상수인 경우
                 symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
             } else {    // 초기값이 있지만 상수가 아닌경우
                 printf("오류: static 키워드가 있는 블록 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
@@ -545,21 +545,7 @@ Symbol_info * symbol_finder_from_ident_node(Node * ident_node) {
                     exit(1);
                 }
 
-                if (symbol_table_stack[i][j]->is_func == 1) {
-                    Node * input_node_typetree = get_type_tree_from_func_call(ident_node);
-                    if (compare_tree(input_node_typetree, symbol_table_stack[i][j]->type_tree->brother) == 0) {
-                        printf("오류: 이전에 선언된 함수의 인자 타입과 다른 타입의 인자들로 호출하고 있습니다.\n");
-                        printf("이전에 선언된 함수의 인자 타입 트리:\n");
-                        bin_tree_printer(func_table[j]->type_tree->brother);
-                        printf("호출하는 함수의 인자 타입 트리:\n");
-                        bin_tree_printer(input_node_typetree);
-                        tree_malloc_cleaner(input_node_typetree);
-                        exit(1);
-                    } else {
-                        tree_malloc_cleaner(input_node_typetree);
-                        printf("정상:이전에 선언된 함수의 인자와 같은 인자로 호출했습니다.\n");
-                    }
-                }
+                
                 return symbol_table_stack[i][j];
             }
 
@@ -682,6 +668,49 @@ Symbol_info * symbol_finder_from_symbol_name(int symbol_name) {
     exit(1);    // 미선언 변수 사용 시도한 경우.
 }
 
+void func_typetree_validate(Node * symbol_node) {
+    Symbol_info * func_node = (symbol_finder_from_symbol_node(symbol_node));
+    if (func_node->is_func == 1) {
+                    Node * input_node_typetree_copy = symbol_node->brother->son;
+                    Node * current_input_typetree = input_node_typetree_copy;
+                    Node * func_typetree = func_node->type_tree->brother;
+                    if (current_input_typetree == NULL && func_typetree->son->token.token_number == KW_VOID) {
+                        printf("정상:이전에 선언된 함수의 인자와 같은 인자로 호출했습니다.\n");
+                    } else {
+                        while (current_input_typetree != NULL) {
+                            if (func_typetree == NULL) {
+                                printf("오류: 이전에 선언된 함수의 인자 타입과 다른 개수의 인자들로 호출하고 있습니다.\n");
+                                printf("이전에 선언된 함수의 인자 타입 트리:\n");
+                                bin_tree_printer(func_node->type_tree->brother);
+                                printf("호출하는 함수의 인자 타입 트리:\n");
+                                bin_tree_printer(input_node_typetree_copy);
+                                exit(1);
+                            }
+
+                            if (compare_tree(current_input_typetree->son->son, func_typetree->son) == 0) {
+                                current_input_typetree->token.token_number = NT_CAST;
+                                tree_malloc_cleaner(current_input_typetree->son);
+                                current_input_typetree->son = copy_tree(func_typetree->son);
+                            }
+
+                            current_input_typetree = current_input_typetree->brother;
+                            func_typetree = func_typetree->brother;
+
+                        }
+                        if (func_typetree != NULL) {
+                            printf("오류: 이전에 선언된 함수의 인자 타입과 다른 개수의 인자들로 호출하고 있습니다.\n");
+                            printf("이전에 선언된 함수의 인자 타입 트리:\n");
+                            bin_tree_printer(func_node->type_tree->brother);
+                            printf("호출하는 함수의 인자 타입 트리:\n");
+                            bin_tree_printer(input_node_typetree_copy);
+                            exit(1);
+                        } else {
+                            printf("정상:이전에 선언된 함수의 인자와 같은 인자로 호출했습니다.\n");
+                        }
+                    }
+                }
+}
+
 
 Node * get_type_tree_from_var_declr(Node * declr_node, Node * ident_node) {
     // return_type-param1_type-param2_type-param3_type....
@@ -742,13 +771,15 @@ Node * get_type_tree_from_func_call(Node * ident_node) {
                         param_return_type = symbol_finder_from_ident_node(param_node->son)->type_tree;
                     }
 
-                    param_node_type = copy_tree(param_return_type);
+                    param_node_type = param_return_type;
                 } else {
                     param_node_type = node_maker(NULL, NULL, KW_INT, 0);
                 }
                 
             } else if (param_node->token.token_number == NUM_INT) {
                 param_node_type = node_maker(NULL, NULL, KW_INT, 0);
+            } else if (param_node->token.token_number == NUM_LONG) {
+                param_node_type = node_maker(NULL, NULL, KW_LONG, 0);
             } else {
                 printf("잘못된 노드가 func call 인자 체킹에 들어왔습니다: <%d, %d>\n", param_node->token.token_number, param_node->token.token_value);
                 exit(1);
@@ -812,7 +843,7 @@ void ident_symbolizer(Node * node) {
             Node * type_cleaner;
             
             right_val = ident_node->brother->son->brother;
-            symbol = node_maker(NULL, right_val, SEM_SYMBOL, symbol_id);
+            symbol = node_maker(node_maker(NULL, NULL, SEM_SYMBOL, symbol_id), right_val, NT_EXP, 0);
             assign = node_maker(NULL, symbol, OP_ASSIGN, 0);
             exp = node_maker(assign, NULL, NT_EXP, 0);
             // declr_to_content = node_maker(exp, node->brother, NT_CONTENT, 0);
@@ -924,18 +955,122 @@ void ident_symbolizer(Node * node) {
     if (node->token.token_number == NT_BLOCK) {
         pop();
 
+    } else if (node->token.token_number == NUM_INT || node->token.token_number == NUM_LONG) {
+        Node * type = node_maker(NULL, NULL, SEM_TYPE, 0);
+        if (node->token.token_number == NUM_INT) {
+            type->son = node_maker(NULL, NULL, KW_INT, 0);
+        } else if (node->token.token_number == NUM_LONG) {
+            type->son = node_maker(NULL, NULL, KW_LONG, 0);
+        }
+        
+        Node * num = node_maker(NULL, NULL, node->token.token_number, node->token.token_value);
+        
+        node->son = type;
+        node->token.token_number = NT_EXP;
+        node->token.token_value = 0;
+
+        type->brother = num;
+
     } else if (node->token.token_number == NT_EXP) {
         if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number != NT_EXP && node->son->brother->token.token_number != SEM_SYMBOL) {
         
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
-        } else if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number == NT_EXP && node->son->brother->son->token.token_number != SEM_SYMBOL) {
+        } else if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number == NT_EXP && node->son->brother->son->brother->token.token_number != SEM_SYMBOL) {
 
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
         }
 
-    }else if (node->token.token_number == NT_FUNC_DECLR) {    
+        // NT_EXP에 타입 붙이기.
+        if (node->son->token.token_number == SEM_SYMBOL) {
+            Node * symbol = node_maker(node->son->son, node->son->brother, node->son->token.token_number, node->son->token.token_value);
+            if (symbol_finder_from_symbol_id(symbol->token.token_value)->is_func == 1) {
+                node->son->son = copy_tree(symbol_finder_from_symbol_id(symbol->token.token_value)->type_tree->son);
+            } else {
+                node->son->son = copy_tree(symbol_finder_from_symbol_id(symbol->token.token_value)->type_tree);
+            }            
+            node->son->brother = symbol;
+            node->son->token.token_number = SEM_TYPE;
+            node->son->token.token_value = 0;
+            
+        } else if (node->son->token.token_number == OP_TILDE || node->son->token.token_number == OP_NEG) {
+            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+            type->brother = node->son;
+            node->son = type;
+            
+        } else if (node->son->token.token_number == OP_LOGIC_NOT) {
+            Node * type = node_maker(node_maker(NULL, NULL, KW_INT, 0), NULL, SEM_TYPE, 0);
+            type->brother = node->son;
+            node->son = type;
+            
+        } else if (node->son->token.token_number == OP_PRE_INCRE || node->son->token.token_number == OP_PRE_DECRE) {
+            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+            type->brother = node->son;
+            node->son = type;
+            
+        } else if (node->son->token.token_number == NT_CAST) {
+            // 그대로
+        } else if (node->son->token.token_number == OP_ADD || node->son->token.token_number == OP_SUB || node->son->token.token_number == OP_MUL || node->son->token.token_number == OP_DIV || node->son->token.token_number == OP_MOD || node->son->token.token_number == OP_AND || node->son->token.token_number == OP_OR || node->son->token.token_number == OP_XOR || node->son->token.token_number == OP_SHL || node->son->token.token_number == OP_ASR) {
+            if (node->son->brother->son->son->token.token_number == KW_LONG && node->son->brother->brother->son->son->token.token_number == KW_INT) {
+                node->son->brother->brother->son->token.token_number = NT_CAST;
+                node->son->brother->brother->son->son->token.token_number = KW_LONG;
+            } else if (node->son->brother->son->son->token.token_number == KW_INT && node->son->brother->brother->son->son->token.token_number == KW_LONG) {
+                node->son->brother->son->token.token_number = NT_CAST;
+                node->son->brother->son->son->token.token_number = KW_LONG;
+            }
+            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+            type->brother = node->son;
+            node->son = type;
+            
+        } else if (node->son->token.token_number == OP_EQ || node->son->token.token_number == OP_NE || node->son->token.token_number == OP_LT || node->son->token.token_number == OP_GT || node->son->token.token_number == OP_LE || node->son->token.token_number == OP_GE) {
+            Node * type = node_maker(node_maker(NULL, NULL, KW_INT, 0), NULL, SEM_TYPE, 0);
+            if (node->son->brother->son->son->token.token_number == KW_LONG && node->son->brother->brother->son->son->token.token_number == KW_INT) {
+                node->son->brother->brother->son->token.token_number = NT_CAST;
+                node->son->brother->brother->son->son->token.token_number = KW_LONG;
+            } else if (node->son->brother->son->son->token.token_number == KW_INT && node->son->brother->brother->son->son->token.token_number == KW_LONG) {
+                node->son->brother->son->token.token_number = NT_CAST;
+                node->son->brother->son->son->token.token_number = KW_LONG;
+            }
+            type->brother = node->son;
+            node->son = type;
+            
+        } else if (node->son->token.token_number == OP_LOGIC_AND || node->son->token.token_number == OP_LOGIC_OR) {
+            Node * type = node_maker(node_maker(NULL, NULL, KW_INT, 0), NULL, SEM_TYPE, 0);
+            type->brother = node->son;
+            node->son = type;
+            
+        } else if (node->son->token.token_number == OP_ASSIGN || node->son->token.token_number == OP_ADDEQ || node->son->token.token_number == OP_SUBEQ || node->son->token.token_number == OP_MULEQ || node->son->token.token_number == OP_DIVEQ || node->son->token.token_number == OP_MODEQ || node->son->token.token_number == OP_ANDEQ || node->son->token.token_number == OP_OREQ || node->son->token.token_number == OP_XOREQ || node->son->token.token_number == OP_SHLEQ || node->son->token.token_number == OP_ASREQ) {
+            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+            if (node->son->brother->son->son->token.token_number == KW_LONG && node->son->brother->brother->son->son->token.token_number == KW_INT) {
+                node->son->brother->brother->son->token.token_number = NT_CAST;
+                node->son->brother->brother->son->son->token.token_number = KW_LONG;
+            }
+            type->brother = node->son;
+            node->son = type;
+            
+        } else if (node->son->token.token_number == OP_QUESTION) {
+            if (node->son->brother->brother->son->son->token.token_number == KW_LONG && node->son->brother->brother->brother->son->son->token.token_number == KW_INT) {
+                node->son->brother->brother->brother->son->token.token_number = NT_CAST;
+                node->son->brother->brother->brother->son->son->token.token_number = KW_LONG;
+            } else if (node->son->brother->brother->son->son->token.token_number == KW_INT && node->son->brother->brother->brother->son->son->token.token_number == KW_LONG) {
+                node->son->brother->brother->son->token.token_number = NT_CAST;
+                node->son->brother->brother->son->son->token.token_number = KW_LONG;
+            }
+            Node * type = node_maker(copy_tree(node->son->brother->brother->son->son), NULL, SEM_TYPE, 0);
+            type->brother = node->son;
+            node->son = type;
+            
+        }
+
+
+        if (node->son->brother->token.token_number == SEM_SYMBOL) {
+            if (node->son->brother->brother != NULL && node->son->brother->brother->token.token_number == NT_ARG_LIST) {
+                func_typetree_validate(node->son->brother);
+            }
+        }
+
+    } else if (node->token.token_number == NT_FUNC_DECLR) {    
         pop(); 
         func_depth--;
     } 
@@ -1434,7 +1569,7 @@ void switch_checker (Node * node) {
 
 
 int case_calculator (Node * node) {
-    if (node->token.token_number == NUM_INT) {
+    if (node->token.token_number == NUM_INT || node->token.token_number == NUM_LONG) {
         return node->token.token_value;
     } else {
         printf("오류: case의 값으로 동적 exp가 들어왔습니다: <%d, %d>\n", node->token.token_number, node->token.token_value);
