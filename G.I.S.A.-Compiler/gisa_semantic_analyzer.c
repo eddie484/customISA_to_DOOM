@@ -7,6 +7,7 @@ Node * get_type_tree_from_var_declr(Node * declr_node, Node * ident_node);
 Node * get_type_tree_from_param_var_declr(Node * declr_node, Node * ident_node);
 Node * get_type_tree_from_func_declr(Node * declr_node, Node * ident_node);
 Node * get_type_tree_from_func_call(Node * ident_node);
+int value_cut_typesize(int input, Node * typetree);
 
 
 
@@ -45,6 +46,8 @@ int func_table_count;
 Symbol_info ** func_table;
 
 int func_depth = 0;
+
+Node * current_func_typetree = NULL;
 
 void push() {
     printf("Pushing Start. Current Table stack count: %d\n", symbol_table_stack_count);
@@ -158,7 +161,10 @@ int symbol_maker(Node * declr_node) {
                         } else {
                             printf("이전 init_option이 %d이었던 변수의 초기값을 설정했습니다.\n", func_table[j]->init_option);
                             func_table[j]->init_option = 1;
-                            func_table[j]->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                            char cut_val[12];
+                            snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), func_table[j]->type_tree));
+                            int type_set_init_value = lexval_manager(cut_val);
+                            func_table[j]->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                         }
 
                     } else if (!(declr_node->son->son->brother->token.token_value == 1) && (ident_node->brother->son == NULL)) { // init_option = 1로 재선언한 경우 
@@ -240,7 +246,10 @@ int symbol_maker(Node * declr_node) {
                         symbol->init_value = 0;
                     } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
-                        symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                        char cut_val[12];
+                        snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
+                        int type_set_init_value = lexval_manager(cut_val);
+                        symbol->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                     } else {    // 초기값이 있지만 상수가 아닌경우
                         printf("오류: static 키워드가 있는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                         exit(1);
@@ -254,7 +263,10 @@ int symbol_maker(Node * declr_node) {
                         symbol->init_value = 0;
                     } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
-                        symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                        char cut_val[12];
+                        snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
+                        int type_set_init_value = lexval_manager(cut_val);
+                        symbol->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                     } else {    // 초기값이 있지만 상수가 아닌경우
                         printf("오류: extern 키워드가 있는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                         exit(1);
@@ -268,7 +280,10 @@ int symbol_maker(Node * declr_node) {
                         symbol->init_value = 0;
                     } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
-                        symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                        char cut_val[12];
+                        snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
+                        int type_set_init_value = lexval_manager(cut_val);
+                        symbol->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                     } else {    // 초기값이 있지만 상수가 아닌경우
                         printf("오류: 키워드가 없는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                         exit(1);
@@ -335,7 +350,10 @@ int symbol_maker(Node * declr_node) {
             if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                 symbol->init_value = 0;
             } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // 초기값이 상수인 경우
-                symbol->init_value = ident_node->brother->son->brother->token.token_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                char cut_val[12];
+                snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
+                int type_set_init_value = lexval_manager(cut_val);
+                symbol->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
             } else {    // 초기값이 있지만 상수가 아닌경우
                 printf("오류: static 키워드가 있는 블록 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                 exit(1);
@@ -687,6 +705,11 @@ void func_typetree_validate(Node * symbol_node) {
                         }
                         
                     } else {
+                        if (current_input_typetree == NULL) {
+                            printf("오류: 인자가 필요한 함수를 인자 없이 호출했습니다.\n");
+                            exit(1);
+                        } 
+
                         while (current_input_typetree != NULL) {
                             if (func_typetree == NULL) {
                                 printf("오류: 이전에 선언된 함수의 인자 타입보다 많은 개수의 인자들로 호출하고 있습니다.\n");
@@ -814,6 +837,19 @@ Node * get_type_tree_from_func_call(Node * ident_node) {
 
 
 
+int value_cut_typesize(int input, Node * type_tree) {
+    if ((type_tree->token.token_number == KW_INT || type_tree->token.token_number == KW_LONG) && type_tree->brother == NULL) {
+        printf("인풋 값 %d를 32비트 사이즈로 자릅니다. 변환된 값: %d\n", input, (uint32_t)input);
+        return (uint32_t)input;
+    } else {
+        printf("[경고] 잘못된 타입이 발생했을 수도 있습니다. value: %d\n", input);
+        bin_tree_printer(type_tree);
+        return input;
+    }
+}
+
+
+
 
 
 
@@ -932,6 +968,10 @@ void ident_symbolizer(Node * node) {
 
             param_node->son = node_maker(NULL, NULL, SEM_SYMBOL, param_node_id);
             param_node = param_node->brother;
+        }
+
+        if (node->son->brother->brother->brother != NULL) {     // 정의가 있는 함수에서만 현재 함수 타입을 기록해, 리턴 타입을 함수에 맞추도록 한다.
+            current_func_typetree = node->son->son->brother->brother;
         }
             
 
@@ -1077,6 +1117,12 @@ void ident_symbolizer(Node * node) {
                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                 previous_exp->brother = NULL;
                 node->son->brother->brother = exp;
+            } else if (node->son->brother->son->son->token.token_number == KW_INT && node->son->brother->brother->son->son->token.token_number == KW_LONG) {
+                Node * previous_exp = node->son->brother->brother;
+                Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->son->brother->brother = exp;
             }
             type->brother = node->son;
             node->son = type;
@@ -1124,6 +1170,17 @@ void ident_symbolizer(Node * node) {
         ident_symbolizer(node->brother);
     }
 
+
+    // *** AFTER PROCESSING ***
+    if (node->token.token_number == KW_RETURN) {
+        if (compare_tree(node->brother->son->son, current_func_typetree) == 0) {
+            Node * previous_exp = node->brother;
+            Node * cast = node_maker(copy_tree(current_func_typetree), previous_exp, NT_CAST, 0);
+            Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+            previous_exp->brother = NULL;
+            node->brother = exp;
+        }
+    } 
 
 
 

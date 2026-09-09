@@ -236,6 +236,7 @@ reg 15=ret_pc
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <stdint.h>
 
 
 typedef struct {
