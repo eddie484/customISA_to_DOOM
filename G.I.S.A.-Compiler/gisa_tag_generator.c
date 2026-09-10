@@ -46,7 +46,14 @@
 
 int temp_count;     // 0은 처음 입력값이므로 1부터 변수 배정. symbol count 이후부터 임시변수 시작.
 int label_count;    // goto label의 개수 이후 번호부터 임시라벨 생성.
-int reverting_compound_assign;  // 복합 대입 연산자와 기본 연산자 사이의 차잇값. 두 묶음의 배치 순서가 일치하는 덕분에 차잇값을 이용해 환원이 가능하다. 중요 포인트!
+static int reverting_compound_assign;  // 복합 대입 연산자와 기본 연산자 사이의 차잇값. 두 묶음의 배치 순서가 일치하는 덕분에 차잇값을 이용해 환원이 가능하다. 중요 포인트!
+
+
+int temp_table_limit;
+int temp_table_count;
+Symbol_info ** temp_table;
+
+
 
 Node * tag_terminal(Node * ast);
 Node * tag_nt_program(Node * ast);
@@ -64,6 +71,87 @@ Node * line_while(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_do(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_for(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB);
+
+
+int temp_registration(int bytewidth);
+Node * type_regulation(Node * node);
+Node * tag_nt_cast(Node * ast);
+
+
+
+int temp_registration(int bytewidth){
+    Symbol_info * symbol = malloc(sizeof(Symbol_info));
+    symbol->name = TAG_TEMP;
+    symbol->id = temp_count;
+    // symbol_id_count++;
+    symbol->type_tree = node_maker(NULL, NULL, TYPE_BYTEWIDTH, bytewidth);
+    symbol->size = bytewidth;
+    symbol->location.type = 0;
+    symbol->location.location = 0;
+    symbol->is_func = 0;
+    symbol->having_body = 0;
+    symbol->is_linkage = 0;
+    symbol->init_option = 0;
+    symbol->init_value = 0;
+
+    temp_table[temp_table_count++] = symbol;
+
+    if (temp_table_count == temp_table_limit) {
+        temp_table_limit = temp_table_limit * 2;
+        temp_table = realloc(temp_table, sizeof(Symbol_info*) * temp_table_limit);
+    }
+
+    printf("바이트 폭이 %d인 ID %d 임시변수를 저장했습니다.\n", bytewidth, symbol->id);
+
+        
+
+    return temp_count++;
+}
+
+
+Node * type_regulation(Node * node) {
+    if ((node->token.token_number == KW_INT || node->token.token_number == KW_LONG) && node->brother == NULL) {
+        node->token.token_number = TYPE_BYTEWIDTH;
+        node->token.token_value = 4;
+    } else if ((node->token.token_number == TYPE_BYTEWIDTH) && node->brother == NULL) {
+        
+    } else {
+        printf("오류: 잘못 정의된 타입트리입니다.\n");
+        bin_tree_printer(node);
+        exit(1);
+    }
+
+    return node;
+}
+
+Node * tag_nt_cast(Node * ast) {
+    Node * casting_type = type_regulation(ast->son->son);
+    Node * original_type = type_regulation(ast->son->brother->son->son);
+    Node * casting_instr;
+
+    if (casting_type->token.token_value == original_type->token.token_value) {
+        printf("같은 비트폭으로 캐스팅을 시도하고 있습니다. 캐스팅을 생략합니다.\n");
+        Node * original_node = ast->son->brother;
+        tree_malloc_cleaner(ast->son->son);
+        free(ast->son);
+        ast->son = original_node->son;
+        ast->brother = original_node->brother;
+        ast->token.token_number = original_node->token.token_number;
+        ast->token.token_value = original_node->token.token_value;
+        free(original_node);
+    } else if (casting_type->token.token_value > original_type->token.token_value) {
+        
+    } else if (casting_type->token.token_value > original_type->token.token_value) {
+        
+    }
+
+    if (ast->son->token.token_number == NT_CAST) {
+        tag_nt_cast(ast);
+    }
+    
+
+    return NULL;    // 실제 비트폭 캐스팅 지원 시 확장수정 필요!
+}
 
 
 Node * tag_terminal(Node * ast){
@@ -114,7 +202,7 @@ Node * tag_symbol(Node * ast){
             n1->son = tag_arg_start;
         } 
         
-        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_count++);
+        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(symbol->size));
 
         n1->brother = n2;
         
@@ -292,8 +380,24 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
     } else if (ast->token.token_number == NT_EXP) {
         printf("enter NT_EXP\n");
-        if (ast->son->token.token_number == OP_TILDE || ast->son->token.token_number == OP_NEG) {
+        // 타입처리
+        if (ast->son->token.token_number == SEM_TYPE) {
+            printf("SEM_TYPE\n");
+            type_regulation(ast->son->son);
+        } else if (ast->son->token.token_number == NT_CAST) {
+            printf("NT_CAST\n");
+            tag_nt_cast(ast);
+        }
+        
+        // 연산처리
+        if (ast->son->brother->token.token_number == NT_EXP) {
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
+
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n1->token.token_value);
+
+            return n;
+        } else if (ast->son->brother->token.token_number == OP_TILDE || ast->son->brother->token.token_number == OP_NEG) {
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
             Node * n2 = tag_nt_instr_interpreting(ast->son, 0, n1->token.token_value);
 
             n1->brother = n2;
@@ -301,9 +405,9 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
             return n;
-        } else if ((ast->son->token.token_number >= OP_ADD && ast->son->token.token_number <= OP_ASR) || (ast->son->token.token_number >= OP_ASSIGN && ast->son->token.token_number <= OP_ASREQ)) {
-            Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
-            Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
+        } else if ((ast->son->brother->token.token_number >= OP_ADD && ast->son->brother->token.token_number <= OP_ASR) || (ast->son->brother->token.token_number >= OP_ASSIGN && ast->son->brother->token.token_number <= OP_ASREQ)) {
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
+            Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);
             Node * n3 = tag_nt_instr_interpreting(ast->son, n1->token.token_value, n2->token.token_value);
 
             n1->brother = n2;
@@ -312,34 +416,34 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n3->token.token_value);
 
             return n;
-        } else if (ast->son->token.token_number == NUM_INT) {
+        } else if (ast->son->brother->token.token_number == NUM_INT || ast->son->brother->token.token_number == NUM_LONG) {
             Node * n1 = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);
 
             return n1;
-        } else if (ast->son->token.token_number == OP_LOGIC_NOT) {
+        } else if (ast->son->brother->token.token_number == OP_LOGIC_NOT) {
             Node * n = line_op_logic_not(ast, temp_in_rA, temp_in_rB);
 
             return n;
-        } else if (ast->son->token.token_number == OP_LOGIC_AND || ast->son->token.token_number == OP_LOGIC_OR) {
+        } else if (ast->son->brother->token.token_number == OP_LOGIC_AND || ast->son->brother->token.token_number == OP_LOGIC_OR) {
             Node * n = line_op_logic_and_or(ast, temp_in_rA, temp_in_rB);
 
             return n;
-        } else if (ast->son->token.token_number >= OP_EQ && ast->son->token.token_number <= OP_GE) {
+        } else if (ast->son->brother->token.token_number >= OP_EQ && ast->son->brother->token.token_number <= OP_GE) {
             Node * n = line_op_comp(ast, temp_in_rA, temp_in_rB);
 
             return n;
-        } else if (ast->son->token.token_number == OP_PRE_INCRE || ast->son->token.token_number == OP_PRE_DECRE) {
-            Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
-            Node * n2 = tag_nt_instr_interpreting(ast->son, 0, n1->token.token_value);
+        } else if (ast->son->brother->token.token_number == OP_PRE_INCRE || ast->son->brother->token.token_number == OP_PRE_DECRE) {
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
+            Node * n2 = tag_nt_instr_interpreting(ast->son->brother, 0, n1->token.token_value);
 
             n1->brother = n2;
 
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
             return n;
-        } else if ((ast->son->token.token_number == SEM_SYMBOL) && (ast->son->brother != NULL && (ast->son->brother->token.token_number == NT_POSTFIX)) && (ast->son->brother->son != NULL && (ast->son->brother->son->token.token_number == OP_POST_INCRE || ast->son->brother->son->token.token_number == OP_POST_DECRE))) {
-            Node * n1 = tag_symbol(ast->son);
-            Node * n3 = tag_nt_instr_interpreting(ast->son->brother->son, 0, n1->token.token_value);
+        } else if ((ast->son->brother->token.token_number == SEM_SYMBOL) && (ast->son->brother->brother != NULL && (ast->son->brother->brother->token.token_number == NT_POSTFIX)) && (ast->son->brother->son != NULL && (ast->son->brother->son->token.token_number == OP_POST_INCRE || ast->son->brother->son->token.token_number == OP_POST_DECRE))) {
+            Node * n1 = tag_symbol(ast->son->brother);
+            Node * n3 = tag_nt_instr_interpreting(ast->son->brother->brother->son, 0, n1->token.token_value);
 
 
             n1->brother = n3;
@@ -347,19 +451,20 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n1->token.token_value);
 
             return n;
-        } else if (ast->son->token.token_number == OP_QUESTION) {
+        } else if (ast->son->brother->token.token_number == OP_QUESTION) {
             printf("enter line_op_question\n");
-            Node * n = line_op_question(ast->son, temp_in_rA, temp_in_rB);
+            Node * n = line_op_question(ast, temp_in_rA, temp_in_rB);
 
             return n;
 
         // Symbol일 경우
-        } else if (ast->son->token.token_number == SEM_SYMBOL) {
-            return tag_symbol(ast->son);
+        } else if (ast->son->brother->token.token_number == SEM_SYMBOL) {
+            return tag_symbol(ast->son->brother);
         } else {
-            printf("EXP로 허용되지 않는 토큰 입력: <%d, %d>\n", ast->son->token.token_number, ast->son->token.token_value);
-            return NULL;
-        }//에러처리
+            printf("EXP로 허용되지 않는 토큰 입력: <%d, %d>\n", ast->son->brother->token.token_number, ast->son->brother->token.token_value);
+            exit(1);
+        }
+
 
     } else if (ast->token.token_number == KW_IF) {
         printf("enter KW_IF\n");
@@ -407,63 +512,6 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         
 
     // *** 트리 밑바닥 ***
-    } else if (ast->token.token_number == NUM_INT) {
-        printf("enter NUM_INT\n");
-        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_count++, TAG_TEMP, 0, NUM_INT, ast->token.token_value);
-                
-        n->token.token_value = n->son->brother->token.token_value;
-
-        printf("\tINSTR: %d temp.%d %d\n", n->son->token.token_number, n->son->brother->token.token_value, n->son->brother->brother->brother->token.token_value);
-
-        return n;
-
-    // 단항 연산자일 경우 (OP_TILDE, OP_NEG)
-    } else if (ast->token.token_number == OP_TILDE || ast->token.token_number == OP_NEG) {
-        printf("enter OP_%d\n", ast->token.token_number);
-        Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_count++, TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
-        
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
-    // 이항 연산자일 경우 (OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_AND, OP_OR, OP_XOR, OP_SHL, OP_ASR)
-    } else if (ast->token.token_number >= OP_ADD && ast->token.token_number <= OP_GE) {
-        printf("enter OP_%d\n", ast->token.token_number);
-        Node * n = line_maker(ast->token.token_number, TAG_TEMP, temp_count++, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
-        
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
-    // ASSIGN 연산자일 경우
-    } else if (ast->token.token_number == OP_ASSIGN) {
-        printf("enter OP_ASSIGN\n");        // 인자 1이 lside, 2가 rside.
-        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_in_rA, TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
-        
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
-    // 복합 대입 연산자일 경우
-    } else if (ast->token.token_number >= OP_ADDEQ && ast->token.token_number <= OP_ASREQ) {
-        printf("enter OP_Compound_Assignment\n");        // 인자 1이 lside, 2가 rside.
-        Node * n = line_maker(ast->token.token_number - reverting_compound_assign, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
-    //                                              ^^^^^^^^ 복합대입연산자로써 가진 의미가 전부 표현되었으므로 일반 연산자로 되돌려 진행한다. 
-    //                                                       일반 연산자와 복합대입 연산자 사이의 차를 빼줌으로써 되돌린다.
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
-    // Symbol일 경우
-    } else if (ast->token.token_number == SEM_SYMBOL) {
-        printf("enter SEM_SYMBOL\n");
-        Node * n = node_maker(NULL, NULL, TAG_NOP, ast->token.token_value); // 심볼 ID를 기록해두는 라인.
-                
-
-        printf("\tSYMBOL CALL. SYMBOL ID is %d.\n", n->token.token_value);
-
-        return n;
-
     // 증감 연산자일 경우
     } else if (ast->token.token_number >= OP_PRE_INCRE && ast->token.token_number <= OP_POST_DECRE) {
         printf("enter INCRE/DECRE OP\n");
@@ -509,6 +557,75 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         Node * n = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);
         n->token.token_value = n->son->brother->token.token_value;
         return n;
+
+    // NUM일 경우
+    } else if (ast->brother->token.token_number == NUM_INT) {
+        printf("enter NUM_INT\n");
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, NUM_INT, ast->brother->token.token_value);
+                
+        n->token.token_value = n->son->brother->token.token_value;
+
+        printf("\tINSTR: %d temp.%d %d\n", n->son->token.token_number, n->son->brother->token.token_value, n->son->brother->brother->brother->token.token_value);
+
+        return n;
+
+    } else if (ast->brother->token.token_number == NUM_LONG) {
+        printf("enter NUM_LONG\n");
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, NUM_LONG, ast->brother->token.token_value);
+                
+        n->token.token_value = n->son->brother->token.token_value;
+
+        printf("\tINSTR: %d temp.%d %d\n", n->son->token.token_number, n->son->brother->token.token_value, n->son->brother->brother->brother->token.token_value);
+
+        return n;
+
+    // 단항 연산자일 경우 (OP_TILDE, OP_NEG)
+    } else if (ast->brother->token.token_number == OP_TILDE || ast->brother->token.token_number == OP_NEG) {
+        printf("enter OP_%d\n", ast->brother->token.token_number);
+        Node * n = line_maker(ast->brother->token.token_number, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
+        
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    // 이항 연산자일 경우 (OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_AND, OP_OR, OP_XOR, OP_SHL, OP_ASR)
+    } else if (ast->brother->token.token_number >= OP_ADD && ast->brother->token.token_number <= OP_ASR) {
+        printf("enter OP_%d\n", ast->brother->token.token_number);
+        Node * n = line_maker(ast->brother->token.token_number, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+        
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    // ASSIGN 연산자일 경우
+    } else if (ast->brother->token.token_number == OP_ASSIGN) {
+        printf("enter OP_ASSIGN\n");        // 인자 1이 lside, 2가 rside.
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_in_rA, TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
+        
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    // 복합 대입 연산자일 경우
+    } else if (ast->brother->token.token_number >= OP_ADDEQ && ast->brother->token.token_number <= OP_ASREQ) {
+        printf("enter OP_Compound_Assignment\n");        // 인자 1이 lside, 2가 rside.
+        Node * n = line_maker(ast->token.token_number - reverting_compound_assign, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+    //                                              ^^^^^^^^ 복합대입연산자로써 가진 의미가 전부 표현되었으므로 일반 연산자로 되돌려 진행한다. 
+    //                                                       일반 연산자와 복합대입 연산자 사이의 차를 빼줌으로써 되돌린다.
+        n->token.token_value = n->son->brother->token.token_value;
+
+        return n;
+
+    // Symbol일 경우
+    } else if (ast->brother->token.token_number == SEM_SYMBOL) {
+        printf("enter SEM_SYMBOL\n");
+        Node * n = node_maker(NULL, NULL, TAG_NOP, ast->token.token_value); // 심볼 ID를 기록해두는 라인.
+                
+
+        printf("\tSYMBOL CALL. SYMBOL ID is %d.\n", n->token.token_value);
+
+        return n;
+
     } else {
         printf("AST to TAG 과정에서 오류 발생: Instruction node들을 처리해야 하지만, instr에 해당하지 않는 노드가 입력되었습니다. 입력 노드: %d\n", ast->token.token_number);
         exit(1);
@@ -522,9 +639,9 @@ Node * line_op_logic_not(Node * ast, int temp_in_rA, int temp_in_rB)
     int return_val_temp;
 
 
-    return_val_temp = temp_count++;
+    return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
     Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // true, return 1
-    Node * n2 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);           // e1 calc
+    Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);           // e1 calc
     Node * n3 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, NUM_INT, lexval_manager ("0"));  // comparing, setcc
     Node * n5 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // false, return 0
     Node * n6 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
@@ -547,20 +664,20 @@ Node * line_op_logic_and_or(Node * ast, int temp_in_rA, int temp_in_rB)
 {
     int return_val_temp;
 
-    Node * n2 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);           // e1 calc
-    Node * n5 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);  // e2 calc
+    Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);           // e1 calc
+    Node * n5 = tag_nt_instr_interpreting(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);  // e2 calc
 
     Node * n9 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
     n9->token.token_value = n9->son->brother->token.token_value;
 
-    return_val_temp = temp_count++;
+    return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
 
     Node * n8;
     Node * n1;
     Node * n4;
     Node * n7;
 
-    if (ast->son->token.token_number == OP_LOGIC_AND){
+    if (ast->son->brother->token.token_number == OP_LOGIC_AND){
         n8 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // true, return 1
         n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // false, return 0
         n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);    // e1 branch, to end
@@ -599,10 +716,10 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
     int return_val_temp;
 
 
-    return_val_temp = temp_count++;
+    return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
     Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // true, return 1
-    Node * n2 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);           // e1 calc
-    Node * n3 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);  // e2 calc
+    Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);           // e1 calc
+    Node * n3 = tag_nt_instr_interpreting(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);  // e2 calc
     Node * n4 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, TAG_TEMP, n3->token.token_value);  // comparing, setcc
             
     Node * n6 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // false, return 0
@@ -611,7 +728,7 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
 
     Node * n5;
 
-    switch (ast->son->token.token_number) {    // if hit, branch to end
+    switch (ast->son->brother->token.token_number) {    // if hit, branch to end
         case (OP_EQ):
             n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);
             break;
@@ -693,11 +810,14 @@ Node * line_if(Node * ast, int temp_in_rA, int temp_in_rB)
 
 Node * line_op_question(Node * ast, int temp_in_rA, int temp_in_rB)
 {
-    int return_val_temp = temp_count++;
-    Node * n1 = tag_nt_instr_interpreting(ast->brother, temp_in_rA, temp_in_rB);           // 분기 조건 계산
+    int return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
+
+    Node * op = ast->son->brother;
+
+    Node * n1 = tag_nt_instr_interpreting(op->brother, temp_in_rA, temp_in_rB);           // 분기 조건 계산
     Node * n2 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value, NUM_INT, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
     
-    Node * n4 = tag_nt_instr_interpreting(ast->brother->brother, temp_in_rA, temp_in_rB);           // then 수행
+    Node * n4 = tag_nt_instr_interpreting(op->brother->brother, temp_in_rA, temp_in_rB);           // then 수행
     Node * n5 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, TAG_TEMP, n4->token.token_value);   // then 결과 저장
 
     Node * n7 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: then_end
@@ -705,7 +825,7 @@ Node * line_op_question(Node * ast, int temp_in_rA, int temp_in_rB)
 
     Node * n3 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);   // 분기 조건이 false인 경우. then의 끝으로 이동한다.
     
-    Node * n8 = tag_nt_instr_interpreting(ast->brother->brother->brother, temp_in_rA, temp_in_rB);           // else 수행
+    Node * n8 = tag_nt_instr_interpreting(op->brother->brother->brother, temp_in_rA, temp_in_rB);           // else 수행
     Node * n9 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, TAG_TEMP, n8->token.token_value);   // else 결과 저장
     Node * n10 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: else_end
     n10->token.token_value = n10->son->brother->token.token_value;
@@ -951,11 +1071,15 @@ Node * tag_generator(Node * parse_input, char * tagtree_name)
 {
     temp_count = symbol_id_count + 1;
     label_count = label_id_count + 1;
-    reverting_compound_assign = OP_ADDEQ - OP_ADD;
+    int reverting_compound_assign = OP_ADDEQ - OP_ADD;
 
     Node * tag_top;
     Node * tag_static_var;
     Node * tag_global_sym;
+
+    temp_table_limit = 4;
+    temp_table_count = 0;
+    temp_table = malloc(sizeof(Symbol_info*) * temp_table_limit);
 
 
     FILE *taggenfp = fopen(tagtree_name, "w");         // 처리 결과 ast를 저장할 파일 오픈

@@ -149,6 +149,8 @@
 #define TAG_STATIC_VAR  318
 #define TAG_STATIC_LIST 319
 
+#define TYPE_BYTEWIDTH  350
+
 #define COND_EQ         385
 #define COND_NE         386
 #define COND_CS         387
