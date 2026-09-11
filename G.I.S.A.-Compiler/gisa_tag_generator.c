@@ -46,7 +46,6 @@
 
 int temp_count;     // 0은 처음 입력값이므로 1부터 변수 배정. symbol count 이후부터 임시변수 시작.
 int label_count;    // goto label의 개수 이후 번호부터 임시라벨 생성.
-static int reverting_compound_assign;  // 복합 대입 연산자와 기본 연산자 사이의 차잇값. 두 묶음의 배치 순서가 일치하는 덕분에 차잇값을 이용해 환원이 가능하다. 중요 포인트!
 
 
 int temp_table_limit;
@@ -90,6 +89,7 @@ int temp_registration(int bytewidth){
     symbol->location.location = 0;
     symbol->is_func = 0;
     symbol->having_body = 0;
+    symbol->is_global = 0;
     symbol->is_linkage = 0;
     symbol->init_option = 0;
     symbol->init_value = 0;
@@ -135,13 +135,13 @@ Node * tag_nt_cast(Node * ast) {
         tree_malloc_cleaner(ast->son->son);
         free(ast->son);
         ast->son = original_node->son;
-        ast->brother = original_node->brother;
         ast->token.token_number = original_node->token.token_number;
         ast->token.token_value = original_node->token.token_value;
+        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
         free(original_node);
     } else if (casting_type->token.token_value > original_type->token.token_value) {
         
-    } else if (casting_type->token.token_value > original_type->token.token_value) {
+    } else if (casting_type->token.token_value < original_type->token.token_value) {
         
     }
 
@@ -441,7 +441,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
             return n;
-        } else if ((ast->son->brother->token.token_number == SEM_SYMBOL) && (ast->son->brother->brother != NULL && (ast->son->brother->brother->token.token_number == NT_POSTFIX)) && (ast->son->brother->son != NULL && (ast->son->brother->son->token.token_number == OP_POST_INCRE || ast->son->brother->son->token.token_number == OP_POST_DECRE))) {
+        } else if ((ast->son->brother->token.token_number == SEM_SYMBOL) && (ast->son->brother->brother != NULL && (ast->son->brother->brother->token.token_number == NT_POSTFIX)) && (ast->son->brother->brother->son != NULL && (ast->son->brother->brother->son->token.token_number == OP_POST_INCRE || ast->son->brother->brother->son->token.token_number == OP_POST_DECRE))) {
             Node * n1 = tag_symbol(ast->son->brother);
             Node * n3 = tag_nt_instr_interpreting(ast->son->brother->brother->son, 0, n1->token.token_value);
 
@@ -606,20 +606,10 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
         return n;
 
-    // 복합 대입 연산자일 경우
-    } else if (ast->brother->token.token_number >= OP_ADDEQ && ast->brother->token.token_number <= OP_ASREQ) {
-        printf("enter OP_Compound_Assignment\n");        // 인자 1이 lside, 2가 rside.
-        Node * n = line_maker(ast->token.token_number - reverting_compound_assign, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
-    //                                              ^^^^^^^^ 복합대입연산자로써 가진 의미가 전부 표현되었으므로 일반 연산자로 되돌려 진행한다. 
-    //                                                       일반 연산자와 복합대입 연산자 사이의 차를 빼줌으로써 되돌린다.
-        n->token.token_value = n->son->brother->token.token_value;
-
-        return n;
-
     // Symbol일 경우
     } else if (ast->brother->token.token_number == SEM_SYMBOL) {
         printf("enter SEM_SYMBOL\n");
-        Node * n = node_maker(NULL, NULL, TAG_NOP, ast->token.token_value); // 심볼 ID를 기록해두는 라인.
+        Node * n = node_maker(NULL, NULL, TAG_NOP, ast->brother->token.token_value); // 심볼 ID를 기록해두는 라인.
                 
 
         printf("\tSYMBOL CALL. SYMBOL ID is %d.\n", n->token.token_value);
@@ -1071,7 +1061,6 @@ Node * tag_generator(Node * parse_input, char * tagtree_name)
 {
     temp_count = symbol_id_count + 1;
     label_count = label_id_count + 1;
-    int reverting_compound_assign = OP_ADDEQ - OP_ADD;
 
     Node * tag_top;
     Node * tag_static_var;

@@ -613,40 +613,58 @@ Symbol_info * symbol_finder_from_symbol_node(Node * symbol_node) {
 }
 
 Symbol_info * symbol_finder_from_symbol_id(int symbol_id) {
-    printf("DEBUG: id가 %d인 심볼을 찾기 위해 심볼 테이블 리스트를 순회합니다.\n", symbol_id);
-    for (int i = symbol_table_list_count - 1; i >= 0; i--) {      // 테이블 스택 순회
-        for (int j = 0; j <= symbol_table_list_inside_count[i] - 1; j++) {        // 테이블 내부 순회
-            if (symbol_table_list[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
-                printf("DEBUG: symbol_table_list[%d][%d] is NULL\n", i, j);
-                break;
-            } else if (symbol_id == symbol_table_list[i][j]->id) {
-                printf("DEBUG: Symbol ID %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_id, i, j);
-                
-                return symbol_table_list[i][j];
+    if (symbol_id <= symbol_id_count) {
+        printf("DEBUG: id가 명시변수 심볼 id 범위인 1~%d에 속하므로, 명시변수들 사이에서 심볼을 찾습니다.\n", symbol_id_count);
+        printf("DEBUG: id가 %d인 심볼을 찾기 위해 심볼 테이블 리스트를 순회합니다.\n", symbol_id);
+        for (int i = symbol_table_list_count - 1; i >= 0; i--) {      // 테이블 스택 순회
+            for (int j = 0; j <= symbol_table_list_inside_count[i] - 1; j++) {        // 테이블 내부 순회
+                if (symbol_table_list[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
+                    printf("DEBUG: symbol_table_list[%d][%d] is NULL\n", i, j);
+                    break;
+                } else if (symbol_id == symbol_table_list[i][j]->id) {
+                    printf("DEBUG: Symbol ID %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_id, i, j);
+                    
+                    return symbol_table_list[i][j];
+                }
+
+                printf("DEBUG: symbol_table_list[%d][%d]'s name is %d\n", i, j, symbol_table_list[i][j]->name);
             }
-
-            printf("DEBUG: symbol_table_list[%d][%d]'s name is %d\n", i, j, symbol_table_list[i][j]->name);
         }
-    }
 
-    printf("DEBUG: 심볼 테이블 리스트에서 심볼을 찾지 못했습니다. 심볼 테이블 스택을 순회합니다.\n");
-    for (int i = symbol_table_stack_count - 1; i >= 0; i--) {      // 테이블 스택 순회
-        for (int j = 0; j <= symbol_table_count[i] - 1; j++) {        // 테이블 내부 순회
-            if (symbol_table_stack[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
-                printf("DEBUG: symbol_table_stack[%d][%d] is NULL\n", i, j);
-                break;
-            } else if (symbol_id == symbol_table_stack[i][j]->id) {
-                printf("DEBUG: Symbol ID %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_id, i, j);
+        printf("DEBUG: 심볼 테이블 리스트에서 심볼을 찾지 못했습니다. 심볼 테이블 스택을 순회합니다.\n");
+        for (int i = symbol_table_stack_count - 1; i >= 0; i--) {      // 테이블 스택 순회
+            for (int j = 0; j <= symbol_table_count[i] - 1; j++) {        // 테이블 내부 순회
+                if (symbol_table_stack[i][j] == NULL) {     // 테이블 및 info들 초기화 하도록 수정해야 함.
+                    printf("DEBUG: symbol_table_stack[%d][%d] is NULL\n", i, j);
+                    break;
+                } else if (symbol_id == symbol_table_stack[i][j]->id) {
+                    printf("DEBUG: Symbol ID %d는 symbol_table_list[%d][%d]에 정상적으로 선언된 심볼입니다.\n", symbol_id, i, j);
 
-                return symbol_table_stack[i][j];
+                    return symbol_table_stack[i][j];
+                }
+
+                printf("DEBUG: symbol_table_stack[%d][%d]'s name is %d\n", i, j, symbol_table_stack[i][j]->name);
             }
-
-            printf("DEBUG: symbol_table_stack[%d][%d]'s name is %d\n", i, j, symbol_table_stack[i][j]->name);
         }
-    }
 
-    printf("오류: 선언되지 않은 Symbol ID %d을 사용하려 합니다. 종료합니다.\n", symbol_id);
-    exit(1);    // 미선언 변수 사용 시도한 경우.
+        printf("오류: 선언되지 않은 Symbol ID %d을 사용하려 합니다. 종료합니다.\n", symbol_id);
+        exit(1);    // 미선언 변수 사용 시도한 경우.
+        
+    } else {
+        printf("DEBUG: id가 임시변수 심볼 id 범위인 (%d + 1)~ 에 속하므로, 임시변수들 사이에서 심볼을 찾습니다.\n", symbol_id_count);
+        
+        for (int i = 0; i < temp_count - (symbol_id_count + 1); i++) {      // 테이블 스택 순회
+            if (temp_table[i] != NULL && symbol_id == temp_table[i]->id) {
+                printf("DEBUG: Symbol ID %d는 temp_table[%d]에 정상적으로 선언된 심볼입니다.\n", symbol_id, i);
+                    
+                return temp_table[i];
+            }
+        }
+
+        printf("오류: 선언되지 않은 Symbol ID %d을 사용하려 합니다. 종료합니다.\n", symbol_id);
+        exit(1);    // 미선언 변수 사용 시도한 경우.
+    }
+    
 }
 
 Symbol_info * symbol_finder_from_symbol_name(int symbol_name) {
