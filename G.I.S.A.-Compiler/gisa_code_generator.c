@@ -127,7 +127,7 @@ Node * asm_pass1_nt_param_receive(Node * tag){
                     int n = (4 - 4) * 4;
                     char param_stack_size[12];
                     snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
-                    param_stack = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 13, NUM_INT, lexval_manager (param_stack_size));
+                    param_stack = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 13, NUM_IMM, lexval_manager (param_stack_size));
                     current_param_node = current_param_node->brother;
 
                     param_3->brother = param_stack;
@@ -137,7 +137,7 @@ Node * asm_pass1_nt_param_receive(Node * tag){
                     for (int i = 5; i <= param_count; i++) {
                         n = (i - 4) * 4;
                         snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
-                        param_stack->brother = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 13, NUM_INT, lexval_manager (param_stack_size));
+                        param_stack->brother = line_maker(ASM_LDR, TAG_TEMP, current_param_node->token.token_value, ASM_REGISTER, 13, NUM_IMM, lexval_manager (param_stack_size));
                         current_param_node = current_param_node->brother;
 
                         param_stack = param_stack->brother;
@@ -196,8 +196,8 @@ Node * asm_pass1_nt_func_call(Node * tag){
                     int n = -(((param_count - 3) * 4) + 7 & ~7);
                     char param_stack_size[12];
                     snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
-                    stack_space_making_for_param = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
-                    stack_space_return_for_param = line_maker(ASM_SUB, ASM_REGISTER, 14, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+                    stack_space_making_for_param = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 14, NUM_IMM, lexval_manager (param_stack_size));
+                    stack_space_return_for_param = line_maker(ASM_SUB, ASM_REGISTER, 14, ASM_REGISTER, 14, NUM_IMM, lexval_manager (param_stack_size));
 
                     // 인자들 실행시켜 temp에 인자값 가져오기
                     Node * param_instr_stack;
@@ -205,7 +205,7 @@ Node * asm_pass1_nt_func_call(Node * tag){
                     Node * current_param = tag->son->brother->brother->brother;
 
                     param_instr_stack = asm_pass1_nt_instr_loop(current_param);
-                    param_save_stack = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager ("0"));
+                    param_save_stack = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->token.token_value, ASM_REGISTER, 14, NUM_IMM, lexval_manager ("0"));
                     param_instr_3->brother = param_instr_stack;
                     param_save_3->brother = param_save_stack;
 
@@ -216,7 +216,7 @@ Node * asm_pass1_nt_func_call(Node * tag){
 
                         n = (i - 4) * 4;
                         snprintf(param_stack_size, sizeof(param_stack_size), "%d", n);
-                        param_save_stack->brother = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->brother->token.token_value, ASM_REGISTER, 14, NUM_INT, lexval_manager (param_stack_size));
+                        param_save_stack->brother = line_maker(ASM_STR, TAG_TEMP, param_instr_stack->brother->token.token_value, ASM_REGISTER, 14, NUM_IMM, lexval_manager (param_stack_size));
                         current_param = current_param->brother;
                         param_save_stack = param_save_stack->brother;
 
@@ -337,7 +337,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
             return n;
         } else if (tag->son->token.token_number == OP_NEG && tag->son->brother->brother->token.token_number == TAG_TEMP && tag->son->brother->brother->token.token_value == 0) {
-            Node * n1 = line_maker(ASM_MOV, ASM_REGISTER, 2, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));
+            Node * n1 = line_maker(ASM_MOV, ASM_REGISTER, 2, TAG_TEMP, 0, NUM_IMM, lexval_manager ("0"));
             Node * n2 = line_maker(ASM_SUB, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value);
 
             n1->brother = n2;
@@ -473,9 +473,9 @@ void asm_pass2_temp_to_stack(Node * node) {
 
                 Node * original_line_node;
                 if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_INT, temp_val);
+                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                 } else {
-                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                 }
                 Node * son = original_line_node->son;
 
@@ -498,9 +498,9 @@ void asm_pass2_temp_to_stack(Node * node) {
 
                 Node * store_rD;
                 if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_INT, temp_val);
+                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                 } else {
-                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                 }
                 store_rD->brother = node->brother;
 
@@ -520,9 +520,9 @@ void asm_pass2_temp_to_stack(Node * node) {
 
             Node * original_line_node;
             if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_INT, temp_val);
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
             } else {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
             }
             Node * son = original_line_node->son;
 
@@ -548,9 +548,9 @@ void asm_pass2_temp_to_stack(Node * node) {
 
                 Node * line_ldr_rb;
                 if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_INT, temp_val);
+                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                 } else {
-                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                 }
 
                 node->brother = line_ldr_rb;
@@ -569,9 +569,9 @@ void asm_pass2_temp_to_stack(Node * node) {
 
             Node * original_line_node;
             if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_INT, temp_val);
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
             } else {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_INT, lexval_manager (str));
+                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
             }
             Node * son = original_line_node->son;
 
@@ -618,13 +618,13 @@ void asm_pass3_prologue_maker(Node * node) {
         int n = -((temp_count + 1) * 4);
         char str_r15[12];
         snprintf(str_r15, sizeof(str_r15), "%d", n);
-        Node * p1 = line_maker(ASM_STR, ASM_REGISTER, 15, ASM_REGISTER, 14, NUM_INT, lexval_manager (str_r15));
+        Node * p1 = line_maker(ASM_STR, ASM_REGISTER, 15, ASM_REGISTER, 14, NUM_IMM, lexval_manager (str_r15));
 
         // STR R13 R14 -(temp_count * 4 + 2)
         n = -((temp_count + 2) * 4);
         char str_r13[12];
         snprintf(str_r13, sizeof(str_r13), "%d", n);
-        Node * p2 = line_maker(ASM_STR, ASM_REGISTER, 13, ASM_REGISTER, 14, NUM_INT, lexval_manager (str_r13));
+        Node * p2 = line_maker(ASM_STR, ASM_REGISTER, 13, ASM_REGISTER, 14, NUM_IMM, lexval_manager (str_r13));
 
         // MOV R13 R14
         Node * p3 = line_maker(ASM_MOV, ASM_REGISTER, 13, TAG_TEMP, 0, ASM_REGISTER, 14);
@@ -632,7 +632,7 @@ void asm_pass3_prologue_maker(Node * node) {
         // ADD R14 R13 -(temp_count * 4 + 2)
         n = -(((temp_count + 2) * 4) + 7 & ~7);
         snprintf(str_r13, sizeof(str_r13), "%d", n);
-        Node * p4 = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 13, NUM_INT, lexval_manager (str_r13));
+        Node * p4 = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str_r13));
         
 
         p1->brother = p2;

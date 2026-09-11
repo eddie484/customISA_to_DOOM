@@ -149,6 +149,7 @@
 #define TAG_STATIC_VAR  318
 #define TAG_STATIC_LIST 319
 
+#define NUM_IMM         349
 #define TYPE_BYTEWIDTH  350
 
 #define COND_EQ         385

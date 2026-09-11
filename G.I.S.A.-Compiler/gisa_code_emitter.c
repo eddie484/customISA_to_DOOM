@@ -25,7 +25,13 @@ void asm_printer(Node * node, FILE * codeemitfp){
             Symbol_info * symbol = symbol_finder_from_symbol_id(node->token.token_value);
             char * label_name = lexval_finder(symbol->name);
             int label_id = symbol->id;
-            int init_value = atoi(lexval_finder(symbol->init_value));
+            int init_value;
+            if (symbol->init_option == 1) {
+                init_value = atoi(lexval_finder(symbol->init_value));
+            } else {
+                init_value = 0;
+            }
+
             if ((init_value << 12 >> 12) == init_value) {
                 printf("\tMOVI R1 #%d\n", init_value);
                 fprintf(codeemitfp, "\tMOVI R1 #%d\n", init_value);
@@ -72,7 +78,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tMOV R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tMOV R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         if ((atoi(int_value) << 12 >> 12) == atoi(int_value)) { // 즉시값이 20비트 이하일 경우, movi로 저장한다.
                             printf("\tMOVI R%d #%s\n", node->son->brother->token.token_value, int_value);
@@ -96,7 +102,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tADD R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tADD R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tADDI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tADDI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -112,7 +118,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tSUB R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tSUB R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tSUBI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tSUBI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -128,7 +134,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tCMPS R%d R%d\n", node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tCMPS R%d R%d\n", node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tCMPIS R%d #%s\n", node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tCMPIS R%d #%s\n", node->son->brother->brother->token.token_value, int_value);
@@ -144,7 +150,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tMUL R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tMUL R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tMULI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tMULI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -160,7 +166,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tDIV R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tDIV R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tDIVI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tDIVI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -176,7 +182,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tMOD R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tMOD R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tMODI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tMODI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -193,7 +199,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tAND R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tAND R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tANDI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tANDI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -209,7 +215,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tOR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tOR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tORI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tORI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -226,7 +232,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tXOR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tXOR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tXORI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tXORI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -243,7 +249,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tSHL R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tSHL R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tSHLI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tSHLI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -260,7 +266,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tASR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tASR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tASRI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tASRI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
@@ -277,7 +283,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         printf("\tNOT R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tNOT R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 
-                    } else if (node->son->brother->brother->brother->token.token_number == NUM_INT) {
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
                         char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
                         printf("\tNOTI R%d #%s\n", node->son->brother->token.token_value, int_value);
                         fprintf(codeemitfp, "\tNOTI R%d #%s\n", node->son->brother->token.token_value, int_value);

@@ -517,7 +517,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         printf("enter INCRE/DECRE OP\n");
 
         int op = (ast->token.token_number == OP_PRE_INCRE || ast->token.token_number == OP_POST_INCRE) ? OP_ADD : OP_SUB;
-        Node * n = line_maker(op, TAG_TEMP, temp_in_rB, TAG_TEMP, temp_in_rB, NUM_INT, lexval_manager("1"));
+        Node * n = line_maker(op, TAG_TEMP, temp_in_rB, TAG_TEMP, temp_in_rB, NUM_IMM, lexval_manager("1"));
         
         n->token.token_value = n->son->brother->token.token_value;
 
@@ -561,7 +561,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     // NUM일 경우
     } else if (ast->brother->token.token_number == NUM_INT) {
         printf("enter NUM_INT\n");
-        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, NUM_INT, ast->brother->token.token_value);
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, NUM_IMM, ast->brother->token.token_value);
                 
         n->token.token_value = n->son->brother->token.token_value;
 
@@ -571,7 +571,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
     } else if (ast->brother->token.token_number == NUM_LONG) {
         printf("enter NUM_LONG\n");
-        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, NUM_LONG, ast->brother->token.token_value);
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, NUM_IMM, ast->brother->token.token_value);
                 
         n->token.token_value = n->son->brother->token.token_value;
 
@@ -630,10 +630,10 @@ Node * line_op_logic_not(Node * ast, int temp_in_rA, int temp_in_rB)
 
 
     return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
-    Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // true, return 1
+    Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("1"));   // true, return 1
     Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);           // e1 calc
-    Node * n3 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, NUM_INT, lexval_manager ("0"));  // comparing, setcc
-    Node * n5 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // false, return 0
+    Node * n3 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, NUM_IMM, lexval_manager ("0"));  // comparing, setcc
+    Node * n5 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("0"));   // false, return 0
     Node * n6 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
     n6->token.token_value = n6->son->brother->token.token_value;
             
@@ -668,13 +668,13 @@ Node * line_op_logic_and_or(Node * ast, int temp_in_rA, int temp_in_rB)
     Node * n7;
 
     if (ast->son->brother->token.token_number == OP_LOGIC_AND){
-        n8 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // true, return 1
-        n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // false, return 0
+        n8 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("1"));   // true, return 1
+        n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("0"));   // false, return 0
         n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);    // e1 branch, to end
         n7 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);    // e2 branch, to end
     } else {
-        n8 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // true, return 0
-        n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // false, return 1
+        n8 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("0"));   // true, return 0
+        n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("1"));   // false, return 1
         n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n9->token.token_value);    // e1 branch, to end
         n7 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n9->token.token_value);    // e2 branch, to end
     }
@@ -683,8 +683,8 @@ Node * line_op_logic_and_or(Node * ast, int temp_in_rA, int temp_in_rB)
     n1->token.token_value = n1->son->brother->token.token_value;
             
 
-    Node * n3 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, NUM_INT, lexval_manager ("0"));  // comparing, setcc
-    Node * n6 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n5->token.token_value, NUM_INT, lexval_manager ("0"));  // comparing, setcc
+    Node * n3 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, NUM_IMM, lexval_manager ("0"));  // comparing, setcc
+    Node * n6 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n5->token.token_value, NUM_IMM, lexval_manager ("0"));  // comparing, setcc
             
 
     n1->brother = n2;
@@ -707,12 +707,12 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
 
 
     return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
-    Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("1"));   // true, return 1
+    Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("1"));   // true, return 1
     Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);           // e1 calc
     Node * n3 = tag_nt_instr_interpreting(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);  // e2 calc
     Node * n4 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, TAG_TEMP, n3->token.token_value);  // comparing, setcc
             
-    Node * n6 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_INT, lexval_manager ("0"));   // false, return 0
+    Node * n6 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("0"));   // false, return 0
     Node * n7 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
     n7->token.token_value = n7->son->brother->token.token_value;
 
@@ -765,7 +765,7 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
 Node * line_if(Node * ast, int temp_in_rA, int temp_in_rB)
 {
     Node * n1 = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);           // 분기 조건 계산
-    Node * n2 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value, NUM_INT, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
+    Node * n2 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value, NUM_IMM, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
     Node * n4 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);           // then 수행
     
     Node * n6 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: then_end
@@ -805,7 +805,7 @@ Node * line_op_question(Node * ast, int temp_in_rA, int temp_in_rB)
     Node * op = ast->son->brother;
 
     Node * n1 = tag_nt_instr_interpreting(op->brother, temp_in_rA, temp_in_rB);           // 분기 조건 계산
-    Node * n2 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value, NUM_INT, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
+    Node * n2 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value, NUM_IMM, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
     
     Node * n4 = tag_nt_instr_interpreting(op->brother->brother, temp_in_rA, temp_in_rB);           // then 수행
     Node * n5 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, TAG_TEMP, n4->token.token_value);   // then 결과 저장
@@ -851,7 +851,7 @@ Node * line_while(Node * ast, int temp_in_rA, int temp_in_rB)
     n9->token.token_value = n9->son->brother->token.token_value;
 
     Node * n3 = tag_nt_instr_interpreting(ast, 0, 0);     // condition 수행
-    Node * n4 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value, NUM_INT, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
+    Node * n4 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value, NUM_IMM, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
     Node * n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n8->token.token_value);   // condition이 false일 경우. (0과 eq) while에서 탈출한다.
     Node * n6 = tag_nt_instr_interpreting(ast->brother, n2->token.token_value, n9->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
     Node * n7 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n1->token.token_value);   // 본문 수행 완료. while 시작으로 이동한다.
@@ -881,7 +881,7 @@ Node * line_do(Node * ast, int temp_in_rA, int temp_in_rB)
 
     Node * n2 = tag_nt_instr_interpreting(ast, n3->token.token_value, n7->token.token_value);     // 본문 수행. temp_rA=continue_out, temp_rB=break_out
     Node * n4 = tag_nt_instr_interpreting(ast->brother, 0, 0);     // condition 수행
-    Node * n5 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n4->token.token_value, NUM_INT, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
+    Node * n5 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n4->token.token_value, NUM_IMM, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
     Node * n6 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n1->token.token_value);   // condition이 true일 경우. (0과 ne) do 시작으로 이동한다.
 
     n1->brother = n2;
@@ -919,7 +919,7 @@ Node * line_for(Node * ast, int temp_in_rA, int temp_in_rB)
 
     if (ast->brother->token.token_number != NT_FOR_EXP) {
         Node * n3 = tag_nt_instr_interpreting(ast->brother, 0, 0);     // for 인자2 수행
-        Node * n_cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value, NUM_INT, lexval_manager ("0"));  // 반복 조건을 0과 비교, setcc
+        Node * n_cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value, NUM_IMM, lexval_manager ("0"));  // 반복 조건을 0과 비교, setcc
         Node * n4 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n9->token.token_value);   // condition이 false일 경우. (0과 eq) for 끝으로 이동한다.
         n2->brother = n3;
         n3->brother = n_cmp;
@@ -962,7 +962,7 @@ Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB)
         printf("DEBUG SWITCH CASE LOOP: I = %d, ast->token.token_value = %d\n\n\n", i, ast->token.token_value);
 
         if (case_table_list[ast->token.token_value][i]->is_default == 0) {
-            Node * cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, cond->token.token_value, NUM_INT, case_table_list[ast->token.token_value][i]->name);
+            Node * cmp = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, cond->token.token_value, NUM_IMM, case_table_list[ast->token.token_value][i]->name);
             Node * branch = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, case_table_list[ast->token.token_value][i]->id);
 
             n1_tail->brother = cmp;
