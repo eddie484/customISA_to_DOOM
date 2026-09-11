@@ -87,6 +87,7 @@
 
 #define NUM_LONG        65
 #define KW_LONG         66
+#define KW_SHORT        67
 
 
 #define NT_PROGRAM      100
