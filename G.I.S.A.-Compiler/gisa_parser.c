@@ -5,11 +5,10 @@
     <specifier> ::= <type> | "static" | "extern"
     <specifier_multi> ::= <specifier_list> | ε
     <type> ::= "int" | "long" | "short" | "signed" | "unsigned"
-    <param_list> ::= "void" | <param_type_list> IDENT <param_multi>
-    <param_multi> ::= "," <param_type_list> IDENT <param_multi> | ε
-    <param_type_list> ::= <param_type> <param_type_multi>
-    <param_type> ::= <type>
-    <param_type_multi> ::= <param_type_list> | ε
+    <param_list> ::= "void" | <type_list> IDENT <param_multi>
+    <param_multi> ::= "," <type_list> IDENT <param_multi> | ε
+    <type_list> ::= <type> <type_multi>
+    <type_multi> ::= <type_list> | ε
     <func_content> ::= <block> | ";"
     <block> ::= "{" <instr_list> "}"
     <instr_list> ::= <instr> <instr_list> | ε
@@ -23,8 +22,7 @@
     <for_init> ::= <var_declr> | <exp> ";" | ";"
     <for_exp> ::= <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "?" <exp> ":" <exp>
-    <factor> ::= NUM_INT | NUM_LONG | NUM_UINT | NUM_ULONG | IDENT <postfix> | <unary_op> <factor> | "(" <cast> ")" <factor> | "(" <exp> ")"
-    <cast> ::= <type>
+    <factor> ::= NUM_INT | NUM_LONG | NUM_UINT | NUM_ULONG | IDENT <postfix> | <unary_op> <factor> | "(" <type_list> ")" <factor> | "(" <exp> ")"
     <postfix> ::= "++" | "--" | "(" <arg_list> ")" | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "," <exp> <arg> | ε
@@ -39,11 +37,10 @@
     <specifier> ::= <type> | "KW_STATIC" | "KW_EXTERN"
     <specifier_multi> ::= <specifier_list> | ε
     <type> ::= "KW_INT" | "KW_LONG" | "KW_SHORT" | "KW_SIGNED" | "KW_UNSIGNED" 
-    <param_list> ::= "KW_VOID" | <param_type_list> IDENT <param_multi>
-    <param_multi> ::= "PN_COMMA" <param_type_list> IDENT <param_multi> | ε
-    <param_type_list> ::= <param_type> <param_type_multi>
-    <param_type> ::= <type>
-    <param_type_multi> ::= <param_type_list> | ε
+    <param_list> ::= "KW_VOID" | <type_list> IDENT <param_multi>
+    <param_multi> ::= "PN_COMMA" <type_list> IDENT <param_multi> | ε
+    <type_list> ::= <type> <type_multi>
+    <type_multi> ::= <type_list> | ε
     <func_content> ::= <block> | "PN_SEMI"
     <block> ::= "OPEN_BRACE" <instr_list> "CLOSE_BRACE"
     <instr_list> ::= <instr> <instr_list> | ε
@@ -57,8 +54,7 @@
     <for_init> ::= <var_declr> | <exp> "PN_SEMI" | "PN_SEMI"
     <for_exp> ::= <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "OP_QUESTION" <exp> " OP_COLON" <exp>
-    <factor> ::= NUM_INT | NUM_LONG | NUM_UINT | NUM_ULONG | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <cast> "CLOSE_PAREN" <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
-    <cast> ::= <type>
+    <factor> ::= NUM_INT | NUM_LONG | NUM_UINT | NUM_ULONG | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <type_list> "CLOSE_PAREN" <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
     <postfix> ::= "OP_INCREMENT" | "OP_DECREMENT" | "OPEN_PAREN" <arg_list> "CLOSE_PAREN" | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "PN_COMMA" <exp> <arg> | ε
@@ -73,11 +69,10 @@
     <specifier> ::= <type> | 63 | 64
     <specifier_multi> ::= <specifier_list> | ε
     <type> ::= 2 | 66 | 67 | 70 | 71
-    <param_list> ::= 3 | <param_type_list> 0 <param_multi>
-    <param_multi> ::= 62 <param_type_list> 0 <param_multi> | ε
-    <param_type_list> ::= <param_type> <param_type_multi>
-    <param_type> ::= <type>
-    <param_type_multi> ::= <param_type_list> | ε
+    <param_list> ::= 3 | <type_list> 0 <param_multi>
+    <param_multi> ::= 62 <type_list> 0 <param_multi> | ε
+    <type_list> ::= <type> <type_multi>
+    <type_multi> ::= <type_list> | ε
     <func_content> ::= <block> | 9
     <block> ::= 7 <instr_list> 8
     <instr_list> ::= <instr> <instr_list> | ε
@@ -91,8 +86,7 @@
     <for_init> ::= <var_declr> | <exp> 9 | 9
     <for_exp> ::= <exp> | ε
     <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> 51 <exp> 52 <exp>
-    <factor> ::= 1 | 65 | 68 | 69 | 0 <postfix> | <unary_op> <factor> | 5 <cast> 6 <factor> | 5 <exp> 6
-    <cast> ::= <type>
+    <factor> ::= 1 | 65 | 68 | 69 | 0 <postfix> | <unary_op> <factor> | 5 <type_list> 6 <factor> | 5 <exp> 6
     <postfix> ::= 13 | 44 | 5 <arg_list> 6 | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= 62 <exp> <arg> | ε
@@ -103,7 +97,7 @@
 
     ---
 
-FIRST(<program>) = {2, 63, 64, 66, 67, 70, 71, ε}
+    FIRST(<program>) = {2, 63, 64, 66, 67, 70, 71, ε}
 	FIRST(<func_declr>) = {2, 63, 64, 66, 67, 70, 71}
 	FIRST(<specifier_list>) = {2, 63, 64, 66, 67, 70, 71}
 	FIRST(<specifier>) = {2, 63, 64, 66, 67, 70, 71}
@@ -111,9 +105,8 @@ FIRST(<program>) = {2, 63, 64, 66, 67, 70, 71, ε}
 	FIRST(<type>) = {2, 66, 67, 70, 71}
 	FIRST(<param_list>) = {2, 3, 66, 67, 70, 71}
 	FIRST(<param_multi>) = {62, ε}
-	FIRST(<param_type_list>) = {2, 66, 67, 70, 71}
-	FIRST(<param_type>) = {2, 66, 67, 70, 71}
-	FIRST(<param_type_multi>) = {2, 66, 67, 70, 71, ε}
+	FIRST(<type_list>) = {2, 66, 67, 70, 71}
+	FIRST(<type_multi>) = {2, 66, 67, 70, 71, ε}
 	FIRST(<func_content>) = {7, 9}
 	FIRST(<block>) = {7}
 	FIRST(<instr_list>) = {0, 1, 2, 4, 5, 7, 9, 10, 11, 13, 24, 44, 49, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71, ε}
@@ -128,7 +121,6 @@ FIRST(<program>) = {2, 63, 64, 66, 67, 70, 71, ε}
 	FIRST(<for_exp>) = {0, 1, 5, 10, 11, 13, 24, 44, 65, 68, 69, ε}
 	FIRST(<exp>) = {0, 1, 5, 10, 11, 13, 24, 44, 65, 68, 69}
 	FIRST(<factor>) = {0, 1, 5, 10, 11, 13, 24, 44, 65, 68, 69}
-	FIRST(<cast>) = {2, 66, 67, 70, 71}
 	FIRST(<postfix>) = {5, 13, 44, ε}
 	FIRST(<arg_list>) = {0, 1, 5, 10, 11, 13, 24, 44, 65, 68, 69, ε}
 	FIRST(<arg>) = {62, ε}
@@ -143,9 +135,8 @@ FIRST(<program>) = {2, 63, 64, 66, 67, 70, 71, ε}
 	FOLLOW(<type>) = {0, 2, 6, 63, 64, 66, 67, 70, 71}
 	FOLLOW(<param_list>) = {6}
 	FOLLOW(<param_multi>) = {6}
-	FOLLOW(<param_type_list>) = {0}
-	FOLLOW(<param_type>) = {0, 2, 66, 67, 70, 71}
-	FOLLOW(<param_type_multi>) = {0}
+	FOLLOW(<type_list>) = {0, 6}
+	FOLLOW(<type_multi>) = {0, 6}
 	FOLLOW(<func_content>) = {$, 0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 24, 44, 49, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71}
 	FOLLOW(<block>) = {$, 0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 24, 44, 49, 50, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71}
 	FOLLOW(<instr_list>) = {8}
@@ -160,7 +151,6 @@ FIRST(<program>) = {2, 63, 64, 66, 67, 70, 71, ε}
 	FOLLOW(<for_exp>) = {6, 9}
 	FOLLOW(<exp>) = {6, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62}
 	FOLLOW(<factor>) = {6, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62}
-	FOLLOW(<cast>) = {6}
 	FOLLOW(<postfix>) = {6, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62}
 	FOLLOW(<arg_list>) = {6}
 	FOLLOW(<arg>) = {6}
@@ -246,10 +236,9 @@ Node * p_nt_specifier_multi(Lexer_result lex_input);
 Node * p_nt_type(Lexer_result lex_input);
 Node * p_nt_param_list(Lexer_result lex_input);
 Node * p_nt_param_multi(Lexer_result lex_input);
-Node * p_nt_param_type_list_calling(Lexer_result lex_input);
-Node * p_nt_param_type_list(Lexer_result lex_input);
-Node * p_nt_param_type(Lexer_result lex_input);
-Node * p_nt_param_type_multi(Lexer_result lex_input);
+Node * p_nt_type_list_calling(Lexer_result lex_input);
+Node * p_nt_type_list(Lexer_result lex_input);
+Node * p_nt_type_multi(Lexer_result lex_input);
 Node * p_nt_func_content(Lexer_result lex_input);
 Node * p_nt_block(Lexer_result lex_input);
 Node * p_nt_instr_list(Lexer_result lex_input);
@@ -320,13 +309,10 @@ int first(int input_token, int nt_set){
         case NT_PARAM_MULTI:
             return (input_token == 62);
 
-        case NT_PARAM_TYPE_LIST:
+        case NT_TYPE_LIST:
             return (input_token == 2 || input_token == 66 || input_token == 67 || input_token == 70 || input_token == 71);
 
-        case NT_PARAM_TYPE:
-            return (input_token == 2 || input_token == 66 || input_token == 67 || input_token == 70 || input_token == 71);
-
-        case NT_PARAM_TYPE_MULTI:
+        case NT_TYPE_MULTI:
             return (input_token == 2 || input_token == 66 || input_token == 67 || input_token == 70 || input_token == 71);
 
         case NT_FUNC_CONTENT:
@@ -370,9 +356,6 @@ int first(int input_token, int nt_set){
 
         case NT_FACTOR:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44 || input_token == 65 || input_token == 68 || input_token == 69);
-
-        case NT_CAST:
-            return (input_token == 2 || input_token == 66 || input_token == 67 || input_token == 70 || input_token == 71);
 
         case NT_POSTFIX:
             return (input_token == 5 || input_token == 13 || input_token == 44);
@@ -422,14 +405,11 @@ int follow(int input_token, int nt_set){
         case NT_PARAM_MULTI:
             return (input_token == 6);
 
-        case NT_PARAM_TYPE_LIST:
-            return (input_token == 0);
+        case NT_TYPE_LIST:
+            return (input_token == 0 || input_token == 6);
 
-        case NT_PARAM_TYPE:
-            return (input_token == 0 || input_token == 2 || input_token == 66 || input_token == 67 || input_token == 70 || input_token == 71);
-
-        case NT_PARAM_TYPE_MULTI:
-            return (input_token == 0);
+        case NT_TYPE_MULTI:
+            return (input_token == 0 || input_token == 6);
 
         case NT_FUNC_CONTENT:
             return (input_token == 999 || input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 7 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44 || input_token == 49 || input_token == 53 || input_token == 54 || input_token == 55 || input_token == 56 || input_token == 57 || input_token == 58 || input_token == 59 || input_token == 60 || input_token == 61 || input_token == 63 || input_token == 64 || input_token == 65 || input_token == 66 || input_token == 67 || input_token == 68 || input_token == 69 || input_token == 70 || input_token == 71);
@@ -472,9 +452,6 @@ int follow(int input_token, int nt_set){
 
         case NT_FACTOR:
             return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62);
-
-        case NT_CAST:
-            return (input_token == 6);
 
         case NT_POSTFIX:
             return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62);
@@ -828,14 +805,14 @@ Node * p_nt_param_list(Lexer_result lex_input){    // <param_list> ::= "void" | 
         printf("parsing: nt_param_list->kw_void\n");
         Node * x1 = p_terminal(lex_input, KW_VOID);
 
-        Node * param_node = node_maker(x1, NULL, NT_PARAM_TYPE_LIST, 0);
+        Node * param_node = node_maker(x1, NULL, NT_TYPE_LIST, 0);
         
         Node * n = node_maker(param_node, NULL, NT_PARAM_LIST, 0);
 
         return n;
-    } else if (first(nextSymbol.token_number, NT_PARAM_TYPE)) {
+    } else if (first(nextSymbol.token_number, NT_TYPE)) {
         printf("parsing: nt_param_list->nt_param\n");
-        Node * x1 = p_nt_param_type_list_calling(lex_input);
+        Node * x1 = p_nt_type_list_calling(lex_input);
         Node * x2 = p_terminal(lex_input, IDENT);
         Node * x3 = p_nt_param_multi(lex_input);
 
@@ -852,7 +829,7 @@ Node * p_nt_param_multi(Lexer_result lex_input){    // <param_multi> ::= "," <pa
     if (nextSymbol.token_number == PN_COMMA) {
         printf("parsing: nt_param_multi->pn_comma\n");
         Node * x1 = p_terminal(lex_input, PN_COMMA);
-        Node * x2 = p_nt_param_type_list_calling(lex_input);
+        Node * x2 = p_nt_type_list_calling(lex_input);
         Node * x3 = p_terminal(lex_input, IDENT);
         Node * x4 = p_nt_param_multi(lex_input);
 
@@ -870,10 +847,10 @@ Node * p_nt_param_multi(Lexer_result lex_input){    // <param_multi> ::= "," <pa
     } else error(2, nextSymbol);
 }
 
-Node * p_nt_param_type_list_calling(Lexer_result lex_input) {
-    if (first(nextSymbol.token_number, NT_PARAM_TYPE)) {
-        printf("parsing: nt_specifier_list_covering\n");
-        Node * x1 = p_nt_param_type_list(lex_input);
+Node * p_nt_type_list_calling(Lexer_result lex_input) {
+    if (first(nextSymbol.token_number, NT_TYPE)) {
+        printf("parsing: nt_type_list_covering\n");
+        Node * x1 = p_nt_type_list(lex_input);
 
         if (x1 == NULL) {
             printf("ERROR: 타입이 발견되지 않았습니다. 종료합니다.\n");
@@ -886,18 +863,18 @@ Node * p_nt_param_type_list_calling(Lexer_result lex_input) {
         }
 
         
-        Node * n = node_maker(x1, NULL, NT_PARAM_TYPE_LIST, 0);
+        Node * n = node_maker(x1, NULL, NT_TYPE_LIST, 0);
 
 
         return n;
     } else error(2, nextSymbol);
 }
 
-Node * p_nt_param_type_list(Lexer_result lex_input) {    // <p_nt_param_type_list> ::= <param_type> <param_type_multi>
-    if (first(nextSymbol.token_number, NT_PARAM_TYPE)) {
-        printf("parsing: nt_param_type_list->nt_param_type\n");
-        Node * x1 = p_nt_param_type(lex_input);
-        Node * x2 = p_nt_param_type_multi(lex_input);
+Node * p_nt_type_list(Lexer_result lex_input) {    // <p_nt_param_type_list> ::= <param_type> <param_type_multi>
+    if (first(nextSymbol.token_number, NT_TYPE)) {
+        printf("parsing: nt_type_list->nt_type\n");
+        Node * x1 = p_nt_type(lex_input);
+        Node * x2 = p_nt_type_multi(lex_input);
 
         x1->brother = x2;
         
@@ -905,23 +882,14 @@ Node * p_nt_param_type_list(Lexer_result lex_input) {    // <p_nt_param_type_lis
     } else error(2, nextSymbol);
 }
 
-Node * p_nt_param_type(Lexer_result lex_input){      // <p_nt_param_type> ::= <type>
-    if (first(nextSymbol.token_number, NT_TYPE)) {
-        printf("parsing: nt_param_type->nt_type\n");
-        Node * x1 = p_nt_type(lex_input);
+Node * p_nt_type_multi(Lexer_result lex_input) {   // <param_type_multi> ::= <param_type_list> | ε
+    if (first(nextSymbol.token_number, NT_TYPE_LIST)) {
+        printf("parsing: nt_type_multi->nt_type_list\n");
+        Node * x1 = p_nt_type_list(lex_input);
         
         return x1;
-    } else error(3, nextSymbol);
-}
-
-Node * p_nt_param_type_multi(Lexer_result lex_input) {   // <param_type_multi> ::= <param_type_list> | ε
-    if (first(nextSymbol.token_number, NT_PARAM_TYPE_LIST)) {
-        printf("parsing: nt_param_type_multi->nt_param_type_list\n");
-        Node * x1 = p_nt_param_type_list(lex_input);
-        
-        return x1;
-    } else if (follow(nextSymbol.token_number, NT_PARAM_TYPE_MULTI)) {
-        printf("parsing: nt_param_type_multi_null\n");
+    } else if (follow(nextSymbol.token_number, NT_TYPE_MULTI)) {
+        printf("parsing: nt_type_multi_null\n");
         Node * n = NULL;
 
         return n;
@@ -1484,7 +1452,7 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
     } else if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_TYPE)) {
         printf("parsing: nt_factor\n");
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
-        Node * type = p_nt_type(lex_input);
+        Node * type = p_nt_type_list_calling(lex_input);
         Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x4 = p_nt_factor(lex_input);
 
