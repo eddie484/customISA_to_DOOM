@@ -2532,7 +2532,14 @@ int main(int argc, char *argv[])
             token = strtok(NULL, " \t\n");
             int static_value = atoi(token);
             
-            binary |= (0b10110110U << 24);
+            if (static_size == 4) {
+                binary |= (0b10110110U << 24);  // STR
+            } else if (static_size == 2) {
+                binary |= (0b10111110U << 24);  // STRH
+            } else if (static_size == 1) {
+                binary |= (0b10111010U << 24);  // STRB
+            }
+            
             binary |= (0x0001U << 12);
             int addr = data_addr + static_location;
             int immBf = addr >> 12;
