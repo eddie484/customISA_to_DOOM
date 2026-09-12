@@ -89,6 +89,11 @@
 #define KW_LONG         66
 #define KW_SHORT        67
 
+#define NUM_UINT        68
+#define NUM_ULONG       69
+#define KW_SIGNED       70
+#define KW_UNSIGNED     71
+
 
 #define NT_PROGRAM      100
 #define NT_FUNC_DECLR   101

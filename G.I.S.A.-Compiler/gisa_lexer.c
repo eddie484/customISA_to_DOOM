@@ -287,7 +287,7 @@ Lexer_result lexer(char *prep_name, char *lex_name)
             // state = 3. 상수 탐지 중.
             } else if (cur_state == 3) {
                 if (check_right_word_boundary(buf[cur_index + 1])) cur_state = 4;
-                else if ('0' <= c && c <= '9') {
+                else if (('0' <= c && c <= '9') || ('A' <= c && c <= 'Z') || ('a' <= c && c <= 'z')) {
                     cur_state = 3;
                 }
                 else {
@@ -373,6 +373,14 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     lexeme[lexeme_count].token_number = KW_SHORT;
                     lexeme[lexeme_count].token_value = 0;
                     //printf("DEFAULT");
+                } else if (!strcmp(get_str, "signed")) {
+                    lexeme[lexeme_count].token_number = KW_SIGNED;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("DEFAULT");
+                } else if (!strcmp(get_str, "unsigned")) {
+                    lexeme[lexeme_count].token_number = KW_UNSIGNED;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("DEFAULT");
                 } else {
                     lexeme[lexeme_count].token_number = IDENT;
                     lexeme[lexeme_count].token_value = lexval_manager (get_str);
@@ -392,18 +400,31 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 char get_num[cur_index + 1];
                 snprintf(get_num, cur_index + 1, "%s", buf);
 
-                if (get_num[cur_index - 1] == 'l' || get_num[cur_index - 1] == 'L') {
+                if (((get_num[cur_index - 1] == 'l' || get_num[cur_index - 1] == 'L' ) && (get_num[cur_index - 2] == 'u' || get_num[cur_index - 2] == 'U')) || ((get_num[cur_index - 1] == 'u' || get_num[cur_index - 1] == 'U' ) && (get_num[cur_index - 2] == 'l' || get_num[cur_index - 2] == 'L'))) {
+                    get_num[cur_index - 2] = '\0';
+                    lexeme[lexeme_count].token_number = NUM_ULONG;
+                } else if (get_num[cur_index - 1] == 'l' || get_num[cur_index - 1] == 'L') {
                     get_num[cur_index - 1] = '\0';
                     lexeme[lexeme_count].token_number = NUM_LONG;
-                    lexeme[lexeme_count].token_value = lexval_manager(get_num);
+                } else if (get_num[cur_index - 1] == 'u' || get_num[cur_index - 1] == 'U') {
+                    get_num[cur_index - 1] = '\0';
+                    lexeme[lexeme_count].token_number = NUM_UINT;
                 } else if (get_num[cur_index - 1] >= '0' && get_num[cur_index - 1] <= '9') {
                     lexeme[lexeme_count].token_number = NUM_INT;
-                    lexeme[lexeme_count].token_value = lexval_manager(get_num);
                 } else {
                     printf("잘못된 정수 접미사가 발견되었습니다: %s. 종료합니다.\n", get_num);
                     exit(1);
                 }
                 
+                char * num_check = get_num;
+                while (*num_check) {
+                    if (!isdigit(*num_check)) {
+                        printf("정수 NUM을 받는 중 오류가 발생했습니다. 정수 안에 숫자 외의 문자가 들어갔습니다: %s. 종료합니다.\n", get_num);
+                        exit(1);
+                    }
+                    num_check++;
+                }
+                lexeme[lexeme_count].token_value = lexval_manager(get_num);
 
                 printf("<%d, %d>, %s\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value, get_num);
                 fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
