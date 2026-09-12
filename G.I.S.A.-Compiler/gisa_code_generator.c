@@ -345,6 +345,12 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             Node * n = node_maker(n1, NULL, ASM_LINE_SET, tag->token.token_value);
 
             return n;
+        } else if (tag->son->token.token_number == TAG_SIGNEXT || tag->son->token.token_number == TAG_ZEROEXT || tag->son->token.token_number == TAG_BYTECUT) {
+            Node * n1 = line_maker(ASM_MOV, tag->son->brother->token.token_number, tag->son->brother->token.token_value, TAG_TEMP, 0, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value);    // 모든 연산을 메모리->레지스터->메모리 로 진행하는 현재 구조 상, 별도의 바이트 확장/절단 없이 str/ldr 조합으로 가능하고, 해당 부분은 중복처리 되므로, 해당 부분은 차후 레지스터 최적화 이후, 레지스터 비트확장/감소가 필요해질 경우 구현한다.
+
+            Node * n = node_maker(n1, NULL, ASM_LINE_SET, tag->token.token_value);
+
+            return n;
         } else {
             Node * x4 = node_maker(NULL, NULL, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value);
             Node * x3 = node_maker(NULL, x4, tag->son->brother->brother->token.token_number, tag->son->brother->brother->token.token_value);
@@ -472,10 +478,24 @@ void asm_pass2_temp_to_stack(Node * node) {
                 snprintf(str, sizeof(str), "%d", n);
 
                 Node * original_line_node;
-                if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                        original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                    }
+                    
                 } else {
-                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                        original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    }
+                    
                 }
                 Node * son = original_line_node->son;
 
@@ -497,10 +517,24 @@ void asm_pass2_temp_to_stack(Node * node) {
                 snprintf(str, sizeof(str), "%d", n);
 
                 Node * store_rD;
-                if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                        store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        store_rD = line_maker(ASM_STRH, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        store_rD = line_maker(ASM_STRB, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                    }
+                    
                 } else {
-                    store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                        store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        store_rD = line_maker(ASM_STRH, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        store_rD = line_maker(ASM_STRB, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    }
+                    
                 }
                 store_rD->brother = node->brother;
 
@@ -519,10 +553,24 @@ void asm_pass2_temp_to_stack(Node * node) {
             snprintf(str, sizeof(str), "%d", n);
 
             Node * original_line_node;
-            if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                }
+                
             } else {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                }
+                
             }
             Node * son = original_line_node->son;
 
@@ -547,10 +595,24 @@ void asm_pass2_temp_to_stack(Node * node) {
                 snprintf(str, sizeof(str), "%d", n);
 
                 Node * line_ldr_rb;
-                if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                        line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        line_ldr_rb = line_maker(ASM_LDRSH, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        line_ldr_rb = line_maker(ASM_LDRSB, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                    }
+                    
                 } else {
-                    line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                        line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        line_ldr_rb = line_maker(ASM_LDRSH, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        line_ldr_rb = line_maker(ASM_LDRSB, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                    } 
+                    
                 }
 
                 node->brother = line_ldr_rb;
@@ -569,9 +631,22 @@ void asm_pass2_temp_to_stack(Node * node) {
 
             Node * original_line_node;
             if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+                }
+                
             } else {
-                original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                }
             }
             Node * son = original_line_node->son;
 

@@ -74,7 +74,7 @@ Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB);
 
 int temp_registration(int bytewidth);
 Node * type_regulation(Node * node);
-Node * tag_nt_cast(Node * ast);
+Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB);
 
 
 
@@ -113,6 +113,9 @@ Node * type_regulation(Node * node) {
     if ((node->token.token_number == KW_INT || node->token.token_number == KW_LONG) && node->brother == NULL) {
         node->token.token_number = TYPE_BYTEWIDTH;
         node->token.token_value = 4;
+    } else if ((node->token.token_number == KW_SHORT) && node->brother == NULL) {
+        node->token.token_number = TYPE_BYTEWIDTH;
+        node->token.token_value = 2;
     } else if ((node->token.token_number == TYPE_BYTEWIDTH) && node->brother == NULL) {
         
     } else {
@@ -124,13 +127,15 @@ Node * type_regulation(Node * node) {
     return node;
 }
 
-Node * tag_nt_cast(Node * ast) {
+Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
     Node * casting_type = type_regulation(ast->son->son);
     Node * original_type = type_regulation(ast->son->brother->son->son);
     Node * casting_instr;
 
     if (casting_type->token.token_value == original_type->token.token_value) {
         printf("같은 비트폭으로 캐스팅을 시도하고 있습니다. 캐스팅을 생략합니다.\n");
+        Node * n = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
+
         Node * original_node = ast->son->brother;
         tree_malloc_cleaner(ast->son->son);
         free(ast->son);
@@ -139,14 +144,52 @@ Node * tag_nt_cast(Node * ast) {
         ast->token.token_value = original_node->token.token_value;
         if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
         free(original_node);
+
+        return n;
+
     } else if (casting_type->token.token_value > original_type->token.token_value) {
+        Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
+        Node * n2 = line_maker(TAG_SIGNEXT, TAG_TEMP, temp_registration(casting_type->token.token_value), TYPE_BYTEWIDTH, casting_type->token.token_value, TAG_TEMP, n1->token.token_value);
+        n2->token.token_value = n2->son->brother->token.token_value;
+
+        n1->brother = n2;
+
+        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
+
+        Node * original_node = ast->son->brother;
+        tree_malloc_cleaner(ast->son->son);
+        free(ast->son);
+        ast->son = original_node->son;
+        ast->token.token_number = original_node->token.token_number;
+        ast->token.token_value = original_node->token.token_value;
+        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
+        free(original_node);
+
+        return n;
         
     } else if (casting_type->token.token_value < original_type->token.token_value) {
+        Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
+        Node * n2 = line_maker(TAG_BYTECUT, TAG_TEMP, temp_registration(casting_type->token.token_value), TYPE_BYTEWIDTH, casting_type->token.token_value, TAG_TEMP, n1->token.token_value);
+        n2->token.token_value = n2->son->brother->token.token_value;
+
+        n1->brother = n2;
+
+        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
+
+        Node * original_node = ast->son->brother;
+        tree_malloc_cleaner(ast->son->son);
+        free(ast->son);
+        ast->son = original_node->son;
+        ast->token.token_number = original_node->token.token_number;
+        ast->token.token_value = original_node->token.token_value;
+        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
+        free(original_node);
         
+        return n;
     }
 
     if (ast->son->token.token_number == NT_CAST) {
-        tag_nt_cast(ast);
+        tag_nt_cast(ast, temp_in_rA, temp_in_rB);
     }
     
 
@@ -386,7 +429,9 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             type_regulation(ast->son->son);
         } else if (ast->son->token.token_number == NT_CAST) {
             printf("NT_CAST\n");
-            tag_nt_cast(ast);
+            Node * n = tag_nt_cast(ast, temp_in_rA, temp_in_rB);
+
+            return n;
         }
         
         // 연산처리
@@ -463,6 +508,10 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         } else {
             printf("EXP로 허용되지 않는 토큰 입력: <%d, %d>\n", ast->son->brother->token.token_number, ast->son->brother->token.token_value);
             exit(1);
+        }
+
+        if (ast->son->token.token_number == NT_CAST) {
+            
         }
 
 

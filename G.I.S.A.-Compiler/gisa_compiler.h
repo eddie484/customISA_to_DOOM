@@ -149,6 +149,9 @@
 #define TAG_GLOBAL_LIST 317
 #define TAG_STATIC_VAR  318
 #define TAG_STATIC_LIST 319
+#define TAG_SIGNEXT     320
+#define TAG_ZEROEXT     321
+#define TAG_BYTECUT     322
 
 #define NUM_IMM         349
 #define TYPE_BYTEWIDTH  350
@@ -196,7 +199,11 @@
 #define ASM_MOD         411
 #define ASM_NOT         436
 #define ASM_LDR         440
+#define ASM_LDRSB       442
+#define ASM_LDRSH       444
 #define ASM_STR         445
+#define ASM_STRB        446
+#define ASM_STRH        447
 #define ASM_B           450
 
 #define ASM_MOVH        403
@@ -215,11 +222,7 @@
 #define ASM_XOR         435
 #define ASM_BCHK        437
 #define ASM_LDRB        441
-#define ASM_LDRSB       442
 #define ASM_LDRH        443
-#define ASM_LDRSH       444
-#define ASM_STRB        446
-#define ASM_STRH        447
 #define ASM_JMP         451
 #define ASM_JMPL        452
 

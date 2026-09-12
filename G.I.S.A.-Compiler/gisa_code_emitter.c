@@ -317,6 +317,52 @@ void asm_printer(Node * node, FILE * codeemitfp){
                     break;
                 }
 
+                case ASM_LDRSH: {
+                    if (1) {
+                        if (node->son->brother->brother->token.token_number == ASM_DATA_AREA) {
+                            if (symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->is_global == 1) {
+                                printf("\tLDRSHI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                                fprintf(codeemitfp, "\tLDRSHI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            } else {
+                                printf("\tLDRSHI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                                fprintf(codeemitfp, "\tLDRSHI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                            }
+                            
+                        } else {
+                            char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                            printf("\tLDRSH R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                            fprintf(codeemitfp, "\tLDRSH R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        }
+                        
+                    } else {
+                        printf("LDRSH의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+                case ASM_LDRSB: {
+                    if (1) {
+                        if (node->son->brother->brother->token.token_number == ASM_DATA_AREA) {
+                            if (symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->is_global == 1) {
+                                printf("\tLDRSBI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                                fprintf(codeemitfp, "\tLDRSBI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            } else {
+                                printf("\tLDRSBI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                                fprintf(codeemitfp, "\tLDRSBI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                            }
+                            
+                        } else {
+                            char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                            printf("\tLDRSB R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                            fprintf(codeemitfp, "\tLDRSB R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        }
+                        
+                    } else {
+                        printf("LDRSB의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
                 case ASM_STR: {
                     if (1) {
                         if (node->son->brother->brother->token.token_number == ASM_DATA_AREA) {
@@ -335,6 +381,50 @@ void asm_printer(Node * node, FILE * codeemitfp){
                         
                     } else {
                         printf("STR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+                case ASM_STRH: {
+                    if (1) {
+                        if (node->son->brother->brother->token.token_number == ASM_DATA_AREA) {
+                            if (symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->is_global == 1) {
+                                printf("\tSTRHI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                                fprintf(codeemitfp, "\tSTRHI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            } else {
+                                printf("\tSTRHI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                                fprintf(codeemitfp, "\tSTRHI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                            }
+                        } else {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                        printf("\tSTRH R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tSTRH R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        }
+                        
+                    } else {
+                        printf("STRH의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+                case ASM_STRB: {
+                    if (1) {
+                        if (node->son->brother->brother->token.token_number == ASM_DATA_AREA) {
+                            if (symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->is_global == 1) {
+                                printf("\tSTRBI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                                fprintf(codeemitfp, "\tSTRBI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            } else {
+                                printf("\tSTRBI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                                fprintf(codeemitfp, "\tSTRBI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                            }
+                        } else {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                        printf("\tSTRB R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tSTRB R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        }
+                        
+                    } else {
+                        printf("STRB의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
                     }
                     break;
                 }
