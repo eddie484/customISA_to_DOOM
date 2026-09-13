@@ -72,19 +72,19 @@ Node * line_for(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB);
 
 
-int temp_registration(int bytewidth);
+int temp_registration(Node * type_tree);
 Node * type_regulation(Node * node);
 Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB);
 
 
 
-int temp_registration(int bytewidth){
+int temp_registration(Node * type_tree){
     Symbol_info * symbol = malloc(sizeof(Symbol_info));
     symbol->name = TAG_TEMP;
     symbol->id = temp_count;
     // symbol_id_count++;
-    symbol->type_tree = node_maker(NULL, NULL, TYPE_BYTEWIDTH, bytewidth);
-    symbol->size = bytewidth;
+    symbol->type_tree = type_tree;
+    symbol->size = type_tree->brother->token.token_value;
     symbol->location.type = 0;
     symbol->location.location = 0;
     symbol->is_func = 0;
@@ -101,7 +101,7 @@ int temp_registration(int bytewidth){
         temp_table = realloc(temp_table, sizeof(Symbol_info*) * temp_table_limit);
     }
 
-    printf("바이트 폭이 %d인 ID %d 임시변수를 저장했습니다.\n", bytewidth, symbol->id);
+    printf("바이트 폭이 %d인 ID %d 임시변수를 저장했습니다.\n", symbol->size, symbol->id);
 
         
 
@@ -128,11 +128,14 @@ Node * type_regulation(Node * node) {
 }
 
 Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
-    Node * casting_type = type_regulation(ast->son->son);
-    Node * original_type = type_regulation(ast->son->brother->son->son);
+    type_regulation(ast->son->son->brother);
+    type_regulation(ast->son->brother->son->son->brother);
+
+    Node * casting_type = ast->son->son;
+    Node * original_type = ast->son->brother->son->son;
     Node * casting_instr;
 
-    if (casting_type->token.token_value == original_type->token.token_value) {
+    if (compare_tree(casting_type, original_type) == 1) {
         printf("같은 비트폭으로 캐스팅을 시도하고 있습니다. 캐스팅을 생략합니다.\n");
         Node * n = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
 
@@ -147,9 +150,49 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
 
         return n;
 
-    } else if (casting_type->token.token_value > original_type->token.token_value) {
+    } else if (casting_type->brother->token.token_value == original_type->brother->token.token_value) {
         Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
-        Node * n2 = line_maker(TAG_SIGNEXT, TAG_TEMP, temp_registration(casting_type->token.token_value), TYPE_BYTEWIDTH, casting_type->token.token_value, TAG_TEMP, n1->token.token_value);
+        Node * n2 = line_maker(TAG_MOV, TAG_TEMP, temp_registration(casting_type), TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
+        n2->token.token_value = n2->son->brother->token.token_value;
+
+        n1->brother = n2;
+
+        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
+
+        Node * original_node = ast->son->brother;
+        tree_malloc_cleaner(ast->son->son);
+        free(ast->son);
+        ast->son = original_node->son;
+        ast->token.token_number = original_node->token.token_number;
+        ast->token.token_value = original_node->token.token_value;
+        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
+        free(original_node);
+
+        return n;
+    } else if (casting_type->brother->token.token_value < original_type->brother->token.token_value) {
+        Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
+        Node * n2 = line_maker(TAG_BYTECUT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
+        n2->token.token_value = n2->son->brother->token.token_value;
+
+        n1->brother = n2;
+
+        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
+
+        Node * original_node = ast->son->brother;
+        tree_malloc_cleaner(ast->son->son);
+        free(ast->son);
+        ast->son = original_node->son;
+        ast->token.token_number = original_node->token.token_number;
+        ast->token.token_value = original_node->token.token_value;
+        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
+        free(original_node);
+        
+        return n;
+    } else if (casting_type->brother->token.token_value > original_type->brother->token.token_value) {
+        Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
+        Node * n2;
+        if (original_type->token.token_number == KW_SIGNED) n2 = line_maker(TAG_SIGNEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
+        else if (original_type->token.token_number == KW_UNSIGNED) n2 = line_maker(TAG_ZEROEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
         n2->token.token_value = n2->son->brother->token.token_value;
 
         n1->brother = n2;
@@ -167,25 +210,6 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
 
         return n;
         
-    } else if (casting_type->token.token_value < original_type->token.token_value) {
-        Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
-        Node * n2 = line_maker(TAG_BYTECUT, TAG_TEMP, temp_registration(casting_type->token.token_value), TYPE_BYTEWIDTH, casting_type->token.token_value, TAG_TEMP, n1->token.token_value);
-        n2->token.token_value = n2->son->brother->token.token_value;
-
-        n1->brother = n2;
-
-        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
-
-        Node * original_node = ast->son->brother;
-        tree_malloc_cleaner(ast->son->son);
-        free(ast->son);
-        ast->son = original_node->son;
-        ast->token.token_number = original_node->token.token_number;
-        ast->token.token_value = original_node->token.token_value;
-        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
-        free(original_node);
-        
-        return n;
     }
 
     if (ast->son->token.token_number == NT_CAST) {
@@ -245,7 +269,7 @@ Node * tag_symbol(Node * ast){
             n1->son = tag_arg_start;
         } 
         
-        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(symbol->size));
+        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(symbol->type_tree));
 
         n1->brother = n2;
         
@@ -426,7 +450,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         // 타입처리
         if (ast->son->token.token_number == SEM_TYPE) {
             printf("SEM_TYPE\n");
-            type_regulation(ast->son->son);
+            type_regulation(ast->son->son->brother);
         } else if (ast->son->token.token_number == NT_CAST) {
             printf("NT_CAST\n");
             Node * n = tag_nt_cast(ast, temp_in_rA, temp_in_rB);
@@ -461,7 +485,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n3->token.token_value);
 
             return n;
-        } else if (ast->son->brother->token.token_number == NUM_INT || ast->son->brother->token.token_number == NUM_LONG) {
+        } else if (ast->son->brother->token.token_number == NUM_INT || ast->son->brother->token.token_number == NUM_LONG || ast->son->brother->token.token_number == NUM_UINT || ast->son->brother->token.token_number == NUM_ULONG) {
             Node * n1 = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);
 
             return n1;
@@ -610,7 +634,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     // NUM일 경우
     } else if (ast->brother->token.token_number == NUM_INT) {
         printf("enter NUM_INT\n");
-        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, NUM_IMM, ast->brother->token.token_value);
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son), TAG_TEMP, 0, NUM_IMM, ast->brother->token.token_value);
                 
         n->token.token_value = n->son->brother->token.token_value;
 
@@ -620,7 +644,27 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
     } else if (ast->brother->token.token_number == NUM_LONG) {
         printf("enter NUM_LONG\n");
-        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, NUM_IMM, ast->brother->token.token_value);
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son), TAG_TEMP, 0, NUM_IMM, ast->brother->token.token_value);
+                
+        n->token.token_value = n->son->brother->token.token_value;
+
+        printf("\tINSTR: %d temp.%d %d\n", n->son->token.token_number, n->son->brother->token.token_value, n->son->brother->brother->brother->token.token_value);
+
+        return n;
+
+    } else if (ast->brother->token.token_number == NUM_UINT) {
+        printf("enter NUM_UINT\n");
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son), TAG_TEMP, 0, NUM_IMM, ast->brother->token.token_value);
+                
+        n->token.token_value = n->son->brother->token.token_value;
+
+        printf("\tINSTR: %d temp.%d %d\n", n->son->token.token_number, n->son->brother->token.token_value, n->son->brother->brother->brother->token.token_value);
+
+        return n;
+
+    } else if (ast->brother->token.token_number == NUM_ULONG) {
+        printf("enter NUM_ULONG\n");
+        Node * n = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son), TAG_TEMP, 0, NUM_IMM, ast->brother->token.token_value);
                 
         n->token.token_value = n->son->brother->token.token_value;
 
@@ -631,7 +675,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     // 단항 연산자일 경우 (OP_TILDE, OP_NEG)
     } else if (ast->brother->token.token_number == OP_TILDE || ast->brother->token.token_number == OP_NEG) {
         printf("enter OP_%d\n", ast->brother->token.token_number);
-        Node * n = line_maker(ast->brother->token.token_number, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
+        Node * n = line_maker(ast->brother->token.token_number, TAG_TEMP, temp_registration(ast->son), TAG_TEMP, 0, TAG_TEMP, temp_in_rB);
         
         n->token.token_value = n->son->brother->token.token_value;
 
@@ -640,7 +684,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     // 이항 연산자일 경우 (OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_AND, OP_OR, OP_XOR, OP_SHL, OP_ASR)
     } else if (ast->brother->token.token_number >= OP_ADD && ast->brother->token.token_number <= OP_ASR) {
         printf("enter OP_%d\n", ast->brother->token.token_number);
-        Node * n = line_maker(ast->brother->token.token_number, TAG_TEMP, temp_registration(ast->son->token.token_value), TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+        Node * n = line_maker(ast->brother->token.token_number, TAG_TEMP, temp_registration(ast->son), TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
         
         n->token.token_value = n->son->brother->token.token_value;
 
@@ -678,7 +722,7 @@ Node * line_op_logic_not(Node * ast, int temp_in_rA, int temp_in_rB)
     int return_val_temp;
 
 
-    return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
+    return_val_temp = temp_registration(ast->son->son); // true/false값 저장.
     Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("1"));   // true, return 1
     Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);           // e1 calc
     Node * n3 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value, NUM_IMM, lexval_manager ("0"));  // comparing, setcc
@@ -709,7 +753,7 @@ Node * line_op_logic_and_or(Node * ast, int temp_in_rA, int temp_in_rB)
     Node * n9 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
     n9->token.token_value = n9->son->brother->token.token_value;
 
-    return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
+    return_val_temp = temp_registration(ast->son->son); // true/false값 저장.
 
     Node * n8;
     Node * n1;
@@ -755,7 +799,7 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
     int return_val_temp;
 
 
-    return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
+    return_val_temp = temp_registration(ast->son->son); // true/false값 저장.
     Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager ("1"));   // true, return 1
     Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);           // e1 calc
     Node * n3 = tag_nt_instr_interpreting(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);  // e2 calc
@@ -849,7 +893,7 @@ Node * line_if(Node * ast, int temp_in_rA, int temp_in_rB)
 
 Node * line_op_question(Node * ast, int temp_in_rA, int temp_in_rB)
 {
-    int return_val_temp = temp_registration(ast->son->son->token.token_value); // true/false값 저장.
+    int return_val_temp = temp_registration(ast->son->son); // true/false값 저장.
 
     Node * op = ast->son->brother;
 
