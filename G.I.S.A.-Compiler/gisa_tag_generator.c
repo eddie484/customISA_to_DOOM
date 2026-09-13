@@ -83,7 +83,7 @@ int temp_registration(Node * type_tree){
     symbol->name = TAG_TEMP;
     symbol->id = temp_count;
     // symbol_id_count++;
-    symbol->type_tree = type_tree;
+    symbol->type_tree = copy_tree(type_tree);
     symbol->size = type_tree->brother->token.token_value;
     symbol->location.type = 0;
     symbol->location.location = 0;
@@ -189,10 +189,11 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
         
         return n;
     } else if (casting_type->brother->token.token_value > original_type->brother->token.token_value) {
+        int original_type_signed = original_type->token.token_number;
         Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
         Node * n2;
-        if (original_type->token.token_number == KW_SIGNED) n2 = line_maker(TAG_SIGNEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
-        else if (original_type->token.token_number == KW_UNSIGNED) n2 = line_maker(TAG_ZEROEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
+        if (original_type_signed == KW_SIGNED) n2 = line_maker(TAG_SIGNEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
+        else if (original_type_signed == KW_UNSIGNED) n2 = line_maker(TAG_ZEROEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
         n2->token.token_value = n2->son->brother->token.token_value;
 
         n1->brother = n2;
@@ -269,7 +270,10 @@ Node * tag_symbol(Node * ast){
             n1->son = tag_arg_start;
         } 
         
-        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(symbol->type_tree));
+        Node * func_type = copy_tree(symbol->type_tree->son);
+        type_regulation(func_type->brother);
+        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(func_type));
+        tree_malloc_cleaner(func_type);
 
         n1->brother = n2;
         
