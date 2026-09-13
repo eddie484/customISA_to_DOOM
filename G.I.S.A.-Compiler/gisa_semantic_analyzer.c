@@ -67,15 +67,14 @@ int type_size_calc(int type) {
     if (type == KW_INT) return 4;
     else if (type == KW_LONG) return 4;
     else if (type == KW_SHORT) return 2;
+    else return 0;
 }
 
-int type_tree_size(Node * node) {
-    int size = 0;
-
+int type_tree_size(Node * node, int size) {
     size += type_size_calc(node->token.token_number);
 
-    if (node->son != NULL) size += type_tree_size(node->son);
-    if (node->brother != NULL) size += type_tree_size(node->brother);
+    if (node->son != NULL) size += type_tree_size(node->son, size);
+    if (node->brother != NULL) size += type_tree_size(node->brother, size);
 
     return size;
 }
@@ -228,7 +227,7 @@ int symbol_maker(Node * declr_node) {
             symbol->name = ident_node->token.token_value;
             symbol->id = symbol_id_count++;
             symbol->type_tree = get_type_tree_from_var_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
-            symbol->size = type_tree_size(symbol->type_tree);               // 수정 및 처리가 필요할듯.
+            symbol->size = type_tree_size(symbol->type_tree, 0);               // 수정 및 처리가 필요할듯.
             symbol->location.type = 0;
             symbol->location.location = 0;
             symbol->is_func = 0;
@@ -310,7 +309,7 @@ int symbol_maker(Node * declr_node) {
                     if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                         symbol->init_option = 2;
                         symbol->init_value = 0;
-                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG)) { // 초기값이 상수인 경우
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG)) { // 초기값이 상수인 경우
                         symbol->init_option = 1;
                         char cut_val[12];
                         snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
@@ -365,12 +364,12 @@ int symbol_maker(Node * declr_node) {
         Symbol_info * symbol = malloc(sizeof(Symbol_info));
         symbol->name = ident_node->token.token_value;
         symbol->id = symbol_id_count++;
-        if (declr_node->token.token_number == NT_PARAM_TYPE_LIST) {
+        if (declr_node->token.token_number == NT_TYPE_LIST) {
             symbol->type_tree = get_type_tree_from_param_var_declr(declr_node, ident_node);
         } else {
             symbol->type_tree = get_type_tree_from_var_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
         }
-        symbol->size = type_tree_size(symbol->type_tree);               // 위의 while문에서 typetree 만드는 함수도 만들어 호출하면 좋을것 같음.
+        symbol->size = type_tree_size(symbol->type_tree, 0);               // 위의 while문에서 typetree 만드는 함수도 만들어 호출하면 좋을것 같음.
         symbol->location.type = 0;
         symbol->location.location = 0;
         symbol->is_func = 0;
@@ -504,7 +503,7 @@ int symbol_maker(Node * declr_node) {
         symbol->name = ident_node->token.token_value;
         symbol->id = symbol_id_count++;
         symbol->type_tree = get_type_tree_from_func_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
-        symbol->size = type_tree_size(symbol->type_tree->son);               // 수정 및 처리가 필요할듯.
+        symbol->size = type_tree_size(symbol->type_tree->son, 0);               // 수정 및 처리가 필요할듯.
         symbol->location.type = 0;
         symbol->location.location = 0;
         symbol->is_func = 1;
@@ -799,26 +798,27 @@ void func_typetree_validate(Node * symbol_node) {
 
 Node * get_type_tree_from_var_declr(Node * declr_node, Node * ident_node) {
     // return_type-param1_type-param2_type-param3_type....
-    Node * type_tree = node_maker(NULL, NULL, declr_node->son->son->brother->brother->token.token_number, 0);
+    Node * type_tree = copy_tree(declr_node->son->son->brother->brother);
 
     return type_tree;
 }
 
 Node * get_type_tree_from_param_var_declr(Node * declr_node, Node * ident_node) {
     // return_type-param1_type-param2_type-param3_type....
-    Node * type_tree = node_maker(NULL, NULL, declr_node->son->token.token_number, 0);
+    Node * type_tree = copy_tree(declr_node->son);
 
     return type_tree;
 }
 
 Node * get_type_tree_from_func_declr(Node * declr_node, Node * ident_node) {
     // return_type-param1_type-param2_type-param3_type....
-    Node * type_tree = node_maker(node_maker(NULL, NULL, declr_node->son->son->brother->brother->token.token_number, 0), NULL, SEM_TYPE, 0);
+    Node * type_tree = node_maker(copy_tree(declr_node->son->son->brother->brother), NULL, SEM_TYPE, 0);
     Node * type_tree_current = type_tree;
     Node * param_node = ident_node->brother->son;
     while (param_node != NULL) {
         Node * param_node_son_holder = param_node->son;
         Node * param_node_type_holder = node_maker(NULL, NULL, param_node_son_holder->token.token_number, param_node_son_holder->token.token_value);
+        Node * param_node_type_holder_start = param_node_type_holder;
         param_node_son_holder = param_node_son_holder->brother;
         while (param_node_son_holder != NULL && param_node_son_holder->token.token_number != IDENT) {
         param_node_type_holder->brother = node_maker(NULL, NULL, param_node_son_holder->token.token_number, param_node_son_holder->token.token_value);
@@ -826,7 +826,7 @@ Node * get_type_tree_from_func_declr(Node * declr_node, Node * ident_node) {
             param_node_type_holder = param_node_type_holder->brother;
         }
 
-        type_tree_current->brother = node_maker(param_node_type_holder, NULL, SEM_TYPE, 0);
+        type_tree_current->brother = node_maker(param_node_type_holder_start, NULL, SEM_TYPE, 0);
         type_tree_current = type_tree_current->brother;
 
         param_node = param_node->brother;
@@ -1013,7 +1013,7 @@ void ident_symbolizer(Node * node) {
         push();
 
         Node * param_node = ident_node->brother->son;
-        while (param_node != NULL && param_node->token.token_number == NT_PARAM_TYPE_LIST && param_node->son->token.token_number != KW_VOID) {
+        while (param_node != NULL && param_node->token.token_number == NT_TYPE_LIST && param_node->son->token.token_number != KW_VOID) {
             int param_node_id = symbol_maker(param_node);
 
             Node * param_node_son = param_node->son;
@@ -1064,12 +1064,16 @@ void ident_symbolizer(Node * node) {
     if (node->token.token_number == NT_BLOCK) {
         pop();
 
-    } else if (node->token.token_number == NUM_INT || node->token.token_number == NUM_LONG) {
+    } else if (node->token.token_number == NUM_INT || node->token.token_number == NUM_LONG || node->token.token_number == NUM_UINT || node->token.token_number == NUM_ULONG) {
         Node * type = node_maker(NULL, NULL, SEM_TYPE, 0);
         if (node->token.token_number == NUM_INT) {
-            type->son = node_maker(NULL, NULL, KW_INT, 0);
+            type->son = node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0);
         } else if (node->token.token_number == NUM_LONG) {
-            type->son = node_maker(NULL, NULL, KW_LONG, 0);
+            type->son = node_maker(NULL, node_maker(NULL, NULL, KW_LONG, 0), KW_SIGNED, 0);
+        } else if (node->token.token_number == NUM_UINT) {
+            type->son = node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_UNSIGNED, 0);
+        } else if (node->token.token_number == NUM_ULONG) {
+            type->son = node_maker(NULL, node_maker(NULL, NULL, KW_LONG, 0), KW_UNSIGNED, 0);
         }
         
         Node * num = node_maker(NULL, NULL, node->token.token_number, node->token.token_value);
@@ -1104,19 +1108,19 @@ void ident_symbolizer(Node * node) {
             node->son->token.token_value = 0;
             
         } else if (node->son->token.token_number == OP_TILDE || node->son->token.token_number == OP_NEG) {
-            if (type_rank_change(node->son->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
+            /*if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
                 Node * previous_exp = node->son->brother;
                 Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                 previous_exp->brother = NULL;
                 node->son->brother = exp;
             }
-            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);*/ Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0); // short 지원할 때 사용할 것.
             type->brother = node->son;
             node->son = type;
             
         } else if (node->son->token.token_number == OP_LOGIC_NOT) {
-            Node * type = node_maker(node_maker(NULL, NULL, KW_INT, 0), NULL, SEM_TYPE, 0);
+            Node * type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
             
@@ -1128,71 +1132,118 @@ void ident_symbolizer(Node * node) {
         } else if (node->son->token.token_number == NT_CAST) {
             // 그대로
         } else if (node->son->token.token_number == OP_ADD || node->son->token.token_number == OP_SUB || node->son->token.token_number == OP_MUL || node->son->token.token_number == OP_DIV || node->son->token.token_number == OP_MOD || node->son->token.token_number == OP_AND || node->son->token.token_number == OP_OR || node->son->token.token_number == OP_XOR) {
-            if (type_rank_change(node->son->brother->son->son->token.token_number, 0) > type_rank_change(node->son->brother->brother->son->son->token.token_number, 0)) {
-                Node * previous_exp = node->son->brother->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother->brother = exp;
-            } else if (type_rank_change(node->son->brother->son->son->token.token_number, 0) < type_rank_change(node->son->brother->brother->son->son->token.token_number, 0)) {
-                Node * previous_exp = node->son->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother = exp;
-            } else if (type_rank_change(node->son->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0) && type_rank_change(node->son->brother->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
-                Node * previous_exp = node->son->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother = exp;
+            if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son) != 1) {   // 경우 1
+                if (node->son->brother->son->son->token.token_number == node->son->brother->brother->son->son->token.token_number) {    // 경우 2
+                    if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) > type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) {
+                        Node * previous_exp = node->son->brother->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                    } else if (type_rank_change(node->son->brother->son->son->token.token_number, 0) < type_rank_change(node->son->brother->brother->son->son->token.token_number, 0)) {
+                        Node * previous_exp = node->son->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother = exp;
+                    } /*else if (type_rank_change(node->son->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0) && type_rank_change(node->son->brother->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
+                        Node * previous_exp = node->son->brother;
+                        Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother = exp;
 
-                previous_exp = node->son->brother->brother;
-                cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
-                exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother->brother = exp;
+                        previous_exp = node->son->brother->brother;
+                        cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+                        exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                    }*/
+                } else {  // 경우 3
+                    if (node->son->brother->son->son->token.token_number == KW_UNSIGNED && (node->son->brother->son->son->brother->token.token_number >= node->son->brother->brother->son->son->brother->token.token_number)) {
+                        Node * previous_exp = node->son->brother->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                    } else if (node->son->brother->brother->son->son->token.token_number == KW_UNSIGNED && (node->son->brother->son->son->brother->token.token_number <= node->son->brother->brother->son->son->brother->token.token_number)) {
+                        Node * previous_exp = node->son->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother = exp;
+                    } else {    // 경우 4
+                        if (node->son->brother->son->son->token.token_number == KW_SIGNED && (symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_number)->size > symbol_finder_from_symbol_id(node->son->brother->brother->son->brother->token.token_number)->size)) {
+                            Node * previous_exp = node->son->brother->brother;
+                            Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                            Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                            previous_exp->brother = NULL;
+                            node->son->brother->brother = exp;
+                        } else if (node->son->brother->brother->son->son->token.token_number == KW_SIGNED && (symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_number)->size < symbol_finder_from_symbol_id(node->son->brother->brother->son->brother->token.token_number)->size)) {
+                            Node * previous_exp = node->son->brother;
+                            Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                            Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                            previous_exp->brother = NULL;
+                            node->son->brother = exp;
+                        } else {    // 조건 5
+                            if (node->son->brother->son->son->token.token_number == KW_SIGNED) {
+                                Node * previous_exp = node->son->brother->brother;
+                                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), KW_UNSIGNED, 0), previous_exp, NT_CAST, 0);
+                                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                                previous_exp->brother = NULL;
+                                node->son->brother->brother = exp;
+                            } else if (node->son->brother->brother->son->son->token.token_number == KW_SIGNED) {
+                                Node * previous_exp = node->son->brother;
+                                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), KW_UNSIGNED, 0), previous_exp, NT_CAST, 0);
+                                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                                previous_exp->brother = NULL;
+                                node->son->brother = exp;
+                            }
+                        }
+                    }
+                }
             }
+            
             Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
             
         } else if (node->son->token.token_number == OP_SHL || node->son->token.token_number == OP_ASR) {
-            if (type_rank_change(node->son->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
+            /*if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
                 Node * previous_exp = node->son->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), previous_exp, NT_CAST, 0);
                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                 previous_exp->brother = NULL;
                 node->son->brother = exp;
             }
             
-            if (type_rank_change(node->son->brother->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
+            if (type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
                 Node * previous_exp = node->son->brother->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), previous_exp, NT_CAST, 0);
                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                 previous_exp->brother = NULL;
                 node->son->brother->brother = exp;
-            }
+            }*/
             Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
             
         } else if (node->son->token.token_number == OP_EQ || node->son->token.token_number == OP_NE || node->son->token.token_number == OP_LT || node->son->token.token_number == OP_GT || node->son->token.token_number == OP_LE || node->son->token.token_number == OP_GE) {
-            if (type_rank_change(node->son->brother->son->son->token.token_number, 0) > type_rank_change(node->son->brother->brother->son->son->token.token_number, 0)) {
+            if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) > type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) {
                 Node * previous_exp = node->son->brother->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                 previous_exp->brother = NULL;
                 node->son->brother->brother = exp;
-            } else if (type_rank_change(node->son->brother->son->son->token.token_number, 0) < type_rank_change(node->son->brother->brother->son->son->token.token_number, 0)) {
+            } else if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) < type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) {
                 Node * previous_exp = node->son->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                 previous_exp->brother = NULL;
                 node->son->brother = exp;
-            } else if (type_rank_change(node->son->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0) && type_rank_change(node->son->brother->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
+            } /*else if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0) && type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
                 Node * previous_exp = node->son->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), previous_exp, NT_CAST, 0);
                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                 previous_exp->brother = NULL;
                 node->son->brother = exp;
@@ -1202,21 +1253,21 @@ void ident_symbolizer(Node * node) {
                 exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                 previous_exp->brother = NULL;
                 node->son->brother->brother = exp;
-            }
-            Node * type = node_maker(node_maker(NULL, NULL, KW_INT, 0), NULL, SEM_TYPE, 0);
+            }*/
+            Node * type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
             
         } else if (node->son->token.token_number == OP_LOGIC_AND || node->son->token.token_number == OP_LOGIC_OR) {
-            Node * type = node_maker(node_maker(NULL, NULL, KW_INT, 0), NULL, SEM_TYPE, 0);
+            Node * type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
             
         } else if (node->son->token.token_number == OP_ASSIGN) {
             Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
-            if (type_rank_change(node->son->brother->son->son->token.token_number, 0) != type_rank_change(node->son->brother->brother->son->son->token.token_number, 0)) {
+            if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) != type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) {
                 Node * previous_exp = node->son->brother->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                 previous_exp->brother = NULL;
                 node->son->brother->brother = exp;
@@ -1225,31 +1276,78 @@ void ident_symbolizer(Node * node) {
             node->son = type;
             
         } else if (node->son->token.token_number == OP_QUESTION) {
-            if (type_rank_change(node->son->brother->brother->son->son->token.token_number, 0) > type_rank_change(node->son->brother->brother->brother->son->son->token.token_number, 0)) {
-                Node * previous_exp = node->son->brother->brother->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother->brother->brother = exp;
-            } else if (type_rank_change(node->son->brother->brother->son->son->token.token_number, 0) < type_rank_change(node->son->brother->brother->brother->son->son->token.token_number, 0)) {
-                Node * previous_exp = node->son->brother->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, node->son->brother->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother->brother = exp;
-            } else if (type_rank_change(node->son->brother->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0) && type_rank_change(node->son->brother->brother->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
-                Node * previous_exp = node->son->brother->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother->brother = exp;
+            if (compare_tree(node->son->brother->brother->son->son, node->son->brother->brother->brother->son->son) != 1) {   // 경우 1
+                if (node->son->brother->brother->son->son->token.token_number == node->son->brother->brother->brother->son->son->token.token_number) {    // 경우 2
+                    if (type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0) > type_rank_change(node->son->brother->brother->brother->son->son->brother->token.token_number, 0)) {
+                        Node * previous_exp = node->son->brother->brother->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother->brother = exp;
+                    } else if (type_rank_change(node->son->brother->brother->son->son->token.token_number, 0) < type_rank_change(node->son->brother->brother->brother->son->son->token.token_number, 0)) {
+                        Node * previous_exp = node->son->brother->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                    } /*else if (type_rank_change(node->son->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0) && type_rank_change(node->son->brother->brother->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
+                        Node * previous_exp = node->son->brother;
+                        Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother = exp;
 
-                previous_exp = node->son->brother->brother->brother;
-                cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
-                exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother->brother->brother = exp;
+                        previous_exp = node->son->brother->brother;
+                        cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+                        exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                    }*/
+                } else {  // 경우 3
+                    if (node->son->brother->brother->son->son->token.token_number == KW_UNSIGNED && (node->son->brother->brother->son->son->brother->token.token_number >= node->son->brother->brother->brother->son->son->brother->token.token_number)) {
+                        Node * previous_exp = node->son->brother->brother->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother->brother = exp;
+                    } else if (node->son->brother->brother->brother->son->son->token.token_number == KW_UNSIGNED && (node->son->brother->brother->son->son->brother->token.token_number <= node->son->brother->brother->brother->son->son->brother->token.token_number)) {
+                        Node * previous_exp = node->son->brother->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                    } else {    // 경우 4
+                        if (node->son->brother->brother->son->son->token.token_number == KW_SIGNED && (symbol_finder_from_symbol_id(node->son->brother->brother->son->brother->token.token_number)->size > symbol_finder_from_symbol_id(node->son->brother->brother->brother->son->brother->token.token_number)->size)) {
+                            Node * previous_exp = node->son->brother->brother->brother;
+                            Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                            Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                            previous_exp->brother = NULL;
+                            node->son->brother->brother->brother = exp;
+                        } else if (node->son->brother->brother->brother->son->son->token.token_number == KW_SIGNED && (symbol_finder_from_symbol_id(node->son->brother->brother->son->brother->token.token_number)->size < symbol_finder_from_symbol_id(node->son->brother->brother->brother->son->brother->token.token_number)->size)) {
+                            Node * previous_exp = node->son->brother->brother;
+                            Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                            Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                            previous_exp->brother = NULL;
+                            node->son->brother->brother = exp;
+                        } else {    // 조건 5
+                            if (node->son->brother->brother->son->son->token.token_number == KW_SIGNED) {
+                                Node * previous_exp = node->son->brother->brother->brother;
+                                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), KW_UNSIGNED, 0), previous_exp, NT_CAST, 0);
+                                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                                previous_exp->brother = NULL;
+                                node->son->brother->brother->brother = exp;
+                            } else if (node->son->brother->brother->brother->son->son->token.token_number == KW_SIGNED) {
+                                Node * previous_exp = node->son->brother->brother;
+                                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->brother->son->son->brother->token.token_number, 0), KW_UNSIGNED, 0), previous_exp, NT_CAST, 0);
+                                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                                previous_exp->brother = NULL;
+                                node->son->brother->brother = exp;
+                            }
+                        }
+                    }
+                }
             }
+
             Node * type = node_maker(copy_tree(node->son->brother->brother->son->son), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
@@ -1263,19 +1361,19 @@ void ident_symbolizer(Node * node) {
             }
         }
 
-    } else if (node->token.token_number == KW_SWITCH) {
-            if (type_rank_change(node->son->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
-                Node * previous_exp = node->son;
-                Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son = exp;
-            }
+    } /*else if (node->token.token_number == KW_SWITCH) {
+        if (type_rank_change(node->son->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
+            Node * previous_exp = node->son;
+            Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+            Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+            previous_exp->brother = NULL;
+            node->son = exp;
+        }
             
-        } else if (node->token.token_number == NT_FUNC_DECLR) {    
+    }*/ else if (node->token.token_number == NT_FUNC_DECLR) {    
         pop(); 
         func_depth--;
-    } 
+    }
     
 
 

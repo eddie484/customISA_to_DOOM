@@ -1456,12 +1456,13 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
         Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x4 = p_nt_factor(lex_input);
 
-        Node * x2 = node_maker(type, NULL, NT_CAST, 0);
+        Node * x2 = node_maker(type->son, NULL, NT_CAST, 0);
 
         x2->brother = x4;
 
         free(x1);
         free(x3);
+        free(type);
         
         Node * n = node_maker(x2, NULL, NT_EXP, 0);
 
