@@ -209,7 +209,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                     break;
                 }
 
-                case ASM_MOD: {
+                case ASM_MODU: {
                     if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
                         printf("\tMODU R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tMODU R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
@@ -305,6 +305,23 @@ void asm_printer(Node * node, FILE * codeemitfp){
 
                     } else {
                         printf("ASR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
+                    }
+                    break;
+                }
+
+
+                case ASM_LSR: {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                        printf("\tLSR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        fprintf(codeemitfp, "\tLSR R%d R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+
+                    } else if (node->son->brother->brother->brother->token.token_number == NUM_IMM) {
+                        char * int_value = lexval_finder(node->son->brother->brother->brother->token.token_value);
+                        printf("\tLSRI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+                        fprintf(codeemitfp, "\tLSRI R%d R%d #%s\n", node->son->brother->token.token_value, node->son->brother->brother->token.token_value, int_value);
+
+                    } else {
+                        printf("LSR의 인자로 잘못된 형식이 입력되었습니다: <%d, %d>", node->son->brother->brother->brother->token.token_number, node->son->brother->brother->brother->token.token_value);
                     }
                     break;
                 }

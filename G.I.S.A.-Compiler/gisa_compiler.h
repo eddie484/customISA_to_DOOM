@@ -94,6 +94,8 @@
 #define KW_SIGNED       70
 #define KW_UNSIGNED     71
 
+#define OP_LSR          72
+
 
 #define NT_PROGRAM      100
 #define NT_FUNC_DECLR   101

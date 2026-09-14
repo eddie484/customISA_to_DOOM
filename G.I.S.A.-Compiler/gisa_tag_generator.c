@@ -478,7 +478,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
             return n;
-        } else if ((ast->son->brother->token.token_number >= OP_ADD && ast->son->brother->token.token_number <= OP_ASR) || (ast->son->brother->token.token_number >= OP_ASSIGN && ast->son->brother->token.token_number <= OP_ASREQ)) {
+        } else if ((ast->son->brother->token.token_number >= OP_ADD && ast->son->brother->token.token_number <= OP_ASR) || (ast->son->brother->token.token_number == OP_ASSIGN)) {
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
             Node * n2 = tag_nt_instr_interpreting(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);
             Node * n3 = tag_nt_instr_interpreting(ast->son, n1->token.token_value, n2->token.token_value);
@@ -685,14 +685,33 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
         return n;
 
-    // 이항 연산자일 경우 (OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_AND, OP_OR, OP_XOR, OP_SHL, OP_ASR)
-    } else if (ast->brother->token.token_number >= OP_ADD && ast->brother->token.token_number <= OP_ASR) {
+    // 이항 연산자일 경우 (OP_ADD, OP_SUB, OP_MUL, OP_DIV, OP_MOD, OP_AND, OP_OR, OP_XOR, OP_SHL)
+    } else if (ast->brother->token.token_number >= OP_ADD && ast->brother->token.token_number <= OP_SHL) {
         printf("enter OP_%d\n", ast->brother->token.token_number);
         Node * n = line_maker(ast->brother->token.token_number, TAG_TEMP, temp_registration(ast->son), TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
         
         n->token.token_value = n->son->brother->token.token_value;
 
         return n;
+
+    // ASR 연산자일 경우
+    } else if (ast->brother->token.token_number == OP_ASR) {
+        if (ast->son->token.token_number == KW_UNSIGNED) {
+            printf("enter unsigned asr: OP_LSR\n");
+            Node * n = line_maker(OP_LSR, TAG_TEMP, temp_registration(ast->son), TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+            
+            n->token.token_value = n->son->brother->token.token_value;
+
+            return n;
+        } else if (ast->son->token.token_number == KW_SIGNED) {
+            printf("enter signed asr: OP_ASR\n");
+            Node * n = line_maker(OP_ASR, TAG_TEMP, temp_registration(ast->son), TAG_TEMP, temp_in_rA, TAG_TEMP, temp_in_rB);
+            
+            n->token.token_value = n->son->brother->token.token_value;
+
+            return n;
+        }
+        
 
     // ASSIGN 연산자일 경우
     } else if (ast->brother->token.token_number == OP_ASSIGN) {
@@ -815,7 +834,7 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
 
     Node * n5;
 
-    if (symbol_finder_from_symbol_id(n2->son->brother->token.token_value)->type_tree->token.token_number == KW_UNSIGNED) {
+    if (symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->token.token_number == KW_UNSIGNED) {
         switch (ast->son->brother->token.token_number) {    // if hit, branch to end
             case (OP_EQ):
                 n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);
@@ -846,7 +865,7 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
                 break;
                             
         }
-    } else if (symbol_finder_from_symbol_id(n2->son->brother->token.token_value)->type_tree->token.token_number == KW_SIGNED) {
+    } else if (symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->token.token_number == KW_SIGNED) {
         switch (ast->son->brother->token.token_number) {    // if hit, branch to end
             case (OP_EQ):
                 n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);
