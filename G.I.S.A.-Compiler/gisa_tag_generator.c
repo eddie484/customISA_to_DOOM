@@ -815,36 +815,70 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
 
     Node * n5;
 
-    switch (ast->son->brother->token.token_number) {    // if hit, branch to end
-        case (OP_EQ):
-            n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);
-            break;
-                    
-        case (OP_NE):
-            n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n7->token.token_value);
-            break;
-                    
-        case (OP_LT):
-            n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_LT, TAG_LABEL, n7->token.token_value);
-            break;
-                    
-        case (OP_GT):
-            n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_GT, TAG_LABEL, n7->token.token_value);
-            break;
-                    
-        case (OP_LE):
-            n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_LE, TAG_LABEL, n7->token.token_value);
-            break;
-                    
-        case (OP_GE):
-            n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_GE, TAG_LABEL, n7->token.token_value);
-            break;
-
-        default:
-            n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n7->token.token_value);
-            break;
+    if (symbol_finder_from_symbol_id(n2->son->brother->token.token_value)->type_tree->token.token_number == KW_UNSIGNED) {
+        switch (ast->son->brother->token.token_number) {    // if hit, branch to end
+            case (OP_EQ):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);
+                break;
                         
+            case (OP_NE):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n7->token.token_value);
+                break;
+                        
+            case (OP_LT):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_LO, TAG_LABEL, n7->token.token_value);
+                break;
+                        
+            case (OP_GT):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_HI, TAG_LABEL, n7->token.token_value);
+                break;
+                        
+            case (OP_LE):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_LS, TAG_LABEL, n7->token.token_value);
+                break;
+                        
+            case (OP_GE):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_HS, TAG_LABEL, n7->token.token_value);
+                break;
+
+            default:
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n7->token.token_value);
+                break;
+                            
+        }
+    } else if (symbol_finder_from_symbol_id(n2->son->brother->token.token_value)->type_tree->token.token_number == KW_SIGNED) {
+        switch (ast->son->brother->token.token_number) {    // if hit, branch to end
+            case (OP_EQ):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);
+                break;
+                        
+            case (OP_NE):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_NE, TAG_LABEL, n7->token.token_value);
+                break;
+                        
+            case (OP_LT):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_LT, TAG_LABEL, n7->token.token_value);
+                break;
+                        
+            case (OP_GT):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_GT, TAG_LABEL, n7->token.token_value);
+                break;
+                        
+            case (OP_LE):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_LE, TAG_LABEL, n7->token.token_value);
+                break;
+                        
+            case (OP_GE):
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_GE, TAG_LABEL, n7->token.token_value);
+                break;
+
+            default:
+                n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n7->token.token_value);
+                break;
+                            
+        }
     }
+    
             
 
     n1->brother = n2;
