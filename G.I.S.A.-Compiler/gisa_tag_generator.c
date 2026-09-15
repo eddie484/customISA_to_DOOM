@@ -84,7 +84,8 @@ int temp_registration(Node * type_tree){
     symbol->id = temp_count;
     // symbol_id_count++;
     symbol->type_tree = copy_tree(type_tree);
-    symbol->size = type_tree->brother->token.token_value;
+    type_regulation(symbol->type_tree->brother);
+    symbol->size = symbol->type_tree->brother->token.token_value;
     symbol->location.type = 0;
     symbol->location.location = 0;
     symbol->is_func = 0;
@@ -138,16 +139,7 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
     if (compare_tree(casting_type, original_type) == 1) {
         printf("같은 비트폭으로 캐스팅을 시도하고 있습니다. 캐스팅을 생략합니다.\n");
         Node * n = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
-
-        Node * original_node = ast->son->brother;
-        tree_malloc_cleaner(ast->son->son);
-        free(ast->son);
-        ast->son = original_node->son;
-        ast->token.token_number = original_node->token.token_number;
-        ast->token.token_value = original_node->token.token_value;
-        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
-        free(original_node);
-
+        
         return n;
 
     } else if (casting_type->brother->token.token_value == original_type->brother->token.token_value) {
@@ -159,15 +151,6 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
 
         Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
-        Node * original_node = ast->son->brother;
-        tree_malloc_cleaner(ast->son->son);
-        free(ast->son);
-        ast->son = original_node->son;
-        ast->token.token_number = original_node->token.token_number;
-        ast->token.token_value = original_node->token.token_value;
-        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
-        free(original_node);
-
         return n;
     } else if (casting_type->brother->token.token_value < original_type->brother->token.token_value) {
         Node * n1 = tag_nt_instr_interpreting(ast->son->brother, temp_in_rA, temp_in_rB);
@@ -178,15 +161,6 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
 
         Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
-        Node * original_node = ast->son->brother;
-        tree_malloc_cleaner(ast->son->son);
-        free(ast->son);
-        ast->son = original_node->son;
-        ast->token.token_number = original_node->token.token_number;
-        ast->token.token_value = original_node->token.token_value;
-        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
-        free(original_node);
-        
         return n;
     } else if (casting_type->brother->token.token_value > original_type->brother->token.token_value) {
         int original_type_signed = original_type->token.token_number;
@@ -199,15 +173,6 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
         n1->brother = n2;
 
         Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
-
-        Node * original_node = ast->son->brother;
-        tree_malloc_cleaner(ast->son->son);
-        free(ast->son);
-        ast->son = original_node->son;
-        ast->token.token_number = original_node->token.token_number;
-        ast->token.token_value = original_node->token.token_value;
-        if (original_node->brother != NULL) tree_malloc_cleaner(original_node->brother);
-        free(original_node);
 
         return n;
         
@@ -270,10 +235,7 @@ Node * tag_symbol(Node * ast){
             n1->son = tag_arg_start;
         } 
         
-        Node * func_type = copy_tree(symbol->type_tree->son);
-        type_regulation(func_type->brother);
-        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(func_type));
-        tree_malloc_cleaner(func_type);
+        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(symbol->type_tree->son));
 
         n1->brother = n2;
         
