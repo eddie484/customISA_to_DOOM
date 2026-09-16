@@ -96,6 +96,10 @@
 
 #define OP_LSR          72
 
+#define KW_POINTER      73
+#define OP_DEREFER      74
+#define OP_ADDROF       75
+
 
 #define NT_PROGRAM      100
 #define NT_FUNC_DECLR   101
@@ -127,6 +131,10 @@
 #define NT_BINARY_OP    128
 #define NT_TYPE         129
 #define NT_CAST         130
+#define NT_IDENT_DECLR  131
+#define NT_IDENT_BACKSIDE   132
+#define NT_IDENT_MAIN   133
+#define NT_CAST_DECLR   134
 
 #define NT_FUNCTION     140
 
