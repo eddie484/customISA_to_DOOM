@@ -1269,33 +1269,70 @@ Node * p_nt_label(Lexer_result lex_input){    // <label> ::= IDENT "OP_COLON"
     } else error(3, nextSymbol);
 }
 
+void specifier_declr_setting (Node * spec, Node * declr) {
+    if (declr->token.token_number != NT_PARAM_LIST && declr->son != NULL) specifier_declr_setting(spec, declr->son);
+    if (declr->token.token_number != NT_PARAM_LIST && declr->brother != NULL) specifier_declr_setting(spec, declr->brother);
+
+    if (declr->token.token_number == IDENT) {
+        Node * ident = node_maker(NULL, NULL, IDENT, declr->token.token_value);
+        if (spec->brother == NULL) {
+            spec->brother = ident;
+        } else if (spec->brother->token.token_number == NT_PARAM_LIST) {
+            ident->brother = spec->brother;
+            spec->brother = ident;
+        }
+    } else if (declr->token.token_number == OP_MUL) {
+        spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, KW_POINTER, 0);
+    } else if (declr->token.token_number == NT_PARAM_LIST) {
+        spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, TYPE_FUNC, 0);
+
+        Node * param_list = node_maker(NULL, NULL, declr->token.token_number, declr->token.token_value);
+        param_list->son = copy_tree(declr->son);
+
+        if (spec->brother == NULL) {
+            spec->brother = param_list;
+        } else if (spec->brother->token.token_number == IDENT) {
+            spec->brother->brother = param_list;
+        }
+    }/* else if (declr->token.token_number == 배열) {
+        spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, 배열타입, 배열개수);
+    }*/
+    
+}
+
 Node * p_nt_declr(Lexer_result lex_input){   // <declr> ::= <func_declr> | <var_declr>
     if (first(nextSymbol.token_number, NT_SPECIFIER_LIST)) {
         printf("parsing: nt_declr->nt_specifier_list\n");
         Node * x1 = p_nt_specifier_list_calling(lex_input);
         Node * x2 = p_nt_ident_declr(lex_input);
+
+        specifier_declr_setting(x1, x2);
+
         Node * x3;
         Node * n;
 
 
-        if (first(nextSymbol.token_number, NT_FUNC_CONTENT)) {
-            printf("parsing: nt_declr->nt_func_declr\n");
-            x3 = p_nt_func_content(lex_input);
-            
-            n = node_maker(x1, NULL, NT_FUNC_DECLR, 0);
-        } else if ((first(nextSymbol.token_number, NT_ASSIGN) || follow(nextSymbol.token_number, NT_ASSIGN))) {
+        if (x1->brother->brother == NULL) {
             printf("parsing: nt_declr->nt_var_declr\n");
             x3 = p_nt_assign(lex_input);
             Node * x4 = p_terminal(lex_input, PN_SEMI);     
             
-            x3->brother = x4;
+            x1->brother->brother = x3;
+            free(x4);
             
             n = node_maker(x1, NULL, NT_VAR_DECLR, 0);
+        } else if (x1->brother->brother->token.token_number == NT_PARAM_LIST) {
+            printf("parsing: nt_declr->nt_func_declr\n");
+            x3 = p_nt_func_content(lex_input);
+            
+            x1->brother->brother->brother = x3;
+
+            n = node_maker(x1, NULL, NT_FUNC_DECLR, 0);
         } else error(2, nextSymbol);
 
         
-        x1->brother = x2;
-        x2->brother = x3;
+        
+        tree_malloc_cleaner(x2);
 
         return n;
     } else error(2, nextSymbol);
@@ -1314,9 +1351,7 @@ Node * p_nt_ident_declr(Lexer_result lex_input) {
     } else if (first(nextSymbol.token_number, NT_IDENT_BACKSIDE)) {
         Node * x1 = p_nt_ident_backside(lex_input);
 
-        Node * n = node_maker(x1, NULL, NT_IDENT_DECLR, 0);
-
-        return n;
+        return x1;
     } else error(2, nextSymbol);
 }
 
@@ -1337,9 +1372,7 @@ Node * p_nt_ident_backside(Lexer_result lex_input) {
 
         return n;
     } else if (follow(nextSymbol.token_number, NT_IDENT_MAIN)) {
-        Node * n = node_maker(x1, NULL, NT_IDENT_BACKSIDE, 0);
-
-        return n;
+        return x1;
     } else error(2, nextSymbol);
 }
 
@@ -1347,9 +1380,7 @@ Node * p_nt_ident_main(Lexer_result lex_input) {
     if (nextSymbol.token_number == IDENT) {
         Node * x1 = p_terminal(lex_input, IDENT);
         
-        Node * n = node_maker(x1, NULL, NT_IDENT_MAIN, 0);
-
-        return n;
+        return x1;
     } else if (nextSymbol.token_number == OPEN_PAREN) {
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
         Node * x2 = p_nt_ident_declr(lex_input);
@@ -1622,9 +1653,7 @@ Node * p_nt_cast_declr(Lexer_result lex_input) {
 
         x1->brother = x2;
 
-        Node * n = node_maker(x1, NULL, NT_CAST_DECLR, 0);
-
-        return n;
+        return x1;
     } else if (nextSymbol.token_number == OPEN_PAREN) {
         printf("parsing: nt_postfix->open_paren\n");
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);

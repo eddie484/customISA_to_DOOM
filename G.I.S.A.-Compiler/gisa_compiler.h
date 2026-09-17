@@ -99,6 +99,7 @@
 #define KW_POINTER      73
 #define OP_DEREFER      74
 #define OP_ADDROF       75
+#define TYPE_FUNC       76
 
 
 #define NT_PROGRAM      100
