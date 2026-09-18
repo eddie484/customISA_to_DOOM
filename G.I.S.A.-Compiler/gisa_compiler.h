@@ -109,8 +109,8 @@
 #define NT_SPECIFIER_MULTI  104
 #define NT_PARAM_LIST   105
 #define NT_PARAM_MULTI  106
-#define NT_TYPE_LIST  107
-#define NT_TYPE_MULTI 109
+#define NT_TYPE_LIST    107
+#define NT_TYPE_MULTI   109
 #define NT_FUNC_CONTENT 110
 #define NT_BLOCK        111
 #define NT_INSTR_LIST   112
@@ -136,6 +136,7 @@
 #define NT_IDENT_BACKSIDE   132
 #define NT_IDENT_MAIN   133
 #define NT_CAST_DECLR   134
+#define NT_PARAM        135
 
 #define NT_FUNCTION     140
 

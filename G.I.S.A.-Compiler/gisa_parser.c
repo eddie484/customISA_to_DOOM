@@ -266,6 +266,7 @@ Node * p_nt_instr(Lexer_result lex_input);
 Node * p_nt_content(Lexer_result lex_input);
 Node * p_nt_else(Lexer_result lex_input);
 Node * p_nt_label(Lexer_result lex_input);
+void specifier_declr_setting (Node * spec, Node * declr);
 Node * p_nt_declr(Lexer_result lex_input);
 Node * p_nt_ident_declr(Lexer_result lex_input);
 Node * p_nt_ident_backside(Lexer_result lex_input);
@@ -864,10 +865,13 @@ Node * p_nt_param_list(Lexer_result lex_input){    // <param_list> ::= "void" | 
         Node * x2 = p_nt_ident_declr(lex_input);
         Node * x3 = p_nt_param_multi(lex_input);
 
-        x1->son->brother->brother = x2;
-        x1->brother = x3;
+        specifier_declr_setting(x1, x2);
+        //x1->son->brother->brother = x1->brother;
+        Node * param = node_maker(x1, x3, NT_PARAM, 0);
+        //1->brother->brother = x3;
+        tree_malloc_cleaner(x2);
         
-        Node * n = node_maker(x1, NULL, NT_PARAM_LIST, 0);
+        Node * n = node_maker(param, NULL, NT_PARAM_LIST, 0);
 
         return n;
     } else error(2, nextSymbol);
@@ -881,12 +885,15 @@ Node * p_nt_param_multi(Lexer_result lex_input){    // <param_multi> ::= "," <pa
         Node * x3 = p_nt_ident_declr(lex_input);
         Node * x4 = p_nt_param_multi(lex_input);
 
-        x2->son->brother->brother = x3;
-        x2->brother = x4;
+        specifier_declr_setting(x2, x3);
+        //x2->son->brother->brother = x2->brother;
+        Node * param = node_maker(x2, x4, NT_PARAM, 0);
+        //x2->brother->brother = x4;
 
         free(x1);
+        tree_malloc_cleaner(x3);
         
-        return x2;
+        return param;
     } else if (follow(nextSymbol.token_number, NT_PARAM_MULTI)) {
         printf("parsing: nt_param_multi_null\n");
         Node * n = NULL;
@@ -1270,9 +1277,6 @@ Node * p_nt_label(Lexer_result lex_input){    // <label> ::= IDENT "OP_COLON"
 }
 
 void specifier_declr_setting (Node * spec, Node * declr) {
-    if (declr->token.token_number != NT_PARAM_LIST && declr->son != NULL) specifier_declr_setting(spec, declr->son);
-    if (declr->token.token_number != NT_PARAM_LIST && declr->brother != NULL) specifier_declr_setting(spec, declr->brother);
-
     if (declr->token.token_number == IDENT) {
         Node * ident = node_maker(NULL, NULL, IDENT, declr->token.token_value);
         if (spec->brother == NULL) {
@@ -1282,9 +1286,12 @@ void specifier_declr_setting (Node * spec, Node * declr) {
             spec->brother = ident;
         }
     } else if (declr->token.token_number == OP_MUL) {
-        spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, KW_POINTER, 0);
+        if (spec->son->token.token_number == KW_STATIC && spec->son->brother->token.token_number == KW_EXTERN) spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, KW_POINTER, 0);
+        else spec->son = node_maker(spec->son, NULL, KW_POINTER, 0);
     } else if (declr->token.token_number == NT_PARAM_LIST) {
-        spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, TYPE_FUNC, 0);
+        if (spec->son->token.token_number == KW_STATIC && spec->son->brother->token.token_number == KW_EXTERN) spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, TYPE_FUNC, 0);
+        else spec->son = node_maker(spec->son, NULL, TYPE_FUNC, 0);
+        
 
         Node * param_list = node_maker(NULL, NULL, declr->token.token_number, declr->token.token_value);
         param_list->son = copy_tree(declr->son);
@@ -1298,6 +1305,9 @@ void specifier_declr_setting (Node * spec, Node * declr) {
         spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, 배열타입, 배열개수);
     }*/
     
+
+    if (declr->token.token_number != NT_PARAM_LIST && declr->brother != NULL) specifier_declr_setting(spec, declr->brother);
+    if (declr->token.token_number != NT_PARAM_LIST && declr->son != NULL) specifier_declr_setting(spec, declr->son);
 }
 
 Node * p_nt_declr(Lexer_result lex_input){   // <declr> ::= <func_declr> | <var_declr>
@@ -1482,7 +1492,7 @@ Node * p_nt_for_exp(Lexer_result lex_input){   // <for_exp> ::= <exp> | ε
 }
 
 Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "OP_QUESTION" <exp> " OP_COLON" <exp>
-    if (nextSymbol.token_number == IDENT || nextSymbol.token_number == NUM_INT || nextSymbol.token_number == NUM_LONG || nextSymbol.token_number == NUM_UINT || nextSymbol.token_number == NUM_ULONG || nextSymbol.token_number == OPEN_PAREN || first(nextSymbol.token_number, NT_UNARY_OP)) {
+    if (nextSymbol.token_number == IDENT || nextSymbol.token_number == NUM_INT || nextSymbol.token_number == NUM_LONG || nextSymbol.token_number == NUM_UINT || nextSymbol.token_number == NUM_ULONG || nextSymbol.token_number == OPEN_PAREN || first(nextSymbol.token_number, NT_UNARY_OP) || nextSymbol.token_number == OP_MUL || nextSymbol.token_number == OP_AND) {
         printf("parsing: nt_exp\n");
         Node * left = p_nt_factor(lex_input);
         
@@ -1594,9 +1604,10 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
         Node * n = node_maker(x1, NULL, NT_EXP, 0);
 
         return n;
-    } else if (first(nextSymbol.token_number, OP_MUL)) {
+    } else if (nextSymbol.token_number == OP_MUL) {
         printf("parsing: nt_factor\n");
-        Node * x1 = p_terminal(lex_input, OP_MUL);
+        Node * x1 = node_maker(NULL, NULL, OP_DEREFER, 0);
+        get_nextSymbol(lex_input);
         Node * x2 = p_nt_factor(lex_input);
 
         x1->brother = x2;
@@ -1604,9 +1615,10 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
         Node * n = node_maker(x1, NULL, NT_EXP, 0);
 
         return n;
-    } else if (first(nextSymbol.token_number, OP_AND)) {
+    } else if (nextSymbol.token_number == OP_AND) {
         printf("parsing: nt_factor\n");
-        Node * x1 = p_terminal(lex_input, OP_AND);
+        Node * x1 = node_maker(NULL, NULL, OP_ADDROF, 0);
+        get_nextSymbol(lex_input);
         Node * x2 = p_nt_factor(lex_input);
 
         x1->brother = x2;
@@ -1618,7 +1630,11 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
         printf("parsing: nt_factor\n");
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
         Node * type = p_nt_type_list_calling(lex_input);
-        Node * declr = p_nt_cast_declr(lex_input);  // 연결 필요
+        Node * declr = p_nt_cast_declr(lex_input);
+        if (declr != NULL) {
+            specifier_declr_setting(type, declr);
+        tree_malloc_cleaner(declr);
+        }        
         Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x4 = p_nt_factor(lex_input);
 
