@@ -364,7 +364,7 @@ int symbol_maker(Node * declr_node) {
         Symbol_info * symbol = malloc(sizeof(Symbol_info));
         symbol->name = ident_node->token.token_value;
         symbol->id = symbol_id_count++;
-        if (declr_node->token.token_number == NT_TYPE_LIST) {
+        if (declr_node->token.token_number == NT_PARAM) {
             symbol->type_tree = get_type_tree_from_param_var_declr(declr_node, ident_node);
         } else {
             symbol->type_tree = get_type_tree_from_var_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
@@ -1013,7 +1013,7 @@ void ident_symbolizer(Node * node) {
         push();
 
         Node * param_node = ident_node->brother->son;
-        while (param_node != NULL && param_node->token.token_number == NT_TYPE_LIST && param_node->son->token.token_number != KW_VOID) {
+        while (param_node != NULL && param_node->token.token_number == NT_PARAM && param_node->son->token.token_number != KW_VOID) {
             int param_node_id = symbol_maker(param_node);
 
             Node * param_node_son = param_node->son;
@@ -1028,7 +1028,7 @@ void ident_symbolizer(Node * node) {
         }
 
         if (node->son->brother->brother->brother != NULL) {     // 정의가 있는 함수에서만 현재 함수 타입을 기록해, 리턴 타입을 함수에 맞추도록 한다.
-            current_func_typetree = node->son->son->brother->brother;
+            current_func_typetree = node->son->son->brother->brother->son;
         }
             
 
@@ -1085,11 +1085,16 @@ void ident_symbolizer(Node * node) {
         type->brother = num;
 
     } else if (node->token.token_number == NT_EXP) {
-        if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number != NT_EXP && node->son->brother->token.token_number != SEM_SYMBOL) {
+        Node * symbol_position = node;
+        if (node->son != NULL && node->son->brother != NULL && node->son->brother->son != NULL && node->son->brother->son->brother != NULL) {
+            symbol_position = node->son->brother->son->brother;
+        }
+        while (symbol_position->token.token_number == OP_DEREFER) symbol_position = symbol_position->brother->son->brother;
+        if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number != NT_EXP && symbol_position->token.token_number != SEM_SYMBOL) {
         
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
-        } else if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number == NT_EXP && node->son->brother->son->brother->token.token_number != SEM_SYMBOL) {
+        } else if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number == NT_EXP && symbol_position->token.token_number != SEM_SYMBOL) {
 
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
@@ -1108,6 +1113,10 @@ void ident_symbolizer(Node * node) {
             node->son->token.token_value = 0;
             
         } else if (node->son->token.token_number == OP_TILDE || node->son->token.token_number == OP_NEG) {
+            if (node->son->brother->son->son->token.token_number == KW_POINTER) {
+                printf("오류: 포인터에 산술연산을 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            }
             /*if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
                 Node * previous_exp = node->son->brother;
                 Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
@@ -1125,6 +1134,10 @@ void ident_symbolizer(Node * node) {
             node->son = type;
             
         } else if (node->son->token.token_number == OP_PRE_INCRE || node->son->token.token_number == OP_PRE_DECRE) {
+            if (node->son->brother->son->son->token.token_number == KW_POINTER) {
+                printf("오류: 포인터에 증감연산을 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            }
             Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
@@ -1132,6 +1145,10 @@ void ident_symbolizer(Node * node) {
         } else if (node->son->token.token_number == NT_CAST) {
             // 그대로
         } else if (node->son->token.token_number == OP_ADD || node->son->token.token_number == OP_SUB || node->son->token.token_number == OP_MUL || node->son->token.token_number == OP_DIV || node->son->token.token_number == OP_MOD || node->son->token.token_number == OP_AND || node->son->token.token_number == OP_OR || node->son->token.token_number == OP_XOR) {
+            if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                printf("오류: 포인터에 산술연산을 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            }   // add, sub는 분기에서 분리해 포인터 연산을 추가해야 함.
             if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son) != 1) {   // 경우 1
                 if (node->son->brother->son->son->token.token_number == node->son->brother->brother->son->son->token.token_number) {    // 경우 2
                     if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) > type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) {
@@ -1221,6 +1238,10 @@ void ident_symbolizer(Node * node) {
             node->son = type;
             
         } else if (node->son->token.token_number == OP_SHL || node->son->token.token_number == OP_ASR) {
+            if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                printf("오류: 포인터에 산술연산을 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            }
             /*if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
                 Node * previous_exp = node->son->brother;
                 Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), previous_exp, NT_CAST, 0);
@@ -1335,16 +1356,40 @@ void ident_symbolizer(Node * node) {
             node->son = type;
             
         } else if (node->son->token.token_number == OP_ASSIGN) {
-            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
-            if ((type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) != type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) || (node->son->brother->son->son->token.token_number != node->son->brother->brother->son->son->token.token_number)) {
-                Node * previous_exp = node->son->brother->brother;
-                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother->brother = exp;
+            if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                if (node->son->brother->brother->son->brother->token.token_number == NUM_INT && atoi(lexval_finder(node->son->brother->brother->son->brother->token.token_value)) == 0) {
+                    Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                    if ((type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) != type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) || (node->son->brother->son->son->token.token_number != node->son->brother->brother->son->son->token.token_number)) {
+                        Node * previous_exp = node->son->brother->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                    }
+                    type->brother = node->son;
+                    node->son = type;
+                } else if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son)) {
+
+                } else {
+                    printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+            } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                printf("오류: 포인터가 아닌 곳에 포인터를 대입하려고 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            } else {
+                Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                if ((type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) != type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) || (node->son->brother->son->son->token.token_number != node->son->brother->brother->son->son->token.token_number)) {
+                    Node * previous_exp = node->son->brother->brother;
+                    Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                    Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                    previous_exp->brother = NULL;
+                    node->son->brother->brother = exp;
+                }
+                type->brother = node->son;
+                node->son = type;
             }
-            type->brother = node->son;
-            node->son = type;
+            
             
         } else if (node->son->token.token_number == OP_QUESTION) {
             if (compare_tree(node->son->brother->brother->son->son, node->son->brother->brother->brother->son->son) != 1) {   // 경우 1
@@ -1434,6 +1479,32 @@ void ident_symbolizer(Node * node) {
             Node * type = node_maker(copy_tree(node->son->brother->brother->son->son), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
+            
+        } else if (node->son->token.token_number == OP_DEREFER) {
+            printf("DEREFER!!!!!!!!!!!!!!!!! :%d\n\n\n\n\n", node->son->brother->son->son->token.token_number);
+            if (node->son->brother->son->son->token.token_number == KW_POINTER) {
+                /*Node * under_type = node->son->brother->son->son->son;
+                free(node->son->brother->son->son);
+                node->son->brother->son->son = under_type;*/
+                
+                Node * type = node_maker(copy_tree(node->son->brother->son->son->son), NULL, SEM_TYPE, 0);
+                type->brother = node->son;
+                node->son = type;
+            } else {
+                printf("포인터가 아닌 곳에 dereference를 사용 시도하고 있습니다 종료합니다.\n");
+            }
+        } else if (node->son->token.token_number == OP_ADDROF) {
+            printf("ADDROF!!!!!!!!!!!!!!!!! :%d\n\n\n\n\n", node->son->brother->son->brother->token.token_number);
+                /*Node * under_type = node->son->brother->son->son->son;
+                free(node->son->brother->son->son);
+                node->son->brother->son->son = under_type;*/
+            if (node->son->brother->son->brother->token.token_number == SEM_SYMBOL || node->son->brother->son->brother->token.token_number == OP_DEREFER) {
+                Node * type = node_maker(node_maker(copy_tree(node->son->brother->son->son), NULL, KW_POINTER, 0), NULL, SEM_TYPE, 0);
+                type->brother = node->son;
+                node->son = type;
+            } else {
+                printf("lvalue가 아닌 곳에 addrof를 사용 시도하고 있습니다 종료합니다.\n");
+            }
             
         }
 
