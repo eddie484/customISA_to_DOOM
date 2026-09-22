@@ -190,6 +190,10 @@ int symbol_maker(Node * declr_node) {
                             printf("오류: 초기값이 확정된 변수를 재선언하며 다시 초기값을 설졍하려고 합니다. 종료합니다.\n");
                             exit(1);
                         } else {
+                            if (func_table[j]->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
+                                printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
+                                exit(1);
+                            }
                             printf("이전 init_option이 %d이었던 변수의 초기값을 설정했습니다.\n", func_table[j]->init_option);
                             func_table[j]->init_option = 1;
                             char cut_val[12];
@@ -198,7 +202,7 @@ int symbol_maker(Node * declr_node) {
                             func_table[j]->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
                         }
 
-                    } else if (!(declr_node->son->son->brother->token.token_value == 1) && (ident_node->brother->son == NULL)) { // init_option = 1로 재선언한 경우 
+                    } else if (!(declr_node->son->son->brother->token.token_value == 1) && (ident_node->brother->son == NULL)) { // init_option = 2로 재선언한 경우 
                         if (func_table[j]->init_option == 3) {
                             printf("이전 init_option이 %d이었던 변수의 option을 2로 설정했습니다.\n", func_table[j]->init_option);
                             func_table[j]->init_option = 2;
@@ -269,6 +273,7 @@ int symbol_maker(Node * declr_node) {
 
 
             if (func_depth == 0) {  // 파일 스코프인 경우
+
                 if (declr_node->son->son->token.token_value == 1) { // static 키워드가 있는 경우
                     symbol->is_global = 0;
                     printf("\tIs Global: NO\n");
@@ -276,6 +281,10 @@ int symbol_maker(Node * declr_node) {
                         symbol->init_option = 2;
                         symbol->init_value = 0;
                     } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG)) { // 초기값이 상수인 경우
+                        if (symbol->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
+                            printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
+                            exit(1);
+                        }
                         symbol->init_option = 1;
                         char cut_val[12];
                         snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
@@ -293,6 +302,10 @@ int symbol_maker(Node * declr_node) {
                         symbol->init_option = 3;
                         symbol->init_value = 0;
                     } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG)) { // 초기값이 상수인 경우
+                        if (symbol->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
+                            printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
+                            exit(1);
+                        }
                         symbol->init_option = 1;
                         char cut_val[12];
                         snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
@@ -310,6 +323,10 @@ int symbol_maker(Node * declr_node) {
                         symbol->init_option = 2;
                         symbol->init_value = 0;
                     } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG)) { // 초기값이 상수인 경우
+                        if (symbol->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
+                            printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
+                            exit(1);
+                        }
                         symbol->init_option = 1;
                         char cut_val[12];
                         snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
@@ -326,7 +343,7 @@ int symbol_maker(Node * declr_node) {
                 if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                     symbol->init_option = 3;
                     symbol->init_value = 0;
-                } else {    // 초기값이 있지만 상수가 아닌경우
+                } else {    // 초기값이 있는 경우
                     printf("오류: extern 키워드가 있는 블록 스코프 변수는 초기값을 가질 수 없습니다. 종료합니다.\n");
                     exit(1);
                 }     
@@ -381,6 +398,10 @@ int symbol_maker(Node * declr_node) {
             if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                 symbol->init_value = 0;
             } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG)) { // 초기값이 상수인 경우
+                if (symbol->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
+                    printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
                 char cut_val[12];
                 snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
                 int type_set_init_value = lexval_manager(cut_val);
@@ -1073,10 +1094,10 @@ void ident_symbolizer(Node * node) {
         type->brother = num;
 
     } else if (node->token.token_number == NT_EXP) {
-        if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number != NT_EXP && (node->son->brother->son->brother->token.token_number != SEM_SYMBOL && node->son->brother->son->brother->token.token_number != OP_DEREFER)) {
+        if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number != NT_EXP && ((node->son->brother->son->brother->token.token_number != SEM_SYMBOL || symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 1) && node->son->brother->son->brother->token.token_number != OP_DEREFER)) {
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
-        } else if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number == NT_EXP && (node->son->brother->son->brother->token.token_number != SEM_SYMBOL && node->son->brother->son->brother->token.token_number != OP_DEREFER)) {
+        } else if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number == NT_EXP && ((node->son->brother->son->brother->token.token_number != SEM_SYMBOL || symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 1) && node->son->brother->son->brother->token.token_number != OP_DEREFER)) {
 
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
@@ -1260,7 +1281,7 @@ void ident_symbolizer(Node * node) {
                     node->son->brother = exp;
                     
                 } else if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son)) {
-
+                    // EQ/NE if문 끝에서 한번에 type노드를 채운다.
                 } else {
                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
@@ -1462,14 +1483,13 @@ void ident_symbolizer(Node * node) {
                     type->brother = node->son;
                     node->son = type;
                 } else if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son)) {
-
+                    Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                    type->brother = node->son;
+                    node->son = type;
                 } else {
                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
                 }
-            } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
-                printf("오류: 포인터가 아닌 곳에 포인터를 대입하려고 시도하고 있습니다. 종료합니다.\n");
-                exit(1);
             } else {    // 포인터가 아닌 경우들
                 Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                 if ((type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) != type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) || (node->son->brother->son->son->token.token_number != node->son->brother->brother->son->son->token.token_number)) {
@@ -1495,13 +1515,13 @@ void ident_symbolizer(Node * node) {
                     
                 } else if ((node->son->brother->brother->son->brother->token.token_number == NUM_INT || node->son->brother->brother->son->brother->token.token_number == NUM_UINT || node->son->brother->brother->son->brother->token.token_number == NUM_LONG || node->son->brother->brother->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(node->son->brother->brother->son->brother->token.token_value)) == 0) {
                     Node * previous_exp = node->son->brother->brother;
-                    Node * cast = node_maker(copy_tree(node->son->brother->son->son), previous_exp, NT_CAST, 0);
+                    Node * cast = node_maker(copy_tree(node->son->brother->brother->brother->son->son), previous_exp, NT_CAST, 0);
                     Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                     previous_exp->brother = NULL;
                     node->son->brother->brother = exp;
                     
                 } else if (compare_tree(node->son->brother->brother->son->son, node->son->brother->brother->brother->son->son)) {
-
+                    // QUESTION if문 끝에서 한번에 type노드를 채운다.
                 } else {
                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
