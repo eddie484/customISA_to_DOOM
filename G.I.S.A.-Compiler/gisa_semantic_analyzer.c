@@ -66,12 +66,15 @@ int type_rank_change(int type, int direction) {
 int type_size_calc(int type) {
     if (type == KW_INT) return 4;
     else if (type == KW_LONG) return 4;
+    else if (type == KW_POINTER) return 4;
     else if (type == KW_SHORT) return 2;
     else return 0;
 }
 
 int type_tree_size(Node * node, int size) {
     size += type_size_calc(node->token.token_number);
+
+    if (node->token.token_number == KW_POINTER) return size;
 
     if (node->son != NULL) size += type_tree_size(node->son, size);
     if (node->brother != NULL) size += type_tree_size(node->brother, size);
