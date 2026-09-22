@@ -855,8 +855,8 @@ Node * p_nt_param_list(Lexer_result lex_input){    // <param_list> ::= "void" | 
         Node * x1 = p_terminal(lex_input, KW_VOID);
 
         Node * param_node = node_maker(x1, NULL, NT_TYPE_LIST, 0);
-        
-        Node * n = node_maker(param_node, NULL, NT_PARAM_LIST, 0);
+        Node * param = node_maker(param_node, NULL, NT_PARAM, 0);
+        Node * n = node_maker(param, NULL, NT_PARAM_LIST, 0);
 
         return n;
     } else if (first(nextSymbol.token_number, NT_TYPE)) {
