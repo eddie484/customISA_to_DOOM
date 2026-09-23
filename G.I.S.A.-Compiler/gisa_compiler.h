@@ -168,6 +168,10 @@
 #define TAG_SIGNEXT     320
 #define TAG_ZEROEXT     321
 #define TAG_BYTECUT     322
+#define TAG_DEREFER     323
+#define TAG_GET_ADDR    324
+#define TAG_LOAD        325
+#define TAG_STORE       326
 
 #define NUM_IMM         349
 #define TYPE_BYTEWIDTH  350

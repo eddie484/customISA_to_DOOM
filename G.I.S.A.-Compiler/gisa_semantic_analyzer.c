@@ -930,6 +930,9 @@ int value_cut_typesize(int input, Node * type_tree) {
     } else if (type_tree->brother != NULL && (type_tree->brother->token.token_number == KW_SHORT) && type_tree->brother->brother == NULL) {
         printf("인풋 값 %d를 16비트 사이즈로 자릅니다. 변환된 값: %d\n", input, (uint16_t)input);
         return (uint16_t)input;
+    } else if (type_tree->token.token_number == KW_POINTER) {
+        printf("인풋은 포인터 타입입니다. %d를 32비트 사이즈로 내보냅니다. 변환된 값: %d\n", input, (uint32_t)input);
+        return (uint32_t)input;
     } else {
         printf("[경고] 잘못된 타입이 발생했을 수도 있습니다. value: %d\n", input);
         bin_tree_printer(type_tree);
