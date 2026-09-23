@@ -793,12 +793,27 @@ void func_typetree_validate(Node * symbol_node) {
                                 exit(1);
                             }
 
-                            if (compare_tree(current_input_typetree->son->son, func_typetree->son) == 0) {
-                                Node * current_exp_content = current_input_typetree->son;
-                                Node * cast = node_maker(copy_tree(func_typetree->son), node_maker(current_exp_content, NULL, NT_EXP, 0), NT_CAST, 0);
-                                current_input_typetree->son = cast;
-                                current_input_typetree->token.token_number = NT_EXP;
-                                current_input_typetree->token.token_value = 0;
+                            if (current_input_typetree->son->son->token.token_number == KW_POINTER || func_typetree->son->token.token_number == KW_POINTER) {
+                                if ((current_input_typetree->son->brother->token.token_number == NUM_INT || current_input_typetree->son->brother->token.token_number == NUM_UINT || current_input_typetree->son->brother->token.token_number == NUM_LONG || current_input_typetree->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(current_input_typetree->son->brother->token.token_value)) == 0) {
+                                    Node * current_exp_content = current_input_typetree->son;
+                                    Node * cast = node_maker(copy_tree(func_typetree->son), node_maker(current_exp_content, NULL, NT_EXP, 0), NT_CAST, 0);
+
+                                    current_input_typetree->son = cast;
+                                    current_input_typetree->token.token_number = NT_EXP;
+                                    current_input_typetree->token.token_value = 0;
+                                } else if (compare_tree(current_input_typetree->son->son, func_typetree->son)) {
+                                } else {
+                                    printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
+                                    exit(1);
+                                }
+                            } else {    // 포인터가 아닌 경우들
+                                if (compare_tree(current_input_typetree->son->son, func_typetree->son) == 0) {
+                                    Node * current_exp_content = current_input_typetree->son;
+                                    Node * cast = node_maker(copy_tree(func_typetree->son), node_maker(current_exp_content, NULL, NT_EXP, 0), NT_CAST, 0);
+                                    current_input_typetree->son = cast;
+                                    current_input_typetree->token.token_number = NT_EXP;
+                                    current_input_typetree->token.token_value = 0;
+                                }
                             }
 
                             current_input_typetree = current_input_typetree->brother;
@@ -1380,6 +1395,10 @@ void ident_symbolizer(Node * node) {
             node->son = type;
             
         } else if (node->son->token.token_number == OP_LT || node->son->token.token_number == OP_GT || node->son->token.token_number == OP_LE || node->son->token.token_number == OP_GE) {
+            if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                printf("포인터의 대소비교는 아직 미지원.\n");
+                exit(1);
+            }
             if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son) != 1) {   // 경우 1
                 if (node->son->brother->son->son->token.token_number == node->son->brother->brother->son->son->token.token_number) {    // 경우 2
                     if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) > type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) {
@@ -1684,12 +1703,33 @@ void ident_symbolizer(Node * node) {
 
     // *** AFTER PROCESSING ***
     if (node->token.token_number == KW_RETURN) {
-        if (compare_tree(node->brother->son->son, current_func_typetree) == 0) {
-            Node * previous_exp = node->brother;
-            Node * cast = node_maker(copy_tree(current_func_typetree), previous_exp, NT_CAST, 0);
-            Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-            previous_exp->brother = NULL;
-            node->brother = exp;
+        if (node->brother->son->son->token.token_number == KW_POINTER || current_func_typetree->token.token_number == KW_POINTER) {
+            if ((node->brother->son->brother->token.token_number == NUM_INT || node->brother->son->brother->token.token_number == NUM_UINT || node->brother->son->brother->token.token_number == NUM_LONG || node->brother->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(node->brother->son->brother->token.token_value)) == 0) {
+                Node * type = node_maker(copy_tree(current_func_typetree), NULL, SEM_TYPE, 0);
+                Node * previous_exp = node->brother;
+                Node * cast = node_maker(copy_tree(current_func_typetree), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->brother = exp;
+                    
+                type->brother = node->son;
+                node->son = type;
+            } else if (compare_tree(node->brother->son->son, current_func_typetree)) {
+                Node * type = node_maker(copy_tree(node->brother->son->son), NULL, SEM_TYPE, 0);
+                type->brother = node->son;
+                node->son = type;
+            } else {
+                printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            }
+        } else {    // 포인터가 아닌 경우들
+            if (compare_tree(node->brother->son->son, current_func_typetree) == 0) {
+                Node * previous_exp = node->brother;
+                Node * cast = node_maker(copy_tree(current_func_typetree), previous_exp, NT_CAST, 0);
+                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                previous_exp->brother = NULL;
+                node->brother = exp;
+            }
         }
     } 
 
