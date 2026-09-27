@@ -400,6 +400,23 @@ Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB){
     }
 }
 
+Node * tag_derefer_load(Node * val) {
+    Node * n;
+    if (val->token.token_number == TAG_DEREFER) {
+        Node * val_case = val;
+        val = val->son;
+        free(val_case);
+        Node * load_node = line_maker(TAG_LOAD, TAG_TEMP, temp_registration(symbol_finder_from_symbol_id(val->token.token_value)->type_tree->son), TAG_TEMP, 0, TAG_TEMP, val->token.token_value);
+        load_node->token.token_value = load_node->son->brother->token.token_value;
+        val->brother = load_node;
+        n = node_maker(val, NULL, TAG_LINE_SET, load_node->token.token_value);
+    } else {
+        n = val;
+    }
+
+    return n;
+}
+
 
 Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     if (ast->token.token_number == KW_RETURN) {
@@ -436,21 +453,9 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             return n1;
         } else if (ast->son->brother->token.token_number == OP_TILDE || ast->son->brother->token.token_number == OP_NEG) {
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
-            Node * n2;
-            if (n1->token.token_number == TAG_DEREFER) {
-                Node * n1_case = n1;
-                n1 = n1->son;
-                free(n1_case);
-                Node * load_node = line_maker(TAG_LOAD, TAG_TEMP, temp_registration(symbol_finder_from_symbol_id(n1->token.token_value)->type_tree->son), TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
-                load_node->token.token_value = load_node->son->brother->token.token_value;
-                n2 = tag_nt_instr_interpreting(ast->son, 0, load_node->token.token_value);
-                n1->brother = load_node;
-                load_node->brother = n2;
-            } else {
-                n2 = tag_nt_instr_interpreting(ast->son, 0, n1->token.token_value);
-                n1->brother = n2;
-            }
-            
+            n1 = tag_derefer_load(n1);
+            Node * n2 = tag_nt_instr_interpreting(ast->son, 0, n1->token.token_value);
+            n1->brother = n2;           
 
 
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
