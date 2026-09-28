@@ -250,7 +250,7 @@ Node * tag_symbol(Node * ast){
             n1->son = tag_arg_start;
         } 
         
-        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(symbol->type_tree->son));
+        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(symbol->type_tree->son->son));
 
         n1->brother = n2;
         
@@ -491,13 +491,24 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             return n;
         } else if (ast->son->brother->token.token_number == OP_ASSIGN) {
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
+            
             Node * n2 = tag_nt_instr_interpret_load(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);
             printf("enter OP_ASSIGN\n");        // 인자 1이 lside, 2가 rside.
-            Node * n3 = line_maker(TAG_MOV, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value);
             
-            n3->token.token_value = n3->son->brother->token.token_value;
+            Node * n3;
 
+            if (n1->token.token_number == TAG_DEREFER) {
+                n3 = line_maker(TAG_STORE, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value);
+                n3->token.token_value = n2->token.token_value;
+                Node * n1_cover = n1;
+                n1 = n1->son;
+                free(n1_cover);
 
+            } else {
+                n3 = line_maker(TAG_MOV, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value);
+                n3->token.token_value = n3->son->brother->token.token_value;
+            }
+            
             n1->brother = n2;
             n2->brother = n3;
 
@@ -560,7 +571,11 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
                 free(n1);
                 return n;
             } else {
-                Node * n = node_maker(n1, NULL, TAG_GET_ADDR, n1->token.token_value);
+                Node * n2 = line_maker(TAG_GET_ADDR, TAG_TEMP, temp_registration(ast->son->son), TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
+                n2->token.token_value = n2->son->brother->token.token_value;
+                n1->brother = n2;
+
+                Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
                 return n;
             }
 
