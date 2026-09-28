@@ -76,6 +76,7 @@ Node * line_switch(Node * ast, int temp_in_rA, int temp_in_rB);
 
 int temp_registration(Node * type_tree);
 Node * type_regulation(Node * node);
+int type_size(Node * node, int size);
 Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB);
 
 
@@ -86,8 +87,8 @@ int temp_registration(Node * type_tree){
     symbol->id = temp_count;
     // symbol_id_count++;
     symbol->type_tree = copy_tree(type_tree);
-    type_regulation(symbol->type_tree->brother);
-    symbol->size = symbol->type_tree->brother->token.token_value;
+    type_regulation(symbol->type_tree);
+    symbol->size = type_size(symbol->type_tree, 0);
     symbol->location.type = 0;
     symbol->location.location = 0;
     symbol->is_func = 0;
@@ -113,13 +114,15 @@ int temp_registration(Node * type_tree){
 
 
 Node * type_regulation(Node * node) {
-    if ((node->token.token_number == KW_INT || node->token.token_number == KW_LONG || node->token.token_number == KW_POINTER) && node->brother == NULL) {
+    if ((node->token.token_number == KW_INT || node->token.token_number == KW_LONG) && node->brother == NULL) {
         node->token.token_number = TYPE_BYTEWIDTH;
         node->token.token_value = 4;
     } else if ((node->token.token_number == KW_SHORT) && node->brother == NULL) {
         node->token.token_number = TYPE_BYTEWIDTH;
         node->token.token_value = 2;
-    } else if (((node->token.token_number == TYPE_BYTEWIDTH) && node->brother == NULL) || ((node->token.token_number == KW_UNSIGNED || node->token.token_number == KW_SIGNED) && node->brother != NULL)) {
+    } else if ((node->token.token_number == KW_POINTER) && node->brother == NULL) {
+        node->token.token_value = 4;
+    } else if (((node->token.token_number == TYPE_BYTEWIDTH || node->token.token_number == TYPE_FUNC) && node->brother == NULL) || ((node->token.token_number == KW_UNSIGNED || node->token.token_number == KW_SIGNED) && node->brother != NULL)) {
         
     } else {
         printf("오류: 잘못 정의된 타입트리입니다.\n");
@@ -133,13 +136,25 @@ Node * type_regulation(Node * node) {
     return node;
 }
 
+int type_size(Node * node, int size) {
+    size += node->token.token_value;
+    if (node->token.token_number == KW_POINTER) return size;
+    if (node->son != NULL) size = type_size(node->son, size);
+    if (node->brother != NULL) size = type_size(node->brother, size);
+    return size;
+}
+
 Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
-    type_regulation(ast->son->son->brother);
-    type_regulation(ast->son->brother->son->son->brother);
+    type_regulation(ast->son->son);
+    type_regulation(ast->son->brother->son->son);
 
     Node * casting_type = ast->son->son;
     Node * original_type = ast->son->brother->son->son;
     Node * casting_instr;
+
+    int casting_type_size = (casting_type->token.token_number == KW_POINTER) ? 4 : casting_type->brother->token.token_value;
+    int original_type_size = (original_type->token.token_number == KW_POINTER) ? 4 : original_type->brother->token.token_value;
+
 
     if (compare_tree(casting_type, original_type) == 1) {
         printf("같은 비트폭으로 캐스팅을 시도하고 있습니다. 캐스팅을 생략합니다.\n");
@@ -147,7 +162,7 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
         
         return n;
 
-    } else if (casting_type->brother->token.token_value == original_type->brother->token.token_value) {
+    } else if (casting_type_size == original_type_size) {
         Node * n1 = tag_nt_instr_interpret_load(ast->son->brother, temp_in_rA, temp_in_rB);
         Node * n2 = line_maker(TAG_MOV, TAG_TEMP, temp_registration(casting_type), TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
         n2->token.token_value = n2->son->brother->token.token_value;
@@ -157,9 +172,9 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
         Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
         return n;
-    } else if (casting_type->brother->token.token_value < original_type->brother->token.token_value) {
+    } else if (casting_type_size < original_type_size) {
         Node * n1 = tag_nt_instr_interpret_load(ast->son->brother, temp_in_rA, temp_in_rB);
-        Node * n2 = line_maker(TAG_BYTECUT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
+        Node * n2 = line_maker(TAG_BYTECUT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type_size, TAG_TEMP, n1->token.token_value);
         n2->token.token_value = n2->son->brother->token.token_value;
 
         n1->brother = n2;
@@ -167,12 +182,12 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
         Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
 
         return n;
-    } else if (casting_type->brother->token.token_value > original_type->brother->token.token_value) {
+    } else if (casting_type_size > original_type_size) {
         int original_type_signed = original_type->token.token_number;
         Node * n1 = tag_nt_instr_interpret_load(ast->son->brother, temp_in_rA, temp_in_rB);
         Node * n2;
-        if (original_type_signed == KW_SIGNED) n2 = line_maker(TAG_SIGNEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
-        else if (original_type_signed == KW_UNSIGNED) n2 = line_maker(TAG_ZEROEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type->brother->token.token_value, TAG_TEMP, n1->token.token_value);
+        if (original_type_signed == KW_SIGNED) n2 = line_maker(TAG_SIGNEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type_size, TAG_TEMP, n1->token.token_value);
+        else if (original_type_signed == KW_UNSIGNED || original_type_signed == KW_POINTER) n2 = line_maker(TAG_ZEROEXT, TAG_TEMP, temp_registration(casting_type), TYPE_BYTEWIDTH, casting_type_size, TAG_TEMP, n1->token.token_value);
         n2->token.token_value = n2->son->brother->token.token_value;
 
         n1->brother = n2;
@@ -182,11 +197,6 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
         return n;
         
     }
-
-    if (ast->son->token.token_number == NT_CAST) {
-        tag_nt_cast(ast, temp_in_rA, temp_in_rB);
-    }
-    
 
     return NULL;    // 실제 비트폭 캐스팅 지원 시 확장수정 필요!
 }
@@ -461,7 +471,6 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             return n1;
         } else if (ast->son->brother->token.token_number == OP_TILDE || ast->son->brother->token.token_number == OP_NEG) {
             Node * n1 = tag_nt_instr_interpret_load(ast->son->brother->brother, temp_in_rA, temp_in_rB);
-            n1 = tag_derefer_load(n1);
             Node * n2 = tag_nt_instr_interpreting(ast->son, 0, n1->token.token_value);
             n1->brother = n2;           
 
@@ -859,7 +868,7 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
 
     Node * n5;
 
-    if (symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->token.token_number == KW_UNSIGNED) {
+    if (symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->token.token_number == KW_POINTER) {
         switch (ast->son->brother->token.token_number) {    // if hit, branch to end
             case (OP_EQ):
                 n5 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);
