@@ -204,8 +204,27 @@ int main(int argc, char *argv[])
             binary |= (rD << 20);
             
             token = strtok(NULL, " \t\n");          // 세 번째 토큰으로 immB를 확인한다.
-            int immB = atoi(token + 1);
-            binary |= (immB & 0x000fffffU);         // 즉시값 부호가 범위를 초과하지 않도록 제한한다.
+            
+            
+            if (token[0] != '#') {      // 라벨 branch인 경우
+                int static_location = staticget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
+                int immB = data_addr + static_location;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    binary |= (immB & 0x000fffffU);
+                } else {    // 20비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
+                    exit(1);
+                }
+                
+            } else {      // 주소지정 branch인 경우
+                int immB = atoi(token + 1);
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                    binary |= (immB & 0x000fffffU);
+                } else {    // 20비트 바깥쪽이면 오류 처리.
+                    printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
+                    exit(1);
+                }
+            }
 
         } else if (strcmp(token, "MOVIZ") == 0) {
             binary |= (0b00000011U << 24);
@@ -1500,7 +1519,7 @@ int main(int argc, char *argv[])
             if (token[0] != '#') {      // 라벨 branch인 경우
                 int static_location = staticget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
                 int immB = data_addr + static_location;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1509,7 +1528,7 @@ int main(int argc, char *argv[])
                 
             } else {      // 주소지정 branch인 경우
                 int immB = atoi(token + 1);
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1554,7 +1573,7 @@ int main(int argc, char *argv[])
             if (token[0] != '#') {      // 라벨 branch인 경우
                 int static_location = staticget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
                 int immB = data_addr + static_location;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1563,7 +1582,7 @@ int main(int argc, char *argv[])
                 
             } else {      // 주소지정 branch인 경우
                 int immB = atoi(token + 1);
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1608,7 +1627,7 @@ int main(int argc, char *argv[])
             if (token[0] != '#') {      // 라벨 branch인 경우
                 int static_location = staticget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
                 int immB = data_addr + static_location;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1617,7 +1636,7 @@ int main(int argc, char *argv[])
                 
             } else {      // 주소지정 branch인 경우
                 int immB = atoi(token + 1);
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1662,7 +1681,7 @@ int main(int argc, char *argv[])
             if (token[0] != '#') {      // 라벨 branch인 경우
                 int static_location = staticget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
                 int immB = data_addr + static_location;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1671,7 +1690,7 @@ int main(int argc, char *argv[])
                 
             } else {      // 주소지정 branch인 경우
                 int immB = atoi(token + 1);
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1716,7 +1735,7 @@ int main(int argc, char *argv[])
             if (token[0] != '#') {      // 라벨 branch인 경우
                 int static_location = staticget(token);    // 어떤 라벨인지 감지 후, 라벨이 라인 몇을 가리키는지 가져옴
                 int immB = data_addr + static_location;    // (현재 라인 - 라벨 라인) * 4. 현재 라인은 int i에서 명시중.
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1725,7 +1744,7 @@ int main(int argc, char *argv[])
                 
             } else {      // 주소지정 branch인 경우
                 int immB = atoi(token + 1);
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= (immB & 0x000fffffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1775,7 +1794,7 @@ int main(int argc, char *argv[])
                 int immBf = immB >> 12;
                 int immBb = immB & 0xFFF;
                 
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1787,7 +1806,7 @@ int main(int argc, char *argv[])
                 int immBf = immB >> 12;
                 int immBb = immB & 0xFFF;
                 
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1839,7 +1858,7 @@ int main(int argc, char *argv[])
                 int immBf = immB >> 12;
                 int immBb = immB & 0xFFF;
                 
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1851,7 +1870,7 @@ int main(int argc, char *argv[])
                 int immBf = immB >> 12;
                 int immBb = immB & 0xFFF;
                 
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1903,7 +1922,7 @@ int main(int argc, char *argv[])
                 int immBf = immB >> 12;
                 int immBb = immB & 0xFFF;
                 
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
@@ -1915,7 +1934,7 @@ int main(int argc, char *argv[])
                 int immBf = immB >> 12;
                 int immBb = immB & 0xFFF;
                 
-                if(immB < 524287 && immB > -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
+                if(immB <= 524287 && immB >= -524288){    // 결과값이 20비트 안쪽인지 확인 후 immB로 만들고 바이너리 생성
                     binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
                 } else {    // 20비트 바깥쪽이면 오류 처리.
                     printf("너무 먼 주소의 data에 접근을 시도하고 있습니다.");
