@@ -1289,6 +1289,11 @@ void specifier_declr_setting (Node * spec, Node * declr) {
         if (spec->son->token.token_number == KW_STATIC && spec->son->brother->token.token_number == KW_EXTERN) spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, KW_POINTER, 0);
         else spec->son = node_maker(spec->son, NULL, KW_POINTER, 0);
     } else if (declr->token.token_number == NT_PARAM_LIST) {
+        if (spec->son->token.token_number == TYPE_FUNC || (spec->son->brother != NULL && spec->son->brother->brother != NULL && spec->son->brother->brother->token.token_number == TYPE_FUNC)) {
+            printf("오류: 함수의 반환타입이 함수라고 정의되어 있습니다. 종료합니다.\n");
+            exit(1);
+        }
+
         if (spec->son->token.token_number == KW_STATIC && spec->son->brother->token.token_number == KW_EXTERN) spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, TYPE_FUNC, 0);
         else spec->son = node_maker(spec->son, NULL, TYPE_FUNC, 0);
         
