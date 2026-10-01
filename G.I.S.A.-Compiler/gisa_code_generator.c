@@ -389,8 +389,27 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
             return n;
         } else if (tag->son->token.token_number == TAG_STORE) {
-            Node * n1 = line_maker(ASM_MOV, ASM_REGISTER, 2, TAG_TEMP, 0, NUM_IMM, lexval_manager ("0"));
-            Node * n2 = line_maker(ASM_SUB, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value);
+            int temp_val = tag->son->brother->token.token_value;
+            int saved_val = tag->son->brother->brother->brother->token.token_value;
+            char str[12];
+            snprintf(str, sizeof(str), "%d", -(4 * temp_val));
+
+            Node * n1;
+            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
+            } else {
+                n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+            }
+
+            Node * n2;
+            if (symbol_finder_from_symbol_id(saved_val)->size == 4) {
+                n2 = line_maker(ASM_STR, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
+            } else if (symbol_finder_from_symbol_id(saved_val)->size == 2) {
+                n2 = line_maker(ASM_STRH, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
+            } else if (symbol_finder_from_symbol_id(saved_val)->size == 1) {
+                n2 = line_maker(ASM_STRB, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
+            }
+            
 
             n1->brother = n2;
 
@@ -398,79 +417,18 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
             return n;
         } else if (tag->son->token.token_number == TAG_GET_ADDR) {
-            
-            Node * n1 = line_maker(ASM_MOV, ASM_REGISTER, 2, TAG_TEMP, 0, NUM_IMM, lexval_manager ("0"));
-            Node * n2 = line_maker(ASM_SUB, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value);
-
-            n1->brother = n2;
-
-            Node * n = node_maker(n1, NULL, ASM_LINE_SET, tag->token.token_value);
-
-            return n;
-
-            /*int temp_val = node->son->brother->brother->token.token_value;
-            int n = -(4 * node->son->brother->brother->token.token_value);
+            int addr_temp = tag->son->brother->brother->brother->token.token_value;
+            int result_temp = tag->son->brother->token.token_value;
             char str[12];
-            snprintf(str, sizeof(str), "%d", n);
+            snprintf(str, sizeof(str), "%d", -(4 * addr_temp));
 
-            Node * original_line_node;
-            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
-                if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
-                        original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
-                        original_line_node = line_maker(ASM_LDRH, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
-                        original_line_node = line_maker(ASM_LDRB, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    }
-                } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
-                        original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
-                        original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
-                        original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    }
-                }
-                
-                
+            Node * n1;
+            if ((addr_temp < temp_count && addr_temp >= 1) && (symbol_finder_from_symbol_id(addr_temp)->init_option == 1 || symbol_finder_from_symbol_id(addr_temp)->init_option == 2)) {
+                n1 = line_maker(ASM_ADD, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_DATA_AREA, 0, NUM_IMM, addr_temp);
             } else {
-                if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
-                        original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
-                        original_line_node = line_maker(ASM_LDRH, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
-                        original_line_node = line_maker(ASM_LDRB, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    }
-                } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
-                        original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
-                        original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
-                        original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    }
-                }
-                
-                
+                n1 = line_maker(ASM_ADD, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
             }
-            Node * son = original_line_node->son;
-
-            original_line_node->son = node->son;
-            original_line_node->brother = node->brother;
-            original_line_node->token.token_number = node->token.token_number;
-            original_line_node->token.token_value = node->token.token_value;
-
-            node->son = son;
-            node->brother = original_line_node;
-            node->token.token_number = ASM_LINE;
-            node->token.token_value = 0;
-
-            original_line_node->son->brother->brother->token.token_number = ASM_REGISTER;
-            original_line_node->son->brother->brother->token.token_value = 2;
-*/
-
+            return n1;
         } else {
             Node * x4 = node_maker(NULL, NULL, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value);
             Node * x3 = node_maker(NULL, x4, tag->son->brother->brother->token.token_number, tag->son->brother->brother->token.token_value);
