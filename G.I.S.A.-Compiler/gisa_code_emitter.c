@@ -74,7 +74,15 @@ void asm_printer(Node * node, FILE * codeemitfp){
         case ASM_LINE: {
             switch(node->son->token.token_number) {
                 case ASM_MOV: {
-                    if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
+                    if (node->son->brother->brother->brother->token.token_number == ASM_DATA_AREA) {
+                        if (symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->is_global == 1) {
+                            printf("\tMOVI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                            fprintf(codeemitfp, "\tMOVI R%d DATA_%s\n", node->son->brother->token.token_value, lexval_finder(symbol_finder_from_symbol_id(node->son->brother->brother->brother->token.token_value)->name));
+                        } else {
+                            printf("\tMOVI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                            fprintf(codeemitfp, "\tMOVI R%d DATA_ID_%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
+                        } 
+                    } else if (node->son->brother->brother->brother->token.token_number == ASM_REGISTER) {
                         printf("\tMOV R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
                         fprintf(codeemitfp, "\tMOV R%d R%d\n", node->son->brother->token.token_value, node->son->brother->brother->brother->token.token_value);
 

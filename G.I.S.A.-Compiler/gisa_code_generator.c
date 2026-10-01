@@ -424,7 +424,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
             Node * n1;
             if ((addr_temp < temp_count && addr_temp >= 1) && (symbol_finder_from_symbol_id(addr_temp)->init_option != 0)) {
-                n1 = line_maker(ASM_ADD, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_DATA_AREA, 0, NUM_IMM, addr_temp);
+                n1 = line_maker(ASM_MOV, tag->son->brother->token.token_number, tag->son->brother->token.token_value, TAG_TEMP, 0, ASM_DATA_AREA, addr_temp);
             } else {
                 n1 = line_maker(ASM_ADD, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
             }
