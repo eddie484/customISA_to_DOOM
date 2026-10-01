@@ -358,7 +358,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             snprintf(str, sizeof(str), "%d", -(4 * temp_val));
 
             Node * n1;
-            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
                 n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
             } else {
                 n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
@@ -395,7 +395,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             snprintf(str, sizeof(str), "%d", -(4 * temp_val));
 
             Node * n1;
-            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
                 n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
             } else {
                 n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
@@ -423,7 +423,7 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
             snprintf(str, sizeof(str), "%d", -(4 * addr_temp));
 
             Node * n1;
-            if ((addr_temp < temp_count && addr_temp >= 1) && (symbol_finder_from_symbol_id(addr_temp)->init_option == 1 || symbol_finder_from_symbol_id(addr_temp)->init_option == 2)) {
+            if ((addr_temp < temp_count && addr_temp >= 1) && (symbol_finder_from_symbol_id(addr_temp)->init_option != 0)) {
                 n1 = line_maker(ASM_ADD, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_DATA_AREA, 0, NUM_IMM, addr_temp);
             } else {
                 n1 = line_maker(ASM_ADD, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
@@ -568,7 +568,7 @@ void asm_pass2_temp_to_stack(Node * node) {
                 snprintf(str, sizeof(str), "%d", n);
 
                 Node * original_line_node;
-                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
                     if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
                         if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
                             original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
@@ -629,7 +629,7 @@ void asm_pass2_temp_to_stack(Node * node) {
                 snprintf(str, sizeof(str), "%d", n);
 
                 Node * store_rD;
-                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
                     if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
                         store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                     } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
@@ -665,7 +665,7 @@ void asm_pass2_temp_to_stack(Node * node) {
             snprintf(str, sizeof(str), "%d", n);
 
             Node * original_line_node;
-            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
                 if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
                     if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
@@ -729,7 +729,7 @@ void asm_pass2_temp_to_stack(Node * node) {
                 snprintf(str, sizeof(str), "%d", n);
 
                 Node * line_ldr_rb;
-                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
                     if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
                         if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
                             line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
@@ -786,7 +786,7 @@ void asm_pass2_temp_to_stack(Node * node) {
             snprintf(str, sizeof(str), "%d", n);
 
             Node * original_line_node;
-            if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option == 1 || symbol_finder_from_symbol_id(temp_val)->init_option == 2)) {
+            if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
                 if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
                     if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
