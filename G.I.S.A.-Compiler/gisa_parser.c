@@ -5,9 +5,10 @@
     <specifier> ::= <type> | "static" | "extern"
     <specifier_multi> ::= <specifier_list> | ε
     <type> ::= "int" | "long" | "short" | "signed" | "unsigned"
-    <ident_declr> ::= * <ident_declr> | <ident_backside>
-    <ident_backside> ::= <ident_main> | <ident_main> "(" <param_list> ")"
+    <ident_declr> ::= "*" <ident_declr> | <ident_backside>
+    <ident_backside> ::= <ident_main> <array> | <ident_main> "(" <param_list> ")"
     <ident_main> ::= IDENT | "(" <ident_declr> ")"
+    <array> ::= "[" <num> "]" <array> | ε
     <param_list> ::= "void" | <type_list> <ident_declr> <param_multi>
     <param_multi> ::= "," <type_list> <ident_declr> <param_multi> | ε
     <type_list> ::= <type> <type_multi>
@@ -21,15 +22,21 @@
     <label> ::= IDENT ":"
     <declr> ::= <func_declr> | <var_declr>
     <var_declr> ::= <specifier_list> <ident_declr> <assign> ";"
-    <assign> ::= "=" <exp> | ε
+    <assign> ::= "=" <init> | ε
+    <init> ::= <exp> | "{" <init> <init_list> <is_comma> "}"
+    <init_list> ::= "," <init> <init_list> | ε
+    <is_comma> ::= "," | ε
     <for_init> ::= <var_declr> | <exp> ";" | ";"
     <for_exp> ::= <exp> | ε
-    <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "?" <exp> ":" <exp>
-    <factor> ::= NUM_INT | NUM_LONG | NUM_UINT | NUM_ULONG | IDENT <postfix> | <unary_op> <factor> | "*" <factor> | "&" <factor> | "(" <type_list> <cast_declr> ")" <factor> | "(" <exp> ")"
-    <cast_declr> ::= * <cast_declr> | "(" <cast_declr> ")" | ε
+    <exp> ::= <unary_exp> | <exp> <binary_op> <exp> | <exp> "?" <exp> ":" <exp>
+    <unary_exp> ::= <unary_op> <unary_exp> | "*" <unary_exp> | "&" <unary_exp> | "(" <type_list> <cast_declr> ")" <unary_exp> | <factor> <array_exp>
+    <array_exp> ::= "[" <exp> "]" <array_exp> | ε
+    <factor> ::= <num> | IDENT <postfix> | "(" <exp> ")"
+    <cast_declr> ::= * <cast_declr> | "(" <cast_declr> ")" <array> | <array>
     <postfix> ::= "++" | "--" | "(" <arg_list> ")" | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "," <exp> <arg> | ε
+    <num> ::= NUM_INT | NUM_LONG | NUM_UINT | NUM_ULONG
     <unary_op> ::= "~" | "-" | "!" | "++" | "--"
     <binary_op> ::= "+" | "-" | "*" | "/" | "%" | "&" | "|" | "^" | "<<" | ">>"
                     "&&" | "||" | "==" | "!=" | "<" | ">" | "<=" | ">=" | "="
@@ -42,8 +49,9 @@
     <specifier_multi> ::= <specifier_list> | ε
     <type> ::= "KW_INT" | "KW_LONG" | "KW_SHORT" | "KW_SIGNED" | "KW_UNSIGNED"
     <ident_declr> ::= "OP_MUL" <ident_declr> | <ident_backside>
-    <ident_backside> ::= <ident_main> | <ident_main> "OPEN_PAREN" <param_list> "CLOSE_PAREN"
+    <ident_backside> ::= <ident_main> <array> | <ident_main> "OPEN_PAREN" <param_list> "CLOSE_PAREN"
     <ident_main> ::= IDENT | "OPEN_PAREN" <ident_declr> "CLOSE_PAREN"
+    <array> ::= "OPEN_BRACK" <num> "CLOSE_BRACK" <array> | ε
     <param_list> ::= "KW_VOID" | <type_list> <ident_declr> <param_multi>
     <param_multi> ::= "PN_COMMA" <type_list> <ident_declr> <param_multi> | ε
     <type_list> ::= <type> <type_multi>
@@ -57,16 +65,22 @@
     <label> ::= IDENT "OP_COLON"
     <declr> ::= <func_declr> | <var_declr>
     <var_declr> ::= <specifier_list> <ident_declr> <assign> "PN_SEMI"
-    <assign> ::= "OP_ASSIGN" <exp> | ε
+    <assign> ::= "OP_ASSIGN" <init> | ε
+    <init> ::= <exp> | "OPEN_BRACE" <init> <init_list> <is_comma> "CLOSE_BRACE"
+    <init_list> ::= "PN_COMMA" <init> <init_list> | ε
+    <is_comma> ::= "PN_COMMA" | ε
     <for_init> ::= <var_declr> | <exp> "PN_SEMI" | "PN_SEMI"
     <for_exp> ::= <exp> | ε
-    <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "OP_QUESTION" <exp> "OP_COLON" <exp>
-    <factor> ::= NUM_INT | NUM_LONG | NUM_UINT | NUM_ULONG | IDENT <postfix> | <unary_op> <factor> | "OP_MUL" <factor> | "OP_AND" <factor> | "OPEN_PAREN" <type_list> <cast_declr> "CLOSE_PAREN" <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
-    <cast_declr> ::= "OP_MUL" <cast_declr> | "OPEN_PAREN" <cast_declr> "CLOSE_PAREN" | ε
+    <exp> ::= <unary_exp> | <exp> <binary_op> <exp> | <exp> "OP_QUESTION" <exp> "OP_COLON" <exp>
+    <unary_exp> ::= <unary_op> <unary_exp> | "OP_MUL" <unary_exp> | "OP_AND" <unary_exp> | "OPEN_PAREN" <type_list> <cast_declr> "CLOSE_PAREN" <unary_exp> | <factor> <array_exp>
+    <array_exp> ::= "OPEN_BRACK" <exp> "CLOSE_BRACK" <array_exp> | ε
+    <factor> ::= <num> | IDENT <postfix> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
+    <cast_declr> ::= "OP_MUL" <cast_declr> | "OPEN_PAREN" <cast_declr> "CLOSE_PAREN" <array> | <array>
     <postfix> ::= "OP_INCREMENT" | "OP_DECREMENT" | "OPEN_PAREN" <arg_list> "CLOSE_PAREN" | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "PN_COMMA" <exp> <arg> | ε
     <unary_op> ::= "OP_TILDE" | "OP_MINUS" | "OP_LOGIC_NOT" | "OP_INCREMENT" | "OP_DECREMENT"
+    <num> ::= NUM_INT | NUM_LONG | NUM_UINT | NUM_ULONG
     <binary_op> ::= "OP_MINUS" | "OP_ADD" | "OP_MUL" | "OP_DIV" | "OP_MOD" | "OP_AND" | "OP_OR" | "OP_XOR" | "OP_SHL" | "OP_ASR"
                     "OP_LOGIC_AND" | "OP_LOGIC_OR" | "OP_EQ" | "OP_NE" | "OP_LT" | "OP_GT" | "OP_LE" | "OP_GE" | "OP_ASSIGN"
                     "OP_ADDEQ" | "OP_SUBEQ" | "OP_MULEQ" | "OP_DIVEQ" | "OP_MODEQ" | "OP_ANDEQ" | "OP_OREQ" | "OP_XOREQ" | "OP_SHLEQ" | "OP_ASREQ"
@@ -78,8 +92,9 @@
     <specifier_multi> ::= <specifier_list> | ε
     <type> ::= 2 | 66 | 67 | 70 | 71
     <ident_declr> ::= 16 <ident_declr> | <ident_backside>
-    <ident_backside> ::= <ident_main> | <ident_main> 5 <param_list> 6
+    <ident_backside> ::= <ident_main> <array> | <ident_main> 5 <param_list> 6
     <ident_main> ::= 0 | 5 <ident_declr> 6
+    <array> ::= 77 <num> 78 <array> | ε
     <param_list> ::= 3 | <type_list> <ident_declr> <param_multi>
     <param_multi> ::= 62 <type_list> <ident_declr> <param_multi> | ε
     <type_list> ::= <type> <type_multi>
@@ -93,15 +108,21 @@
     <label> ::= 0 52
     <declr> ::= <func_declr> | <var_declr>
     <var_declr> ::= <specifier_list> <ident_declr> <assign> 9
-    <assign> ::= 33 <exp> | ε
+    <assign> ::= 33 <init> | ε
+    <init> ::= <exp> | 7 <init> <init_list> <is_comma> 8
+    <init_list> ::= 62 <init> <init_list> | ε
+    <is_comma> ::= 62 | ε
     <for_init> ::= <var_declr> | <exp> 9 | 9
     <for_exp> ::= <exp> | ε
-    <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> 51 <exp> 52 <exp>
-    <factor> ::= 1 | 65 | 68 | 69 | 0 <postfix> | <unary_op> <factor> | 16 <factor> | 19 <factor> | 5 <type_list> <cast_declr> 6 <factor> | 5 <exp> 6
-    <cast_declr> ::= 16 <cast_declr> | 5 <cast_declr> 6 | ε
+    <exp> ::= <unary_exp> | <exp> <binary_op> <exp> | <exp> 51 <exp> 52 <exp>
+    <unary_exp> ::= <unary_op> <unary_exp> | 16 <unary_exp> | 19 <unary_exp> | 5 <type_list> <cast_declr> 6 <unary_exp> | <factor> <array_exp>
+    <array_exp> ::= 77 <exp> 78 <array_exp> | ε
+    <factor> ::= <num> | 0 <postfix> | 5 <exp> 6
+    <cast_declr> ::= 16 <cast_declr> | 5 <cast_declr> 6 <array> | <array>
     <postfix> ::= 13 | 44 | 5 <arg_list> 6 | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= 62 <exp> <arg> | ε
+    <num> ::= 1 | 65 | 68 | 69
     <unary_op> ::= 10 | 11 | 24 | 13 | 44
     <binary_op> ::= 11 | 14 | 16 | 17 | 18 | 19 | 20 | 21 | 22 | 23
                     25 | 26 | 27 | 28 | 29 | 30 | 31 | 32 | 33
@@ -118,6 +139,7 @@
 	FIRST(<ident_declr>) = {0, 5, 16}
 	FIRST(<ident_backside>) = {0, 5}
 	FIRST(<ident_main>) = {0, 5}
+	FIRST(<array>) = {77, ε}
 	FIRST(<param_list>) = {2, 3, 66, 67, 70, 71}
 	FIRST(<param_multi>) = {62, ε}
 	FIRST(<type_list>) = {2, 66, 67, 70, 71}
@@ -132,14 +154,20 @@
 	FIRST(<declr>) = {2, 63, 64, 66, 67, 70, 71}
 	FIRST(<var_declr>) = {2, 63, 64, 66, 67, 70, 71}
 	FIRST(<assign>) = {33, ε}
+	FIRST(<init>) = {0, 1, 5, 7, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69}
+	FIRST(<init_list>) = {62, ε}
+	FIRST(<is_comma>) = {62, ε}
 	FIRST(<for_init>) = {0, 1, 2, 5, 9, 10, 11, 13, 16, 19, 24, 44, 63, 64, 65, 66, 67, 68, 69, 70, 71}
 	FIRST(<for_exp>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, ε}
 	FIRST(<exp>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69}
-	FIRST(<factor>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69}
-	FIRST(<cast_declr>) = {5, 16, ε}
+	FIRST(<unary_exp>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69}
+	FIRST(<array_exp>) = {77, ε}
+	FIRST(<factor>) = {0, 1, 5, 65, 68, 69}
+	FIRST(<cast_declr>) = {5, 16, 77, ε}
 	FIRST(<postfix>) = {5, 13, 44, ε}
 	FIRST(<arg_list>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, ε}
 	FIRST(<arg>) = {62, ε}
+	FIRST(<num>) = {1, 65, 68, 69}
 	FIRST(<unary_op>) = {10, 11, 13, 24, 44}
 	FIRST(<binary_op>) = {11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43}
 
@@ -148,14 +176,15 @@
 	FOLLOW(<specifier_list>) = {0, 5, 16}
 	FOLLOW(<specifier>) = {0, 2, 5, 16, 63, 64, 66, 67, 70, 71}
 	FOLLOW(<specifier_multi>) = {0, 5, 16}
-	FOLLOW(<type>) = {0, 2, 5, 6, 16, 63, 64, 66, 67, 70, 71}
+	FOLLOW(<type>) = {0, 2, 5, 6, 16, 63, 64, 66, 67, 70, 71, 77}
 	FOLLOW(<ident_declr>) = {6, 7, 9, 33, 62}
 	FOLLOW(<ident_backside>) = {6, 7, 9, 33, 62}
-	FOLLOW(<ident_main>) = {5, 6, 7, 9, 33, 62}
+	FOLLOW(<ident_main>) = {5, 6, 7, 9, 33, 62, 77}
+	FOLLOW(<array>) = {6, 7, 9, 33, 62}
 	FOLLOW(<param_list>) = {6}
 	FOLLOW(<param_multi>) = {6}
-	FOLLOW(<type_list>) = {0, 5, 6, 16}
-	FOLLOW(<type_multi>) = {0, 5, 6, 16}
+	FOLLOW(<type_list>) = {0, 5, 6, 16, 77}
+	FOLLOW(<type_multi>) = {0, 5, 6, 16, 77}
 	FOLLOW(<func_content>) = {$, 0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 16, 19, 24, 44, 49, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71}
 	FOLLOW(<block>) = {$, 0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 16, 19, 24, 44, 49, 50, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71}
 	FOLLOW(<instr_list>) = {8}
@@ -166,14 +195,20 @@
 	FOLLOW(<declr>) = {$, 0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 16, 19, 24, 44, 49, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71}
 	FOLLOW(<var_declr>) = {$, 0, 1, 2, 4, 5, 7, 8, 9, 10, 11, 13, 16, 19, 24, 44, 49, 53, 54, 55, 56, 57, 58, 59, 60, 61, 63, 64, 65, 66, 67, 68, 69, 70, 71}
 	FOLLOW(<assign>) = {9}
+	FOLLOW(<init>) = {8, 9, 62}
+	FOLLOW(<init_list>) = {8, 62}
+	FOLLOW(<is_comma>) = {8}
 	FOLLOW(<for_init>) = {0, 1, 5, 9, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69}
 	FOLLOW(<for_exp>) = {6, 9}
-	FOLLOW(<exp>) = {6, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62}
-	FOLLOW(<factor>) = {6, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62}
+	FOLLOW(<exp>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
+	FOLLOW(<unary_exp>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
+	FOLLOW(<array_exp>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
+	FOLLOW(<factor>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 77, 78}
 	FOLLOW(<cast_declr>) = {6}
-	FOLLOW(<postfix>) = {6, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62}
+	FOLLOW(<postfix>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 77, 78}
 	FOLLOW(<arg_list>) = {6}
 	FOLLOW(<arg>) = {6}
+	FOLLOW(<num>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 77, 78}
 	FOLLOW(<unary_op>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69}
 	FOLLOW(<binary_op>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69}
 
@@ -254,6 +289,10 @@ Node * p_nt_specifier_list(Lexer_result lex_input);
 Node * p_nt_specifier(Lexer_result lex_input);
 Node * p_nt_specifier_multi(Lexer_result lex_input);
 Node * p_nt_type(Lexer_result lex_input);
+Node * p_nt_ident_declr(Lexer_result lex_input);
+Node * p_nt_ident_backside(Lexer_result lex_input);
+Node * p_nt_ident_main(Lexer_result lex_input);
+Node * p_nt_array(Lexer_result lex_input);
 Node * p_nt_param_list(Lexer_result lex_input);
 Node * p_nt_param_multi(Lexer_result lex_input);
 Node * p_nt_type_list_calling(Lexer_result lex_input);
@@ -268,19 +307,22 @@ Node * p_nt_else(Lexer_result lex_input);
 Node * p_nt_label(Lexer_result lex_input);
 void specifier_declr_setting (Node * spec, Node * declr);
 Node * p_nt_declr(Lexer_result lex_input);
-Node * p_nt_ident_declr(Lexer_result lex_input);
-Node * p_nt_ident_backside(Lexer_result lex_input);
-Node * p_nt_ident_main(Lexer_result lex_input);
 Node * p_nt_var_declr(Lexer_result lex_input);
 Node * p_nt_assign(Lexer_result lex_input);
+Node * p_nt_init(Lexer_result lex_input);
+Node * p_nt_init_list(Lexer_result lex_input);
+Node * p_nt_is_comma(Lexer_result lex_input);
 Node * p_nt_for_init(Lexer_result lex_input);
 Node * p_nt_for_exp(Lexer_result lex_input);
 Node * p_nt_exp(Lexer_result lex_input, int min_priority);
+Node * p_nt_unary_exp(Lexer_result lex_input);
+Node * p_nt_array_exp(Lexer_result lex_input);
 Node * p_nt_factor(Lexer_result lex_input);
 Node * p_nt_cast_declr(Lexer_result lex_input);
 Node * p_nt_postfix(Lexer_result lex_input);
 Node * p_nt_arg_list(Lexer_result lex_input);
 Node * p_nt_arg(Lexer_result lex_input);
+Node * p_nt_num(Lexer_result lex_input);
 Node * p_nt_unary_op(Lexer_result lex_input);
 Node * p_nt_binary_op(Lexer_result lex_input);
 
@@ -337,6 +379,9 @@ int first(int input_token, int nt_set){
         case NT_IDENT_MAIN:
             return (input_token == 0 || input_token == 5);
 
+        case NT_ARRAY:
+            return (input_token == 77);
+
         case NT_PARAM_LIST:
             return (input_token == 2 || input_token == 3 || input_token == 66 || input_token == 67 || input_token == 70 || input_token == 71);
 
@@ -379,6 +424,15 @@ int first(int input_token, int nt_set){
         case NT_ASSIGN:
             return (input_token == 33);
 
+        case NT_INIT:
+            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 7 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 65 || input_token == 68 || input_token == 69);
+
+        case NT_INIT_LIST:
+            return (input_token == 62);
+
+        case NT_IS_COMMA:
+            return (input_token == 62);
+
         case NT_FOR_INIT:
             return (input_token == 0 || input_token == 1 || input_token == 2 || input_token == 5 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 63 || input_token == 64 || input_token == 65 || input_token == 66 || input_token == 67 || input_token == 68 || input_token == 69 || input_token == 70 || input_token == 71);
 
@@ -388,11 +442,17 @@ int first(int input_token, int nt_set){
         case NT_EXP:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 65 || input_token == 68 || input_token == 69);
 
-        case NT_FACTOR:
+        case NT_UNARY_EXP:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 65 || input_token == 68 || input_token == 69);
 
+        case NT_ARRAY_EXP:
+            return (input_token == 77);
+
+        case NT_FACTOR:
+            return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 65 || input_token == 68 || input_token == 69);
+
         case NT_CAST_DECLR:
-            return (input_token == 5 || input_token == 16);
+            return (input_token == 5 || input_token == 16 || input_token == 77);
 
         case NT_POSTFIX:
             return (input_token == 5 || input_token == 13 || input_token == 44);
@@ -402,6 +462,9 @@ int first(int input_token, int nt_set){
 
         case NT_ARG:
             return (input_token == 62);
+
+        case NT_NUM:
+            return (input_token == 1 || input_token == 65 || input_token == 68 || input_token == 69);
 
         case NT_UNARY_OP:
             return (input_token == 10 || input_token == 11 || input_token == 13 || input_token == 24 || input_token == 44);
@@ -434,7 +497,7 @@ int follow(int input_token, int nt_set){
             return (input_token == 0 || input_token == 5 || input_token == 16);
 
         case NT_TYPE:
-            return (input_token == 0 || input_token == 2 || input_token == 5 || input_token == 6 || input_token == 16 || input_token == 63 || input_token == 64 || input_token == 66 || input_token == 67 || input_token == 70 || input_token == 71);
+            return (input_token == 0 || input_token == 2 || input_token == 5 || input_token == 6 || input_token == 16 || input_token == 63 || input_token == 64 || input_token == 66 || input_token == 67 || input_token == 70 || input_token == 71 || input_token == 77);
 
         case NT_IDENT_DECLR:
             return (input_token == 6 || input_token == 7 || input_token == 9 || input_token == 33 || input_token == 62);
@@ -443,7 +506,10 @@ int follow(int input_token, int nt_set){
             return (input_token == 6 || input_token == 7 || input_token == 9 || input_token == 33 || input_token == 62);
 
         case NT_IDENT_MAIN:
-            return (input_token == 5 || input_token == 6 || input_token == 7 || input_token == 9 || input_token == 33 || input_token == 62);
+            return (input_token == 5 || input_token == 6 || input_token == 7 || input_token == 9 || input_token == 33 || input_token == 62 || input_token == 77);
+
+        case NT_ARRAY:
+            return (input_token == 6 || input_token == 7 || input_token == 9 || input_token == 33 || input_token == 62);
 
         case NT_PARAM_LIST:
             return (input_token == 6);
@@ -452,10 +518,10 @@ int follow(int input_token, int nt_set){
             return (input_token == 6);
 
         case NT_TYPE_LIST:
-            return (input_token == 0 || input_token == 5 || input_token == 6 || input_token == 16);
+            return (input_token == 0 || input_token == 5 || input_token == 6 || input_token == 16 || input_token == 77);
 
         case NT_TYPE_MULTI:
-            return (input_token == 0 || input_token == 5 || input_token == 6 || input_token == 16);
+            return (input_token == 0 || input_token == 5 || input_token == 6 || input_token == 16 || input_token == 77);
 
         case NT_FUNC_CONTENT:
             return (input_token == 999 || input_token == 0 || input_token == 1 || input_token == 2 || input_token == 4 || input_token == 5 || input_token == 7 || input_token == 8 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 49 || input_token == 53 || input_token == 54 || input_token == 55 || input_token == 56 || input_token == 57 || input_token == 58 || input_token == 59 || input_token == 60 || input_token == 61 || input_token == 63 || input_token == 64 || input_token == 65 || input_token == 66 || input_token == 67 || input_token == 68 || input_token == 69 || input_token == 70 || input_token == 71);
@@ -487,6 +553,15 @@ int follow(int input_token, int nt_set){
         case NT_ASSIGN:
             return (input_token == 9);
 
+        case NT_INIT:
+            return (input_token == 8 || input_token == 9 || input_token == 62);
+
+        case NT_INIT_LIST:
+            return (input_token == 8 || input_token == 62);
+
+        case NT_IS_COMMA:
+            return (input_token == 8);
+
         case NT_FOR_INIT:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 9 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 65 || input_token == 68 || input_token == 69);
 
@@ -494,22 +569,31 @@ int follow(int input_token, int nt_set){
             return (input_token == 6 || input_token == 9);
 
         case NT_EXP:
-            return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62);
+            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 78);
+
+        case NT_UNARY_EXP:
+            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 78);
+
+        case NT_ARRAY_EXP:
+            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 78);
 
         case NT_FACTOR:
-            return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62);
+            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
 
         case NT_CAST_DECLR:
             return (input_token == 6);
 
         case NT_POSTFIX:
-            return (input_token == 6 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62);
+            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
 
         case NT_ARG_LIST:
             return (input_token == 6);
 
         case NT_ARG:
             return (input_token == 6);
+
+        case NT_NUM:
+            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
 
         case NT_UNARY_OP:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 65 || input_token == 68 || input_token == 69);
@@ -847,6 +931,91 @@ Node * p_nt_type(Lexer_result lex_input){      // <p_nt_type> ::= "KW_INT" | "KW
 
         return x1;
     } else error(3, nextSymbol);
+}
+
+Node * p_nt_ident_declr(Lexer_result lex_input) {
+    if (nextSymbol.token_number == OP_MUL) {
+        Node * x1 = p_terminal(lex_input, OP_MUL);
+        Node * x2 = p_nt_ident_declr(lex_input);
+
+        x1->brother = x2;
+
+        Node * n = node_maker(x1, NULL, NT_IDENT_DECLR, 0);
+
+        return n;
+    } else if (first(nextSymbol.token_number, NT_IDENT_BACKSIDE)) {
+        Node * x1 = p_nt_ident_backside(lex_input);
+
+        return x1;
+    } else error(2, nextSymbol);
+}
+
+Node * p_nt_ident_backside(Lexer_result lex_input) {
+    Node * x1 = p_nt_ident_main(lex_input);
+
+    if (first(nextSymbol.token_number, NT_ARRAY)) {
+        Node * x2 = p_nt_array(lex_input);
+
+        x1->brother = x2;
+
+        Node * n = node_maker(x1, NULL, NT_IDENT_BACKSIDE, 0);
+
+        return n;
+    } else if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_PARAM_LIST)) {
+        Node * x2 = p_terminal(lex_input, OPEN_PAREN);
+        Node * x3 = p_nt_param_list(lex_input);
+        Node * x4 = p_terminal(lex_input, CLOSE_PAREN);
+
+        free(x2);
+        free(x4);
+
+        x1->brother = x3;
+
+        Node * n = node_maker(x1, NULL, NT_IDENT_BACKSIDE, 0);
+
+        return n;
+    } else if (follow(nextSymbol.token_number, NT_IDENT_MAIN)) {
+        return x1;
+    } else error(2, nextSymbol);
+}
+
+Node * p_nt_ident_main(Lexer_result lex_input) {
+    if (nextSymbol.token_number == IDENT) {
+        Node * x1 = p_terminal(lex_input, IDENT);
+        
+        return x1;
+    } else if (nextSymbol.token_number == OPEN_PAREN) {
+        Node * x1 = p_terminal(lex_input, OPEN_PAREN);
+        Node * x2 = p_nt_ident_declr(lex_input);
+        Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
+
+        free(x1);
+        free(x3);
+
+        Node * n = node_maker(x2, NULL, NT_IDENT_MAIN, 0);
+
+        return n;
+    } else error(2, nextSymbol);
+}
+
+Node * p_nt_array(Lexer_result lex_input) {
+    if (nextSymbol.token_number == OPEN_BRACK) {
+        Node * x1 = p_terminal(lex_input, OPEN_BRACK);
+        Node * x2 = p_nt_num(lex_input);
+        Node * x3 = p_terminal(lex_input, CLOSE_BRACK);
+        Node * x4 = p_nt_array(lex_input);
+
+        x2->brother = x4;
+
+        free(x1);
+        free(x3);
+
+        Node * n = node_maker(x2, NULL, NT_IDENT_MAIN, 0);
+
+        return n;
+    } else if (follow(nextSymbol.token_number, NT_ARRAY)) {
+        return NULL;
+    } else error(2, nextSymbol);
 }
 
 Node * p_nt_param_list(Lexer_result lex_input){    // <param_list> ::= "void" | <param> IDENT <param_multi>
@@ -1306,9 +1475,9 @@ void specifier_declr_setting (Node * spec, Node * declr) {
         } else if (spec->brother->token.token_number == IDENT) {
             spec->brother->brother = param_list;
         }
-    }/* else if (declr->token.token_number == 배열) {
-        spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, 배열타입, 배열개수);
-    }*/
+    } else if (declr->token.token_number == NT_ARRAY) {
+        spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, TYPE_ARRAY, spec->son->brother->brother->token.token_value);
+    }
     
 
     if (declr->token.token_number != NT_PARAM_LIST && declr->brother != NULL) specifier_declr_setting(spec, declr->brother);
@@ -1353,63 +1522,6 @@ Node * p_nt_declr(Lexer_result lex_input){   // <declr> ::= <func_declr> | <var_
     } else error(2, nextSymbol);
 }
 
-Node * p_nt_ident_declr(Lexer_result lex_input) {
-    if (nextSymbol.token_number == OP_MUL) {
-        Node * x1 = p_terminal(lex_input, OP_MUL);
-        Node * x2 = p_nt_ident_declr(lex_input);
-
-        x1->brother = x2;
-
-        Node * n = node_maker(x1, NULL, NT_IDENT_DECLR, 0);
-
-        return n;
-    } else if (first(nextSymbol.token_number, NT_IDENT_BACKSIDE)) {
-        Node * x1 = p_nt_ident_backside(lex_input);
-
-        return x1;
-    } else error(2, nextSymbol);
-}
-
-Node * p_nt_ident_backside(Lexer_result lex_input) {
-    Node * x1 = p_nt_ident_main(lex_input);
-
-    if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_PARAM_LIST)) {
-        Node * x2 = p_terminal(lex_input, OPEN_PAREN);
-        Node * x3 = p_nt_param_list(lex_input);
-        Node * x4 = p_terminal(lex_input, CLOSE_PAREN);
-
-        free(x2);
-        free(x4);
-
-        x1->brother = x3;
-
-        Node * n = node_maker(x1, NULL, NT_IDENT_DECLR, 0);
-
-        return n;
-    } else if (follow(nextSymbol.token_number, NT_IDENT_MAIN)) {
-        return x1;
-    } else error(2, nextSymbol);
-}
-
-Node * p_nt_ident_main(Lexer_result lex_input) {
-    if (nextSymbol.token_number == IDENT) {
-        Node * x1 = p_terminal(lex_input, IDENT);
-        
-        return x1;
-    } else if (nextSymbol.token_number == OPEN_PAREN) {
-        Node * x1 = p_terminal(lex_input, OPEN_PAREN);
-        Node * x2 = p_nt_ident_declr(lex_input);
-        Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
-
-        free(x1);
-        free(x3);
-
-        Node * n = node_maker(x2, NULL, NT_IDENT_MAIN, 0);
-
-        return n;
-    } else error(2, nextSymbol);
-}
-
 Node * p_nt_var_declr(Lexer_result lex_input){   // <var_declr> ::= <specifier_list> IDENT <assign> "PN_SEMI"
     if (first(nextSymbol.token_number, NT_ASSIGN) || follow(nextSymbol.token_number, NT_ASSIGN)) {
         printf("parsing: nt_var_declr\n");
@@ -1426,7 +1538,7 @@ Node * p_nt_assign(Lexer_result lex_input){   // <assign> ::= "OP_ASSIGN" <exp> 
     if (first(nextSymbol.token_number, NT_ASSIGN)) {
         printf("parsing: nt_assign->op_assign\n");
         Node * x1 = p_terminal(lex_input, OP_ASSIGN);
-        Node * x2 = p_nt_exp(lex_input, 0);
+        Node * x2 = p_nt_init(lex_input);
 
         x1->brother = x2;
         
@@ -1438,6 +1550,65 @@ Node * p_nt_assign(Lexer_result lex_input){   // <assign> ::= "OP_ASSIGN" <exp> 
         Node * n = node_maker(NULL, NULL, NT_ASSIGN, 0);
 
         return n;
+    } else error(2, nextSymbol);
+}
+
+Node * p_nt_init(Lexer_result lex_input){   //  <init> ::= <exp> | "{" <init> <init_list> <is_comma> "}"
+    if (first(nextSymbol.token_number, NT_EXP)) {
+        printf("parsing: nt_init->nt_exp\n");
+        Node * n = p_nt_exp(lex_input, 0);
+
+        return n;
+    } else if (nextSymbol.token_number == OPEN_BRACE) {
+        printf("parsing: nt_init->open_brace\n");
+        Node * x1 = p_terminal(lex_input, OPEN_BRACE);
+        Node * x2 = p_nt_init(lex_input);
+        Node * x3 = p_nt_init_list(lex_input);
+        Node * x4 = p_nt_is_comma(lex_input);   // return NULL
+        Node * x5 = p_terminal(lex_input, CLOSE_BRACE);
+
+        x2->brother = x3;
+
+        free(x1);
+        free(x5);
+
+        Node * n = node_maker(x2, NULL, NT_INIT, 0);
+
+        return n;
+    } else error(2, nextSymbol);
+}
+
+Node * p_nt_init_list(Lexer_result lex_input){   //  <init> ::= <exp> | "{" <init> <init_list> <is_comma> "}"
+    if (nextSymbol.token_number == PN_COMMA && first(peek(lex_input, 1).token_number, NT_INIT)) {
+        printf("parsing: nt_init_list->pn_comma\n");
+        Node * x1 = p_terminal(lex_input, PN_COMMA);
+        Node * x2 = p_nt_init(lex_input);
+        Node * x3 = p_nt_init_list(lex_input);
+        
+        x2->brother = x3;
+
+        free(x1);
+
+        return x2;
+    } else if (follow(nextSymbol.token_number, NT_INIT_LIST)) {
+        printf("parsing: nt_init_list_null\n");
+
+        return NULL;
+    } else error(2, nextSymbol);
+}
+
+Node * p_nt_is_comma(Lexer_result lex_input) {
+    if (nextSymbol.token_number == PN_COMMA) {
+        printf("parsing: nt_is_comma->pn_comma\n");
+        Node * x1 = p_terminal(lex_input, PN_COMMA);
+
+        free(x1);
+
+        return NULL;
+    } else if (follow(nextSymbol.token_number, NT_IS_COMMA)) {
+        printf("parsing: nt_is_comma_null\n");
+
+        return NULL;
     } else error(2, nextSymbol);
 }
 
@@ -1499,7 +1670,7 @@ Node * p_nt_for_exp(Lexer_result lex_input){   // <for_exp> ::= <exp> | ε
 Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <factor> | <exp> <binary_op> <exp> | <exp> "OP_QUESTION" <exp> " OP_COLON" <exp>
     if (nextSymbol.token_number == IDENT || nextSymbol.token_number == NUM_INT || nextSymbol.token_number == NUM_LONG || nextSymbol.token_number == NUM_UINT || nextSymbol.token_number == NUM_ULONG || nextSymbol.token_number == OPEN_PAREN || first(nextSymbol.token_number, NT_UNARY_OP) || nextSymbol.token_number == OP_MUL || nextSymbol.token_number == OP_AND) {
         printf("parsing: nt_exp\n");
-        Node * left = p_nt_factor(lex_input);
+        Node * left = p_nt_unary_exp(lex_input);
         
         while (((first(nextSymbol.token_number, NT_BINARY_OP)) || nextSymbol.token_number == OP_QUESTION) && (priority_table[nextSymbol.token_number] >= min_priority)) {
             if (nextSymbol.token_number >= OP_ASSIGN && nextSymbol.token_number <= OP_ASREQ) {
@@ -1544,65 +1715,11 @@ Node * p_nt_exp(Lexer_result lex_input, int min_priority){        // <exp> ::= <
     } else error(1, nextSymbol);
 }
 
-Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
-    if (nextSymbol.token_number == NUM_INT) {
-        printf("parsing: nt_factor\n");
-        errno = 0;
-        long val = strtol(lexval_finder(nextSymbol.token_value), NULL, 10);
-        if (errno == ERANGE || val > 2147483647L) {
-            printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
-            exit(1);
-        }
-        Node * x1 = p_terminal(lex_input, NUM_INT);
-
-        return x1;
-    } else if (nextSymbol.token_number == NUM_LONG) {
-        printf("parsing: nt_factor\n");
-        errno = 0;
-        long val = strtol(lexval_finder(nextSymbol.token_value), NULL, 10);
-        if (errno == ERANGE || val > 2147483647L) {
-            printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
-            exit(1);
-        }
-        Node * x1 = p_terminal(lex_input, NUM_LONG);
-
-        return x1;
-    } else if (nextSymbol.token_number == NUM_UINT) {
-        printf("parsing: nt_factor\n");
-        errno = 0;
-        long val = strtol(lexval_finder(nextSymbol.token_value), NULL, 10);
-        if (errno == ERANGE || val > 4294967295L) {
-            printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
-            exit(1);
-        }
-        Node * x1 = p_terminal(lex_input, NUM_UINT);
-
-        return x1;
-    } else if (nextSymbol.token_number == NUM_ULONG) {
-        printf("parsing: nt_factor\n");
-        errno = 0;
-        long val = strtol(lexval_finder(nextSymbol.token_value), NULL, 10);
-        if (errno == ERANGE || val > 4294967295L) {
-            printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
-            exit(1);
-        }
-        Node * x1 = p_terminal(lex_input, NUM_ULONG);
-
-        return x1;
-    } else if (nextSymbol.token_number == IDENT) {
-        printf("parsing: nt_factor\n");
-        Node * x1 = p_terminal(lex_input, IDENT);
-        Node * x2 = p_nt_postfix(lex_input);     
-        
-        x1->brother = x2;
-
-        Node * n = node_maker(x1, NULL, NT_EXP, 0);
-
-        return n;
-    } else if (first(nextSymbol.token_number, NT_UNARY_OP)) {
-        printf("parsing: nt_factor\n");
+Node * p_nt_unary_exp(Lexer_result lex_input) {
+    if (first(nextSymbol.token_number, NT_UNARY_OP)) {
+        printf("parsing: nt_unary_exp\n");
         Node * x1 = p_nt_unary_op(lex_input);
-        Node * x2 = p_nt_factor(lex_input);
+        Node * x2 = p_nt_unary_exp(lex_input);
 
         x1->brother = x2;
 
@@ -1610,10 +1727,10 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
 
         return n;
     } else if (nextSymbol.token_number == OP_MUL) {
-        printf("parsing: nt_factor\n");
+        printf("parsing: nt_unary_exp\n");
         Node * x1 = node_maker(NULL, NULL, OP_DEREFER, 0);
         get_nextSymbol(lex_input);
-        Node * x2 = p_nt_factor(lex_input);
+        Node * x2 = p_nt_unary_exp(lex_input);
 
         x1->brother = x2;
 
@@ -1621,10 +1738,10 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
 
         return n;
     } else if (nextSymbol.token_number == OP_AND) {
-        printf("parsing: nt_factor\n");
+        printf("parsing: nt_unary_exp\n");
         Node * x1 = node_maker(NULL, NULL, OP_ADDROF, 0);
         get_nextSymbol(lex_input);
-        Node * x2 = p_nt_factor(lex_input);
+        Node * x2 = p_nt_unary_exp(lex_input);
 
         x1->brother = x2;
 
@@ -1632,7 +1749,7 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
 
         return n;
     } else if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_TYPE)) {
-        printf("parsing: nt_factor\n");
+        printf("parsing: nt_unary_exp\n");
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
         Node * type = p_nt_type_list_calling(lex_input);
         Node * declr = p_nt_cast_declr(lex_input);
@@ -1641,7 +1758,7 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
         tree_malloc_cleaner(declr);
         }        
         Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
-        Node * x4 = p_nt_factor(lex_input);
+        Node * x4 = p_nt_unary_exp(lex_input);
 
         Node * x2 = node_maker(type->son, NULL, NT_CAST, 0);
 
@@ -1652,6 +1769,55 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= NUM_INT | IDE
         free(type);
         
         Node * n = node_maker(x2, NULL, NT_EXP, 0);
+
+        return n;
+    } else if (first(nextSymbol.token_number, NT_FACTOR)) {
+        printf("parsing: nt_unary_exp\n");
+        Node * x1 = p_nt_factor(lex_input);
+        Node * x2 = p_nt_array_exp(lex_input);
+
+        x1->brother = x2;
+
+        Node * n = node_maker(x1, NULL, NT_EXP, 0);
+
+        return n;
+    } else error(2, nextSymbol);
+}
+
+Node * p_nt_array_exp(Lexer_result lex_input) {
+    if (nextSymbol.token_number == OPEN_BRACK) {
+        Node * x1 = p_terminal(lex_input, OPEN_BRACK);
+        Node * x2 = p_nt_exp(lex_input, 0);
+        Node * x3 = p_terminal(lex_input, CLOSE_BRACK);
+        Node * x4 = p_nt_array_exp(lex_input);
+
+        x2->brother = x4;
+
+        free(x1);
+        free(x3);
+
+        Node * n = node_maker(x2, NULL, NT_IDENT_MAIN, 0);
+
+        return n;
+    } else if (follow(nextSymbol.token_number, NT_ARRAY_EXP)) {
+        return NULL;
+    } else error(2, nextSymbol);
+}
+
+Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= <num> | IDENT <postfix> | <unary_op> <factor> | "OPEN_PAREN" <exp> "CLOSE_PAREN"
+    if (first(nextSymbol.token_number, NT_NUM)) {
+        printf("parsing: nt_factor\n");
+        Node * n = p_nt_num(lex_input);     
+        
+        return n;
+    } else if (nextSymbol.token_number == IDENT) {
+        printf("parsing: nt_factor\n");
+        Node * x1 = p_terminal(lex_input, IDENT);
+        Node * x2 = p_nt_postfix(lex_input);     
+        
+        x1->brother = x2;
+
+        Node * n = node_maker(x1, NULL, NT_EXP, 0);
 
         return n;
     } else if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_EXP)) {
@@ -1674,12 +1840,17 @@ Node * p_nt_cast_declr(Lexer_result lex_input) {
 
         x1->brother = x2;
 
-        return x1;
+        Node * n = node_maker(x1, NULL, NT_CAST_DECLR, 0);
+
+        return n;
     } else if (nextSymbol.token_number == OPEN_PAREN) {
         printf("parsing: nt_postfix->open_paren\n");
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
         Node * x2 = p_nt_cast_declr(lex_input);
         Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
+        Node * x4 = p_nt_array(lex_input);
+
+        x2->brother = x4;
 
         free(x1);
         free(x3);
@@ -1687,9 +1858,9 @@ Node * p_nt_cast_declr(Lexer_result lex_input) {
         Node * n = node_maker(x2, NULL, NT_CAST_DECLR, 0);
 
         return n;
-    } else if (follow(nextSymbol.token_number, NT_CAST_DECLR)) {
+    } else if (first(nextSymbol.token_number, NT_ARRAY) || follow(nextSymbol.token_number, NT_ARRAY) ) {
         printf("parsing: nt_cast_declr_null\n");
-        Node * n = NULL;
+        Node * n = p_nt_array(lex_input);
 
         return n;
     } else error(2, nextSymbol);
@@ -1756,6 +1927,54 @@ Node * p_nt_arg(Lexer_result lex_input){   // <arg> ::= "PN_COMMA" <exp> <arg> |
         Node * n = NULL;
 
         return n;
+    } else error(2, nextSymbol);
+}
+
+Node * p_nt_num(Lexer_result lex_input) {
+    if (nextSymbol.token_number == NUM_INT) {
+        printf("parsing: nt_factor\n");
+        errno = 0;
+        long val = strtol(lexval_finder(nextSymbol.token_value), NULL, 10);
+        if (errno == ERANGE || val > 2147483647L) {
+            printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
+            exit(1);
+        }
+        Node * x1 = p_terminal(lex_input, NUM_INT);
+
+        return x1;
+    } else if (nextSymbol.token_number == NUM_LONG) {
+        printf("parsing: nt_factor\n");
+        errno = 0;
+        long val = strtol(lexval_finder(nextSymbol.token_value), NULL, 10);
+        if (errno == ERANGE || val > 2147483647L) {
+            printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
+            exit(1);
+        }
+        Node * x1 = p_terminal(lex_input, NUM_LONG);
+
+        return x1;
+    } else if (nextSymbol.token_number == NUM_UINT) {
+        printf("parsing: nt_factor\n");
+        errno = 0;
+        long val = strtol(lexval_finder(nextSymbol.token_value), NULL, 10);
+        if (errno == ERANGE || val > 4294967295L) {
+            printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
+            exit(1);
+        }
+        Node * x1 = p_terminal(lex_input, NUM_UINT);
+
+        return x1;
+    } else if (nextSymbol.token_number == NUM_ULONG) {
+        printf("parsing: nt_factor\n");
+        errno = 0;
+        long val = strtol(lexval_finder(nextSymbol.token_value), NULL, 10);
+        if (errno == ERANGE || val > 4294967295L) {
+            printf("범위를 초과하는 정수값이 들어왔습니다. 종료합니다.\n");
+            exit(1);
+        }
+        Node * x1 = p_terminal(lex_input, NUM_ULONG);
+
+        return x1;
     } else error(2, nextSymbol);
 }
 

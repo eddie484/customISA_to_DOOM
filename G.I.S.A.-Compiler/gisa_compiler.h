@@ -101,6 +101,10 @@
 #define OP_ADDROF       75
 #define TYPE_FUNC       76
 
+#define OPEN_BRACK      77   // [
+#define CLOSE_BRACK     78   // ]
+#define TYPE_ARRAY       79
+
 
 #define NT_PROGRAM      100
 #define NT_FUNC_DECLR   101
@@ -137,8 +141,16 @@
 #define NT_IDENT_MAIN   133
 #define NT_CAST_DECLR   134
 #define NT_PARAM        135
+#define NT_ARRAY        136
+#define NT_INIT         137
+#define NT_INIT_LIST    138
+#define NT_IS_COMMA     139
+#define NT_UNARY_EXP    140
+#define NT_ARRAY_EXP    141
+#define NT_NUM          142
+#define NT_             143
 
-#define NT_FUNCTION     140
+#define NT_FUNCTION     145
 
 
 #define SEM_SYMBOL      150
