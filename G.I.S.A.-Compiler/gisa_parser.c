@@ -1475,18 +1475,19 @@ void specifier_declr_setting (Node * spec, Node * declr) {
         } else if (spec->brother->token.token_number == IDENT) {
             spec->brother->brother = param_list;
         }
-    } else if (declr->token.token_number == NT_ARRAY) {
+    }    
+
+    if (declr->token.token_number != NT_PARAM_LIST && declr->brother != NULL) specifier_declr_setting(spec, declr->brother);
+    if (declr->token.token_number != NT_PARAM_LIST && declr->son != NULL) specifier_declr_setting(spec, declr->son);
+
+    if (declr->token.token_number == NT_ARRAY) {
         if (spec->son->token.token_number == TYPE_FUNC || (spec->son->brother != NULL && spec->son->brother->brother != NULL && spec->son->brother->brother->token.token_number == TYPE_FUNC)) {
             printf("오류: 함수의 배열을 정의하고 있습니다. 종료합니다.\n");
             exit(1);
         }
-        if (spec->son->token.token_number == KW_STATIC && spec->son->brother->token.token_number == KW_EXTERN) spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, TYPE_ARRAY, spec->son->brother->brother->token.token_value);
-        else spec->son = node_maker(spec->son, NULL, TYPE_ARRAY, spec->son->token.token_value);
+        if (spec->son->token.token_number == KW_STATIC && spec->son->brother->token.token_number == KW_EXTERN) spec->son->brother->brother = node_maker(spec->son->brother->brother, NULL, TYPE_ARRAY, declr->son->token.token_value);
+        else spec->son = node_maker(spec->son, NULL, TYPE_ARRAY, declr->son->token.token_value);
     }
-    
-
-    if (declr->token.token_number != NT_PARAM_LIST && declr->brother != NULL) specifier_declr_setting(spec, declr->brother);
-    if (declr->token.token_number != NT_PARAM_LIST && declr->son != NULL) specifier_declr_setting(spec, declr->son);
 }
 
 Node * p_nt_declr(Lexer_result lex_input){   // <declr> ::= <func_declr> | <var_declr>
@@ -1781,11 +1782,17 @@ Node * p_nt_unary_exp(Lexer_result lex_input) {
         Node * x1 = p_nt_factor(lex_input);
         Node * x2 = p_nt_array_exp(lex_input);
 
-        x1->brother = x2;
+        if (x2 == NULL) {
+            return x1;
+        } else {
+            x1->brother = x2;
 
-        Node * n = node_maker(x1, NULL, NT_EXP, 0);
+            Node * n = node_maker(x1, NULL, NT_EXP, 0);
 
-        return n;
+            return n;
+        }
+
+        
     } else error(2, nextSymbol);
 }
 
@@ -1801,7 +1808,7 @@ Node * p_nt_array_exp(Lexer_result lex_input) {
         free(x1);
         free(x3);
 
-        Node * n = node_maker(x2, NULL, NT_IDENT_MAIN, 0);
+        Node * n = node_maker(x2, NULL, NT_ARRAY_EXP, 0);
 
         return n;
     } else if (follow(nextSymbol.token_number, NT_ARRAY_EXP)) {
@@ -1855,7 +1862,8 @@ Node * p_nt_cast_declr(Lexer_result lex_input) {
         Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
         Node * x4 = p_nt_array(lex_input);
 
-        x2->brother = x4;
+        if (x2 == NULL) return NULL;
+        else x2->brother = x4;
 
         free(x1);
         free(x3);
