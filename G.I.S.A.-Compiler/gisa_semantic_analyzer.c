@@ -1076,6 +1076,13 @@ void ident_symbolizer(Node * node) {
     } else if (node->token.token_number == OP_ADDROF) {
         node->brother->token.token_value = 1;   // 이 하위 exp가 배열이라면 자동 변환 하지 않도록 하는 메모값.
                                             // 만약 이후 exp의 token value가 다른곳에서도 쓰이게 된다면, 해당 exp가 배열인지 확인 후 value값 세팅하도록 로직을 추가해야 함.
+    } else if (node->son != NULL && node->son->brother != NULL && node->son->brother->token.token_number == NT_ARRAY_EXP) {
+        while (node->son->brother->son->brother != NULL && node->son->brother->son->brother->token.token_number == NT_ARRAY_EXP) {
+            Node * prev_content = node->son;
+            node->son = node_maker(prev_content, NULL, NT_EXP, 0);
+            node->son->brother = prev_content->brother->son->brother;
+            prev_content->brother->son->brother = NULL;
+        }
     }
 
 
@@ -1118,10 +1125,10 @@ void ident_symbolizer(Node * node) {
         type->brother = num;
 
     } else if (node->token.token_number == NT_EXP) {
-        if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number != NT_EXP && ((node->son->brother->son->brother->token.token_number != SEM_SYMBOL || symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 1) && node->son->brother->son->brother->token.token_number != OP_DEREFER)) {
+        if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number != NT_EXP && ((node->son->brother->son->brother->token.token_number != SEM_SYMBOL || symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 1) && (node->son->brother->son->brother->token.token_number != OP_DEREFER && node->son->brother->son->brother->token.token_number != NT_ARRAY_EXP))) {
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
-        } else if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number == NT_EXP && ((node->son->brother->son->brother->token.token_number != SEM_SYMBOL || symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 1) && node->son->brother->son->brother->token.token_number != OP_DEREFER)) {
+        } else if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number == NT_EXP && ((node->son->brother->son->brother->token.token_number != SEM_SYMBOL || symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 1) && (node->son->brother->son->brother->token.token_number != OP_DEREFER && node->son->brother->son->brother->token.token_number != NT_ARRAY_EXP))) {
 
             printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
             exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
@@ -1663,7 +1670,7 @@ void ident_symbolizer(Node * node) {
                 /*Node * under_type = node->son->brother->son->son->son;
                 free(node->son->brother->son->son);
                 node->son->brother->son->son = under_type;*/
-            if ((node->son->brother->son->brother->token.token_number == SEM_SYMBOL && symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 0) || node->son->brother->son->brother->token.token_number == OP_DEREFER) {
+            if ((node->son->brother->son->brother->token.token_number == SEM_SYMBOL && symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 0) || node->son->brother->son->brother->token.token_number == OP_DEREFER || node->son->brother->son->brother->token.token_number == NT_ARRAY_EXP) {
                 Node * type = node_maker(node_maker(copy_tree(node->son->brother->son->son), NULL, KW_POINTER, 0), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
@@ -1672,6 +1679,28 @@ void ident_symbolizer(Node * node) {
                 exit(1);
             }
             
+        } else if (node->son->token.token_number == NT_EXP && node->son->brother->token.token_number == NT_ARRAY_EXP) {
+            printf("subscript executing\n");
+            Node * array_tree = node->son;
+            
+            if (node->son->son->son->token.token_number == KW_POINTER && node->son->brother->son->son->son->token.token_number != KW_POINTER) {
+                node->son = node_maker(copy_tree(node->son->son->son->son), NULL, SEM_TYPE, 0);
+                node->son->brother = node_maker(NULL, NULL, NT_ARRAY_EXP, 0);
+                node->son->brother->brother = node_maker(copy_tree(array_tree->son), NULL, NT_EXP, 0);
+                node->son->brother->brother->brother = node_maker(copy_tree(array_tree->brother->son->son), NULL, NT_EXP, 0);
+            }
+            else if (node->son->son->son->token.token_number != KW_POINTER && node->son->brother->son->son->son->token.token_number == KW_POINTER) {
+                node->son = node_maker(copy_tree(node->son->brother->son->son->son->son), NULL, SEM_TYPE, 0);
+                node->son->brother = node_maker(NULL, NULL, NT_ARRAY_EXP, 0);
+                node->son->brother->brother = node_maker(copy_tree(array_tree->brother->son->son), NULL, NT_EXP, 0);
+                node->son->brother->brother->brother = node_maker(copy_tree(array_tree->son), NULL, NT_EXP, 0);
+            } 
+            else {
+                printf("오류: 잘못된 배열 배치입니다.\n");
+                exit(1);
+            }
+
+            tree_malloc_cleaner(array_tree);
         }
 
 
