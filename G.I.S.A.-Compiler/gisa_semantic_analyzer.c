@@ -1073,6 +1073,9 @@ void ident_symbolizer(Node * node) {
             printf("오류: OP_PRE_INCRE/OP_PRE_DECRE 연산자의 인자로 변수가 아닌 노드 <%d, %d>를 사용하려 합니다. 종료합니다.\n", node->brother->token.token_number, node->brother->token.token_value);
             exit(1);    // 미선언 변수 사용 시도한 경우.
         }
+    } else if (node->token.token_number == OP_ADDROF) {
+        node->brother->token.token_value = 1;   // 이 하위 exp가 배열이라면 자동 변환 하지 않도록 하는 메모값.
+                                            // 만약 이후 exp의 token value가 다른곳에서도 쓰이게 된다면, 해당 exp가 배열인지 확인 후 value값 세팅하도록 로직을 추가해야 함.
     }
 
 
@@ -1678,6 +1681,14 @@ void ident_symbolizer(Node * node) {
             }
         }
 
+        if (node->token.token_value != 1 && node->son->son->token.token_number == TYPE_ARRAY) {  // 배열을 자동으로 포인터로 변환.
+            printf("ARRAY to POINTER :%d\n\n\n\n\n", node->son->brother->token.token_number);
+            
+            Node * type = node_maker(node_maker(copy_tree(node->son->son->son), NULL, KW_POINTER, 0), NULL, SEM_TYPE, 0);
+            type->brother = node_maker(NULL, node_maker(node->son, NULL, NT_EXP, 0), OP_ADDROF, 0);
+            node->son = type;
+            
+        }
     } /*else if (node->token.token_number == KW_SWITCH) {
         if (type_rank_change(node->son->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
             Node * previous_exp = node->son;
