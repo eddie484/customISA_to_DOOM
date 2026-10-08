@@ -166,7 +166,7 @@ Node * copy_tree(Node * node) {
     return n;
 }
 
-int compare_tree(Node * node_A, Node * node_B) {
+int compare_tree(Node * node_A, Node * node_B) {    // 같은 경우 return 1, 다른 경우 return 0.
     if (node_A == NULL && node_B == NULL) {
         return 1;
     } else if ((node_A != NULL && node_B == NULL) || (node_A == NULL && node_B != NULL)) {
@@ -199,4 +199,13 @@ int compare_tree(Node * node_A, Node * node_B) {
     }
 
     return (result && result_son && result_brother);
+}
+
+int is_tree_having_token_number(Node * node, int number) {
+    int result = 0;
+    if (node->token.token_number == number) result = 1;
+    if(node->son != NULL) if (is_tree_having_token_number(node->son, number)) result = 1;
+    if(node->brother != NULL) if (is_tree_having_token_number(node->brother, number)) result = 1;
+    
+    return result;
 }

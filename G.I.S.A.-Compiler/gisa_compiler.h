@@ -352,6 +352,7 @@ Node * get_son(Node * node);
 Node * get_brother(Node * node);
 Node * copy_tree(Node * node);
 int compare_tree(Node * node_A, Node * node_B);
+int is_tree_having_token_number(Node * node, int number);
 
 
 extern int temp_count;
