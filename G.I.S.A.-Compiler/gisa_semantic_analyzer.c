@@ -459,6 +459,20 @@ int symbol_maker(Node * declr_node) {
             }
         }
 
+        Node * func_ret_type = declr_node->son->son->brother->brother;
+        if (func_ret_type->son->token.token_number == TYPE_ARRAY) {
+            printf("오류: 함수의 리턴 타입을 배열로 선언하고 있습니다. 종료합니다.\n");
+            exit(1);
+        }
+        Node * param_node =ident_node->brother->son;
+        while (param_node != NULL) {
+            if (param_node->son->son->token.token_number == TYPE_ARRAY) {
+                param_node->son->son->token.token_number = KW_POINTER;  // ast 자체에서 배열->포인터로 바꾸므로 이후 파라미터 심볼 등록 등에서 자동으로 포인터 타입으로 등록된다.
+                param_node->son->son->token.token_value = 0;
+            }
+            param_node = param_node->brother;
+        }
+
         // 이 함수가 이전에 함수로 선언된 적이 있는지 확인.
         for (int j = 0; j <= func_table_count - 1; j++) {        // 함수 테이블 순회
             printf("DEBUG. j: %d\n", j);
@@ -1070,8 +1084,8 @@ void ident_symbolizer(Node * node) {
             Node * type_cleaner;
             
             right_val = ident_node->brother->son->brother;
-            symbol = node_maker(node_maker(NULL, NULL, SEM_SYMBOL, symbol_id), right_val, NT_EXP, 0);
-            assign = node_maker(NULL, symbol, OP_ASSIGN, 0);
+            symbol = node_maker(node_maker(NULL, NULL, SEM_SYMBOL, symbol_id), right_val, NT_EXP, 1);
+            assign = node_maker(NULL, symbol, OP_DECLR, 0);
             exp = node_maker(assign, NULL, NT_EXP, 0);
             // declr_to_content = node_maker(exp, node->brother, NT_CONTENT, 0);
 
@@ -1449,6 +1463,73 @@ void ident_symbolizer(Node * node) {
             }
             
             
+        } else if (node->son->token.token_number == OP_DECLR) {
+            if (node->son->brother->brother->token.token_number == NT_INIT) {
+                if (node->son->brother->son->son->token.token_number != TYPE_ARRAY) {
+                    printf("오류: 배열이 아닌 변수의 초기화값으로 복합 초기화자가 왔습니다. 종료합니다.\n");
+                    exit(1);
+                }
+                int counting_init = 0;
+                
+                /*node->son->brother->brother->son = node_maker(0, node->son->brother->brother->son, SEM_TYPE, 0);
+                if (node->son->brother->brother->son->brother->token.token_number == NT_INIT) node->son->brother->brother->son->son = node_maker(NULL, NULL, NT_INIT, 0);
+                else node->son->brother->brother->son->son = copy_tree(node->son->brother->brother->son->brother->son->son);*/
+                Node * init = node->son->brother->brother->son;
+                while (init != NULL) {
+                    counting_init++;
+                    /*Node * current_init = copy_tree(init);
+                    if (current_init->brother != NULL) tree_malloc_cleaner(current_init->brother);
+                    if (init->son != NULL) tree_malloc_cleaner(init->son);
+                    init->token.token_number = NT_EXP;
+                    init->token.token_value = 0;
+                    init->son = node_maker(node_maker(NULL, NULL, current_init->token.token_number, 0), current_init, SEM_TYPE, 0);*/
+                    init = init->brother;
+                }
+                if (counting_init > atoi(lexval_finder(node->son->brother->son->son->token.token_value))) {
+                    printf("오류: 배열이 받을 수 있는 초기화보다 많은 init으로 초기화를 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+
+                node->son = node_maker(copy_tree(node->son->brother->son->son), node->son, SEM_TYPE, 0);
+
+            } else {
+                if (node->son->brother->son->son->token.token_number == TYPE_ARRAY) {
+                    printf("오류: 배열의 초기화값으로 단일 초기화자가 왔습니다. 종료합니다.\n");
+                    exit(1);
+                }
+                if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                    if ((node->son->brother->brother->son->brother->token.token_number == NUM_INT || node->son->brother->brother->son->brother->token.token_number == NUM_UINT || node->son->brother->brother->son->brother->token.token_number == NUM_LONG || node->son->brother->brother->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(node->son->brother->brother->son->brother->token.token_value)) == 0) {
+                        Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                        Node * previous_exp = node->son->brother->brother;
+                        Node * cast = node_maker(copy_tree(node->son->brother->son->son), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                        
+                        type->brother = node->son;
+                        node->son = type;
+                    } else if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son)) {
+                        Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                        type->brother = node->son;
+                        node->son = type;
+                    } else {
+                        printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
+                        exit(1);
+                    }
+                } else {    // 포인터가 아닌 경우들
+                    Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                    if ((type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) != type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) || (node->son->brother->son->son->token.token_number != node->son->brother->brother->son->son->token.token_number)) {
+                        Node * previous_exp = node->son->brother->brother;
+                        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                    }
+                    type->brother = node->son;
+                    node->son = type;
+                }
+            }
+            
         } else if (node->son->token.token_number == OP_QUESTION) {
             if ((node->son->brother->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->brother->son->son->token.token_number == KW_POINTER)) {
                 if ((node->son->brother->brother->brother->son->brother->token.token_number == NUM_INT || node->son->brother->brother->brother->son->brother->token.token_number == NUM_UINT || node->son->brother->brother->brother->son->brother->token.token_number == NUM_LONG || node->son->brother->brother->brother->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(node->son->brother->brother->brother->son->brother->token.token_value)) == 0) {
@@ -1620,7 +1701,7 @@ void ident_symbolizer(Node * node) {
             }
         }
 
-        if (node->token.token_value != 1 && node->son->son->token.token_number == TYPE_ARRAY) {  // 배열을 자동으로 포인터로 변환.
+        if (node->token.token_value != 1 && node->son->brother->token.token_number != OP_DECLR && node->son->son->token.token_number == TYPE_ARRAY) {  // 배열을 자동으로 포인터로 변환.
             printf("ARRAY to POINTER :%d\n\n\n\n\n", node->son->brother->token.token_number);
             
             Node * type = node_maker(node_maker(copy_tree(node->son->son->son), NULL, KW_POINTER, 0), NULL, SEM_TYPE, 0);

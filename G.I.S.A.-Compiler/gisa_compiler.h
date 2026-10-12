@@ -104,6 +104,7 @@
 #define OPEN_BRACK      77   // [
 #define CLOSE_BRACK     78   // ]
 #define TYPE_ARRAY       79
+#define OP_DECLR      80
 
 
 #define NT_PROGRAM      100
