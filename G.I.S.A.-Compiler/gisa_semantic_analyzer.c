@@ -1042,6 +1042,82 @@ void type_checking_binop(Node * node) {
 }
 
 
+void init_type_checker(Node * type, Node * init_tree) {
+    Node * init = init_tree->son;
+    Node * init_type = type->son;
+    int counting_init = 0;
+
+    while (init != NULL) {
+        counting_init++;
+        if (init_type->token.token_number == TYPE_ARRAY) {
+            if (init->token.token_number == NT_INIT) {
+                init_type_checker(init_type, init);
+            } else {
+                printf("오류: 복합 초기화자가 와야 하는 자리에 단일 초기화자가 존재합니다. 종료합니다.\n");
+                exit(1);
+            }
+        } else {
+            if (init->token.token_number == NT_EXP) {
+                // 타입 일치시키기
+            } else {
+                printf("오류: 단일 초기화자가 와야 하는 자리에 복합 초기화자가 존재합니다. 종료합니다.\n");
+                exit(1);
+            }
+        }
+
+        if (init->brother != NULL) init = init->brother;
+        else break;
+    }
+    
+    if (counting_init > atoi(lexval_finder(type->token.token_value))) {
+        printf("오류: 배열이 받을 수 있는 초기화보다 많은 init으로 초기화를 시도하고 있습니다. 종료합니다.\n");
+        exit(1);
+    } else {
+        while (counting_init != atoi(lexval_finder(type->token.token_value))) {
+
+            if (init_type->token.token_number == TYPE_ARRAY) {
+                if (counting_init == 0) {
+                    init_tree->son = node_maker(NULL, NULL, NT_INIT, 0);
+                    init_type_checker(init_type, init_tree->son);
+                } else {
+                    init->brother = node_maker(NULL, NULL, NT_INIT, 0);
+                    init_type_checker(init_type, init->brother);
+                }
+                
+            } else {
+                Node * zero_num;
+                Node * zero_type;
+                if (init_type->token.token_number == KW_SIGNED) {
+                    if (init_type->brother->token.token_number == KW_INT) {
+                        zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                        zero_type = node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0);
+                    } else if (init_type->brother->token.token_number == KW_LONG) {
+                        zero_num = node_maker(NULL, NULL, NUM_LONG, lexval_manager("0"));
+                        zero_type = node_maker(NULL, node_maker(NULL, NULL, KW_LONG, 0), KW_SIGNED, 0);
+                    }
+                } else if (init_type->token.token_number == KW_UNSIGNED) {
+                    if (init_type->brother->token.token_number == KW_INT) {
+                        zero_num = node_maker(NULL, NULL, NUM_UINT, lexval_manager("0"));
+                        zero_type = node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_UNSIGNED, 0);
+                    } else if (init_type->brother->token.token_number == KW_LONG) {
+                        zero_num = node_maker(NULL, NULL, NUM_ULONG, lexval_manager("0"));
+                        zero_type = node_maker(NULL, node_maker(NULL, NULL, KW_LONG, 0), KW_UNSIGNED, 0);
+                    }
+                }else if (init_type->token.token_number == KW_POINTER) {
+                    zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                    zero_type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), NULL, KW_POINTER, 0);
+                }
+
+                if (counting_init == 0) init_tree->son = node_maker(node_maker(zero_type, zero_num, SEM_TYPE, 0), NULL, NT_EXP, 0);
+                else init->brother = node_maker(node_maker(zero_type, zero_num, SEM_TYPE, 0), NULL, NT_EXP, 0);
+            }
+            if (counting_init == 0) init = init_tree->son;
+            else init = init->brother;
+            counting_init++;
+            
+        }
+    }
+}
 
 
 
@@ -1469,28 +1545,11 @@ void ident_symbolizer(Node * node) {
                     printf("오류: 배열이 아닌 변수의 초기화값으로 복합 초기화자가 왔습니다. 종료합니다.\n");
                     exit(1);
                 }
-                int counting_init = 0;
                 
-                /*node->son->brother->brother->son = node_maker(0, node->son->brother->brother->son, SEM_TYPE, 0);
-                if (node->son->brother->brother->son->brother->token.token_number == NT_INIT) node->son->brother->brother->son->son = node_maker(NULL, NULL, NT_INIT, 0);
-                else node->son->brother->brother->son->son = copy_tree(node->son->brother->brother->son->brother->son->son);*/
-                Node * init = node->son->brother->brother->son;
-                while (init != NULL) {
-                    counting_init++;
-                    /*Node * current_init = copy_tree(init);
-                    if (current_init->brother != NULL) tree_malloc_cleaner(current_init->brother);
-                    if (init->son != NULL) tree_malloc_cleaner(init->son);
-                    init->token.token_number = NT_EXP;
-                    init->token.token_value = 0;
-                    init->son = node_maker(node_maker(NULL, NULL, current_init->token.token_number, 0), current_init, SEM_TYPE, 0);*/
-                    init = init->brother;
-                }
-                if (counting_init > atoi(lexval_finder(node->son->brother->son->son->token.token_value))) {
-                    printf("오류: 배열이 받을 수 있는 초기화보다 많은 init으로 초기화를 시도하고 있습니다. 종료합니다.\n");
-                    exit(1);
-                }
+                init_type_checker(node->son->brother->son->son, node->son->brother->brother);
 
                 node->son = node_maker(copy_tree(node->son->brother->son->son), node->son, SEM_TYPE, 0);
+
 
             } else {
                 if (node->son->brother->son->son->token.token_number == TYPE_ARRAY) {
