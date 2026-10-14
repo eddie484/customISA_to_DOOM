@@ -63,21 +63,29 @@ int type_rank_change(int type, int direction) {
     }
 }
 
-int type_size_calc(int type) {
-    if (type == KW_INT) return 4;
-    else if (type == KW_LONG) return 4;
-    else if (type == KW_POINTER) return 4;
-    else if (type == KW_SHORT) return 2;
+int type_size_calc(Node * type) {
+    if (type->token.token_number == KW_INT) return 4;
+    else if (type->token.token_number == KW_LONG) return 4;
+    else if (type->token.token_number == KW_POINTER) return 4;
+    else if (type->token.token_number == KW_SHORT) return 2;
+    else if (type->token.token_number == TYPE_ARRAY) return type->token.token_value;
     else return 0;
 }
 
-int type_tree_size(Node * node, int size) {
-    size += type_size_calc(node->token.token_number);
+int type_tree_size(Node * node) {
+    int size = 0;
+    int current_size;
+    current_size = type_size_calc(node);
 
-    if (node->token.token_number == KW_POINTER) return size;
+    if (node->token.token_number == KW_POINTER) return current_size;
 
-    if (node->son != NULL) size += type_tree_size(node->son, size);
-    if (node->brother != NULL) size += type_tree_size(node->brother, size);
+    if (node->token.token_number == TYPE_ARRAY) {
+        size = current_size * type_tree_size(node->son);
+    } else {
+        if (node->son != NULL) size = current_size + type_tree_size(node->son);
+        else if (node->brother != NULL) size = current_size + type_tree_size(node->brother);
+        else size = current_size;
+    }
 
     return size;
 }
@@ -234,7 +242,7 @@ int symbol_maker(Node * declr_node) {
             symbol->name = ident_node->token.token_value;
             symbol->id = symbol_id_count++;
             symbol->type_tree = get_type_tree_from_var_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
-            symbol->size = type_tree_size(symbol->type_tree, 0);               // 수정 및 처리가 필요할듯.
+            symbol->size = type_tree_size(symbol->type_tree);               // 수정 및 처리가 필요할듯.
             symbol->location.type = 0;
             symbol->location.location = 0;
             symbol->is_func = 0;
@@ -389,7 +397,7 @@ int symbol_maker(Node * declr_node) {
         } else {
             symbol->type_tree = get_type_tree_from_var_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
         }
-        symbol->size = type_tree_size(symbol->type_tree, 0);               // 위의 while문에서 typetree 만드는 함수도 만들어 호출하면 좋을것 같음.
+        symbol->size = type_tree_size(symbol->type_tree);               // 위의 while문에서 typetree 만드는 함수도 만들어 호출하면 좋을것 같음.
         symbol->location.type = 0;
         symbol->location.location = 0;
         symbol->is_func = 0;
@@ -541,7 +549,7 @@ int symbol_maker(Node * declr_node) {
         symbol->name = ident_node->token.token_value;
         symbol->id = symbol_id_count++;
         symbol->type_tree = get_type_tree_from_func_declr(declr_node, ident_node);    // 이후 확장할 것. 형식도 enum으로 개선하고...
-        symbol->size = type_tree_size(symbol->type_tree->son, 0);               // 수정 및 처리가 필요할듯.
+        symbol->size = type_tree_size(symbol->type_tree->son);               // 수정 및 처리가 필요할듯.
         symbol->location.type = 0;
         symbol->location.location = 0;
         symbol->is_func = 1;
@@ -997,13 +1005,13 @@ void type_checking_binop(Node * node) {
                         previous_exp->brother = NULL;
                         node->son->brother = exp;
                     } else {    // 경우 4
-                        if (node->son->brother->son->son->token.token_number == KW_SIGNED && (type_size_calc(node->son->brother->son->son->brother->token.token_number) > type_size_calc(node->son->brother->brother->son->son->brother->token.token_number))) {
+                        if (node->son->brother->son->son->token.token_number == KW_SIGNED && (type_size_calc(node->son->brother->son->son->brother) > type_size_calc(node->son->brother->brother->son->son->brother))) {
                             Node * previous_exp = node->son->brother->brother;
                             Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->son->son->brother->token.token_number, 0), node->son->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
                             Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                             previous_exp->brother = NULL;
                             node->son->brother->brother = exp;
-                        } else if (node->son->brother->brother->son->son->token.token_number == KW_SIGNED && (type_size_calc(node->son->brother->son->brother->token.token_number) < type_size_calc(node->son->brother->brother->son->brother->token.token_number))) {
+                        } else if (node->son->brother->brother->son->son->token.token_number == KW_SIGNED && (type_size_calc(node->son->brother->son->brother) < type_size_calc(node->son->brother->brother->son->brother))) {
                             Node * previous_exp = node->son->brother;
                             Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
                             Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
@@ -1667,13 +1675,13 @@ void ident_symbolizer(Node * node) {
                             previous_exp->brother = NULL;
                             node->son->brother->brother = exp;
                         } else {    // 경우 4
-                            if (node->son->brother->brother->son->son->token.token_number == KW_SIGNED && (type_size_calc(node->son->brother->brother->son->brother->token.token_number) > type_size_calc(node->son->brother->brother->brother->son->brother->token.token_number))) {
+                            if (node->son->brother->brother->son->son->token.token_number == KW_SIGNED && (type_size_calc(node->son->brother->brother->son->brother) > type_size_calc(node->son->brother->brother->brother->son->brother))) {
                                 Node * previous_exp = node->son->brother->brother->brother;
                                 Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
                                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
                                 previous_exp->brother = NULL;
                                 node->son->brother->brother->brother = exp;
-                            } else if (node->son->brother->brother->brother->son->son->token.token_number == KW_SIGNED && (type_size_calc(node->son->brother->brother->son->brother->token.token_number) < type_size_calc(node->son->brother->brother->brother->son->brother->token.token_number))) {
+                            } else if (node->son->brother->brother->brother->son->son->token.token_number == KW_SIGNED && (type_size_calc(node->son->brother->brother->son->brother) < type_size_calc(node->son->brother->brother->brother->son->brother))) {
                                 Node * previous_exp = node->son->brother->brother;
                                 Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, node->son->brother->brother->brother->son->son->brother->token.token_number, 0), node->son->brother->brother->brother->son->son->token.token_number, 0), previous_exp, NT_CAST, 0);
                                 Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
