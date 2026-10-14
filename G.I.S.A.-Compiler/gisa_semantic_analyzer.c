@@ -69,6 +69,7 @@ int type_size_calc(Node * type) {
     else if (type->token.token_number == KW_POINTER) return 4;
     else if (type->token.token_number == KW_SHORT) return 2;
     else if (type->token.token_number == TYPE_ARRAY) return type->token.token_value;
+    else if (type->token.token_number == TYPE_BYTEWIDTH) return type->token.token_value;
     else return 0;
 }
 
