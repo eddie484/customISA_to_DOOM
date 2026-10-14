@@ -122,7 +122,7 @@ Node * type_regulation(Node * node) {
         node->token.token_value = 2;
     } else if ((node->token.token_number == KW_POINTER) && node->brother == NULL) {
         node->token.token_value = 4;
-    } else if (((node->token.token_number == TYPE_BYTEWIDTH || node->token.token_number == TYPE_FUNC) && node->brother == NULL) || ((node->token.token_number == KW_UNSIGNED || node->token.token_number == KW_SIGNED) && node->brother != NULL)) {
+    } else if (((node->token.token_number == TYPE_BYTEWIDTH || node->token.token_number == TYPE_FUNC) && node->brother == NULL) || ((node->token.token_number == KW_UNSIGNED || node->token.token_number == KW_SIGNED) && node->brother != NULL) || node->token.token_number == TYPE_ARRAY) {
         
     } else {
         printf("오류: 잘못 정의된 타입트리입니다.\n");
@@ -130,8 +130,29 @@ Node * type_regulation(Node * node) {
         exit(1);
     }
 
-    if (node->son != NULL) type_regulation(node->son);
-    if (node->brother != NULL) type_regulation(node->brother);
+    /*int bytewidth = type_tree_size(node);
+    if (node->son != NULL) tree_malloc_cleaner(node->son);
+    if (node->brother != NULL) tree_malloc_cleaner(node->brother);
+    node->token.token_number = TYPE_BYTEWIDTH;
+    node->token.token_value = bytewidth;*/
+
+    if (node->token.token_number == TYPE_ARRAY) {
+        int bytewidth = type_tree_size(node);
+        if (node->son != NULL) {
+            tree_malloc_cleaner(node->son);
+            node->son = NULL;
+        }
+        if (node->brother != NULL) {
+            tree_malloc_cleaner(node->brother);
+            node->brother = NULL;
+        }
+        node->token.token_number = TYPE_BYTEWIDTH;
+        node->token.token_value = bytewidth;
+    } else {
+        if (node->son != NULL) type_regulation(node->son);
+        if (node->brother != NULL) type_regulation(node->brother);
+    }
+    
 
     return node;
 }
@@ -605,6 +626,32 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n3->token.token_value);
 
             return n;
+        } else if (ast->son->brother->token.token_number == OP_DECLR) {
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
+            
+            Node * n2 = tag_nt_instr_interpret_load(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);
+            printf("enter OP_ASSIGN\n");        // 인자 1이 lside, 2가 rside.
+            
+            Node * n3;
+
+            if (n1->token.token_number == TAG_DEREFER) {
+                n3 = line_maker(TAG_STORE, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value);
+                n3->token.token_value = n2->token.token_value;
+                Node * n1_cover = n1;
+                n1 = n1->son;
+                free(n1_cover);
+
+            } else {
+                n3 = line_maker(TAG_MOV, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value);
+                n3->token.token_value = n3->son->brother->token.token_value;
+            }
+            
+            n1->brother = n2;
+            n2->brother = n3;
+
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n3->token.token_value);
+
+            return n;
         } else if (ast->son->brother->token.token_number == NUM_INT || ast->son->brother->token.token_number == NUM_LONG || ast->son->brother->token.token_number == NUM_UINT || ast->son->brother->token.token_number == NUM_ULONG) {
             Node * n1 = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);
 
@@ -668,6 +715,28 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
                 Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
                 return n;
             }
+        } else if (ast->son->brother->token.token_number == NT_ARRAY_EXP) {
+            printf("enter line_nt_array_exp\n");
+            Node * n1 = tag_nt_instr_interpret_load(ast->son->brother->brother, temp_in_rA, temp_in_rB);
+            Node * n2 = tag_nt_instr_interpret_load(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);
+
+            int n3_temp_id = temp_registration(symbol_finder_from_symbol_id(n2->token.token_value)->type_tree);
+            char n3_temp_size[12];
+            snprintf(n3_temp_size, sizeof(n3_temp_size), "%d", type_tree_size(ast->son->son));
+
+            Node * n3 = line_maker(OP_MUL, TAG_TEMP, n3_temp_id, TAG_TEMP, n2->token.token_value, NUM_IMM, lexval_manager(n3_temp_size));
+            n3->token.token_value = n3->son->brother->token.token_value;
+            Node * n4 = line_maker(OP_ADD, TAG_TEMP, temp_registration(ast->son->brother->brother->son->son), TAG_TEMP, n1->token.token_value, TAG_TEMP, n3->token.token_value);
+            n4->token.token_value = n4->son->brother->token.token_value;
+
+            n1->brother = n2;
+            n2->brother = n3;
+            n3->brother = n4;
+
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n4->token.token_value);
+            Node * n_derefer = node_maker(n, NULL, TAG_DEREFER, n->token.token_value);
+
+            return n_derefer;
 
         // Symbol일 경우
         } else if (ast->son->brother->token.token_number == SEM_SYMBOL) {
