@@ -340,7 +340,11 @@ Node * asm_pass1_nt_instr_brother(Node * tag) {
 }
 
 Node * asm_pass1_nt_instr_loop(Node * tag){
-    if (tag->token.token_number == TAG_LINE_SET) {
+    if (tag->token.token_number == TAG_NOP) {
+        Node * n = node_maker(NULL, NULL, ASM_LINE_SET, tag->token.token_value);
+        
+        return n;
+    } else if (tag->token.token_number == TAG_LINE_SET) {
         Node * x1 = asm_pass1_nt_instr_brother(tag->son);
         Node * n = node_maker(x1, NULL, ASM_LINE_SET, tag->token.token_value);
         
@@ -450,6 +454,22 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
 
                 n1 = line_maker(ASM_ADD, tag->son->brother->token.token_number, result_temp, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
             }
+            return n1;
+        } else if (tag->son->token.token_number == TAG_COPY_OFFSET) {
+            int init_temp = tag->son->brother->token.token_value;
+            int offset_imm = tag->son->brother->brother->brother->token.token_value;
+            int arr_var_temp = tag->son->brother->brother->token.token_value;
+
+            Symbol_info * arr_var_symbol = symbol_finder_from_symbol_id(arr_var_temp);
+            char arr_var[12];
+            temp_loc_alloc(arr_var_symbol, arr_var);
+            int arr_location = -arr_var_symbol->location.location + atoi(lexval_finder(offset_imm));
+
+            char str[12];
+            snprintf(str, sizeof(str), "%d", arr_location);
+
+            Node * n1 = line_maker(ASM_STR, tag->son->brother->token.token_number, init_temp, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+
             return n1;
         } else {
             Node * x4 = node_maker(NULL, NULL, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value);

@@ -242,8 +242,8 @@ Node * tag_symbol(Node * ast){
     Symbol_info * symbol = symbol_finder_from_symbol_node(ast);
     if (symbol->is_func == 0) {
         printf("심볼이 변수이다.\n");
-        Node * n = line_maker(TAG_MOV, TAG_TEMP, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, ast->token.token_value);
-        n->token.token_value = n->son->brother->token.token_value;      
+        Node * n = node_maker(NULL, NULL, TAG_NOP, ast->token.token_value); /*line_maker(TAG_MOV, TAG_TEMP, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, ast->token.token_value);
+        n->token.token_value = n->son->brother->token.token_value;      */
                 
 
 
