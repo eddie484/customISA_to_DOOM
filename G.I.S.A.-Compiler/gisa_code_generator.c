@@ -15,6 +15,9 @@ void asm_pass2_temp_to_stack(Node * node);
 void asm_pass3_prologue_maker(Node * node);
 
 
+int stack_location = 0;
+
+
 
 
 /* ***********************************
@@ -26,6 +29,17 @@ void asm_pass3_prologue_maker(Node * node);
 **************************************
 **************************************
 *********************************** */
+
+void temp_loc_alloc(Symbol_info * temp_symbol, char * str) {
+    if (temp_symbol->location.location == 0) {    // 아직 위치 배정이 안 된 temp의 경우, stack_location을 증가시켜 위치를 배정한다.
+        int temp_size = temp_symbol->size;
+        stack_location += temp_size;
+        temp_symbol->location.location = stack_location;
+        snprintf(str, 12, "%d", -stack_location);
+    } else {    // 이미 위치 배정이 된 temp의 경우.
+        snprintf(str, 12, "%d", -temp_symbol->location.location);
+    }
+}
 
 Node * asm_pass1_terminal(Node * tag){
     if (tag->token.token_number >= IDENT && tag->token.token_number <= PN_SEMI) {
@@ -354,31 +368,34 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
         } else if (tag->son->token.token_number == TAG_LOAD) {
             int temp_val = tag->son->brother->brother->brother->token.token_value;
             int result_val = tag->son->brother->token.token_value;
-            char str[12];
-            snprintf(str, sizeof(str), "%d", -(4 * temp_val));
-
+            Symbol_info * temp_symbol = symbol_finder_from_symbol_id(temp_val);
+            Symbol_info * result_symbol = symbol_finder_from_symbol_id(result_val);
             Node * n1;
-            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
+
+            if ((temp_val < temp_count && temp_val >= 1) && (temp_symbol->init_option != 0)) {   // static/전역 변수일 경우
                 n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-            } else {
+            } else {    // 일반 변수일 경우
+                char str[12];
+                temp_loc_alloc(temp_symbol, str);
+
                 n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
             }
 
             Node * n2;
-            if (symbol_finder_from_symbol_id(result_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(result_val)->type_tree->token.token_number == KW_POINTER) {
-                if (symbol_finder_from_symbol_id(result_val)->size == 4) {
+            if (result_symbol->type_tree->token.token_number == KW_UNSIGNED || result_symbol->type_tree->token.token_number == KW_POINTER) {
+                if (result_symbol->size == 4) {
                     n2 = line_maker(ASM_LDR, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
-                } else if (symbol_finder_from_symbol_id(result_val)->size == 2) {
+                } else if (result_symbol->size == 2) {
                     n2 = line_maker(ASM_LDRH, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
-                } else if (symbol_finder_from_symbol_id(result_val)->size == 1) {
+                } else if (result_symbol->size == 1) {
                     n2 = line_maker(ASM_LDRB, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
                 }
-            } else if (symbol_finder_from_symbol_id(result_val)->type_tree->token.token_number == KW_SIGNED) {
-                if (symbol_finder_from_symbol_id(result_val)->size == 4) {
+            } else if (result_symbol->type_tree->token.token_number == KW_SIGNED) {
+                if (result_symbol->size == 4) {
                     n2 = line_maker(ASM_LDR, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
-                } else if (symbol_finder_from_symbol_id(result_val)->size == 2) {
+                } else if (result_symbol->size == 2) {
                     n2 = line_maker(ASM_LDRSH, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
-                } else if (symbol_finder_from_symbol_id(result_val)->size == 1) {
+                } else if (result_symbol->size == 1) {
                     n2 = line_maker(ASM_LDRSB, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
                 }
             }
@@ -391,22 +408,25 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
         } else if (tag->son->token.token_number == TAG_STORE) {
             int temp_val = tag->son->brother->token.token_value;
             int saved_val = tag->son->brother->brother->brother->token.token_value;
-            char str[12];
-            snprintf(str, sizeof(str), "%d", -(4 * temp_val));
+            Symbol_info * temp_symbol = symbol_finder_from_symbol_id(temp_val);
+            Symbol_info * saved_symbol = symbol_finder_from_symbol_id(saved_val);
 
             Node * n1;
-            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
+            if ((temp_val < temp_count && temp_val >= 1) && (temp_symbol->init_option != 0)) {
                 n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
             } else {
+                char str[12];
+                temp_loc_alloc(temp_symbol, str);
+
                 n1 = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
             }
 
             Node * n2;
-            if (symbol_finder_from_symbol_id(saved_val)->size == 4) {
+            if (saved_symbol->size == 4) {
                 n2 = line_maker(ASM_STR, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
-            } else if (symbol_finder_from_symbol_id(saved_val)->size == 2) {
+            } else if (saved_symbol->size == 2) {
                 n2 = line_maker(ASM_STRH, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
-            } else if (symbol_finder_from_symbol_id(saved_val)->size == 1) {
+            } else if (saved_symbol->size == 1) {
                 n2 = line_maker(ASM_STRB, tag->son->brother->brother->brother->token.token_number, tag->son->brother->brother->brother->token.token_value, ASM_REGISTER, 2, NUM_IMM, lexval_manager ("0"));
             }
             
@@ -419,14 +439,16 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
         } else if (tag->son->token.token_number == TAG_GET_ADDR) {
             int addr_temp = tag->son->brother->brother->brother->token.token_value;
             int result_temp = tag->son->brother->token.token_value;
-            char str[12];
-            snprintf(str, sizeof(str), "%d", -(4 * addr_temp));
+            Symbol_info * addr_symbol = symbol_finder_from_symbol_id(addr_temp);
 
             Node * n1;
-            if ((addr_temp < temp_count && addr_temp >= 1) && (symbol_finder_from_symbol_id(addr_temp)->init_option != 0)) {
-                n1 = line_maker(ASM_MOV, tag->son->brother->token.token_number, tag->son->brother->token.token_value, TAG_TEMP, 0, ASM_DATA_AREA, addr_temp);
+            if ((addr_temp < temp_count && addr_temp >= 1) && (addr_symbol->init_option != 0)) {
+                n1 = line_maker(ASM_MOV, tag->son->brother->token.token_number, result_temp, TAG_TEMP, 0, ASM_DATA_AREA, addr_temp);
             } else {
-                n1 = line_maker(ASM_ADD, tag->son->brother->token.token_number, tag->son->brother->token.token_value, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+                char str[12];
+                temp_loc_alloc(addr_symbol, str);
+
+                n1 = line_maker(ASM_ADD, tag->son->brother->token.token_number, result_temp, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
             }
             return n1;
         } else {
@@ -562,47 +584,48 @@ void asm_pass2_temp_to_stack(Node * node) {
         // rD가 임시 레지스터일 경우
         if (node->son->brother->token.token_number == TAG_TEMP && node->son->brother->token.token_value != 0) { // rD
             int temp_val = node->son->brother->token.token_value;
+            Symbol_info * temp_symbol = symbol_finder_from_symbol_id(temp_val);
             if (node->son->token.token_number == ASM_STR || node->son->token.token_number == ASM_STRB || node->son->token.token_number == ASM_STRH) {   // rD가 값을 불러오는 역할을 하는 경우
-                int n = -(4 * node->son->brother->token.token_value);
-                char str[12];
-                snprintf(str, sizeof(str), "%d", n);
 
                 Node * original_line_node;
-                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
-                    if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                        if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                if ((temp_val < temp_count && temp_val >= 1) && (temp_symbol->init_option != 0)) {
+                    if (temp_symbol->type_tree->token.token_number == KW_UNSIGNED || temp_symbol->type_tree->token.token_number == KW_POINTER) {
+                        if (temp_symbol->size == 4) {
                             original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        } else if (temp_symbol->size == 2) {
                             original_line_node = line_maker(ASM_LDRH, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        } else if (temp_symbol->size == 1) {
                             original_line_node = line_maker(ASM_LDRB, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                         }
-                    } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                        if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    } else if (temp_symbol->type_tree->token.token_number == KW_SIGNED) {
+                        if (temp_symbol->size == 4) {
                             original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        } else if (temp_symbol->size == 2) {
                             original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        } else if (temp_symbol->size == 1) {
                             original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                         }
                     }
                     
                     
                 } else {
-                    if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                        if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    char str[12];
+                    temp_loc_alloc(temp_symbol, str);
+
+                    if (temp_symbol->type_tree->token.token_number == KW_UNSIGNED || temp_symbol->type_tree->token.token_number == KW_POINTER) {
+                        if (temp_symbol->size == 4) {
                             original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        } else if (temp_symbol->size == 2) {
                             original_line_node = line_maker(ASM_LDRH, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        } else if (temp_symbol->size == 1) {
                             original_line_node = line_maker(ASM_LDRB, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                         }
-                    } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                        if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    } else if (temp_symbol->type_tree->token.token_number == KW_SIGNED) {
+                        if (temp_symbol->size == 4) {
                             original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        } else if (temp_symbol->size == 2) {
                             original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        } else if (temp_symbol->size == 1) {
                             original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                         }
                     }
@@ -624,26 +647,26 @@ void asm_pass2_temp_to_stack(Node * node) {
                 original_line_node->son->brother->token.token_number = ASM_REGISTER;
                 original_line_node->son->brother->token.token_value = 1;
             } else {   // rD가 값을 저장하는 역할을 하는 경우
-                int n = -(4 * node->son->brother->token.token_value);
-                char str[12];
-                snprintf(str, sizeof(str), "%d", n);
 
                 Node * store_rD;
-                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                if ((temp_val < temp_count && temp_val >= 1) && (temp_symbol->init_option != 0)) {
+                    if (temp_symbol->size == 4) {
                         store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         store_rD = line_maker(ASM_STRH, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         store_rD = line_maker(ASM_STRB, ASM_REGISTER, 1, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                     }
                     
                 } else {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    char str[12];
+                    temp_loc_alloc(temp_symbol, str);
+
+                    if (temp_symbol->size == 4) {
                         store_rD = line_maker(ASM_STR, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         store_rD = line_maker(ASM_STRH, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         store_rD = line_maker(ASM_STRB, ASM_REGISTER, 1, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                     }
                     
@@ -660,46 +683,47 @@ void asm_pass2_temp_to_stack(Node * node) {
         // rA가 임시변수일 경우
         if (node->son->brother->brother->token.token_number == TAG_TEMP && node->son->brother->brother->token.token_value != 0) { // rA
             int temp_val = node->son->brother->brother->token.token_value;
-            int n = -(4 * node->son->brother->brother->token.token_value);
-            char str[12];
-            snprintf(str, sizeof(str), "%d", n);
+            Symbol_info * temp_symbol = symbol_finder_from_symbol_id(temp_val);
 
             Node * original_line_node;
-            if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
-                if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+            if ((temp_val < temp_count && temp_val >= 1) && (temp_symbol->init_option != 0)) {
+                if (temp_symbol->type_tree->token.token_number == KW_UNSIGNED || temp_symbol->type_tree->token.token_number == KW_POINTER) {
+                    if (temp_symbol->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         original_line_node = line_maker(ASM_LDRH, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         original_line_node = line_maker(ASM_LDRB, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                     }
-                } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                } else if (temp_symbol->type_tree->token.token_number == KW_SIGNED) {
+                    if (temp_symbol->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 2, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                     }
                 }
                 
                 
             } else {
-                if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                char str[12];
+                temp_loc_alloc(temp_symbol, str);
+
+                if (temp_symbol->type_tree->token.token_number == KW_UNSIGNED || temp_symbol->type_tree->token.token_number == KW_POINTER) {
+                    if (temp_symbol->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         original_line_node = line_maker(ASM_LDRH, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         original_line_node = line_maker(ASM_LDRB, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                     }
-                } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                } else if (temp_symbol->type_tree->token.token_number == KW_SIGNED) {
+                    if (temp_symbol->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 2, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                     }
                 }
@@ -724,46 +748,47 @@ void asm_pass2_temp_to_stack(Node * node) {
             // rA가 임시변수이면서, 동시에 rB가 임시변수일 경우
             if (original_line_node->son->brother->brother->brother->token.token_number == TAG_TEMP && original_line_node->son->brother->brother->brother->token.token_value != 0) { // rB
                 int temp_val = original_line_node->son->brother->brother->brother->token.token_value;
-                int n = -(4 * original_line_node->son->brother->brother->brother->token.token_value);
-                char str[12];
-                snprintf(str, sizeof(str), "%d", n);
+                Symbol_info * temp_symbol = symbol_finder_from_symbol_id(temp_val);
 
                 Node * line_ldr_rb;
-                if ((temp_val < temp_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
-                    if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                        if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                if ((temp_val < temp_count && temp_val >= 1) && (temp_symbol->init_option != 0)) {
+                    if (temp_symbol->type_tree->token.token_number == KW_UNSIGNED || temp_symbol->type_tree->token.token_number == KW_POINTER) {
+                        if (temp_symbol->size == 4) {
                             line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        } else if (temp_symbol->size == 2) {
                             line_ldr_rb = line_maker(ASM_LDRH, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        } else if (temp_symbol->size == 1) {
                             line_ldr_rb = line_maker(ASM_LDRB, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                         }
-                    } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                        if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    } else if (temp_symbol->type_tree->token.token_number == KW_SIGNED) {
+                        if (temp_symbol->size == 4) {
                             line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        } else if (temp_symbol->size == 2) {
                             line_ldr_rb = line_maker(ASM_LDRSH, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        } else if (temp_symbol->size == 1) {
                             line_ldr_rb = line_maker(ASM_LDRSB, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                         }
                     }
                     
                     
                 } else {
-                    if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                        if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    char str[12];
+                    temp_loc_alloc(temp_symbol, str);
+
+                    if (temp_symbol->type_tree->token.token_number == KW_UNSIGNED || temp_symbol->type_tree->token.token_number == KW_POINTER) {
+                        if (temp_symbol->size == 4) {
                             line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        } else if (temp_symbol->size == 2) {
                             line_ldr_rb = line_maker(ASM_LDRH, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        } else if (temp_symbol->size == 1) {
                             line_ldr_rb = line_maker(ASM_LDRB, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                         } 
-                    } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                        if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                    } else if (temp_symbol->type_tree->token.token_number == KW_SIGNED) {
+                        if (temp_symbol->size == 4) {
                             line_ldr_rb = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                        } else if (temp_symbol->size == 2) {
                             line_ldr_rb = line_maker(ASM_LDRSH, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                        } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                        } else if (temp_symbol->size == 1) {
                             line_ldr_rb = line_maker(ASM_LDRSB, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                         } 
                     }
@@ -781,46 +806,47 @@ void asm_pass2_temp_to_stack(Node * node) {
         // rA가 임시변수가 아니고, rB가 임시변수일 경우
         } else if (node->son->brother->brother->brother->token.token_number == TAG_TEMP && node->son->brother->brother->brother->token.token_value != 0) { // rB
             int temp_val = node->son->brother->brother->brother->token.token_value;
-            int n = -(4 * node->son->brother->brother->brother->token.token_value);
-            char str[12];
-            snprintf(str, sizeof(str), "%d", n);
+            Symbol_info * temp_symbol = symbol_finder_from_symbol_id(temp_val);
 
             Node * original_line_node;
-            if ((temp_val < symbol_id_count && temp_val >= 1) && (symbol_finder_from_symbol_id(temp_val)->init_option != 0)) {
-                if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+            if ((temp_val < symbol_id_count && temp_val >= 1) && (temp_symbol->init_option != 0)) {
+                if (temp_symbol->type_tree->token.token_number == KW_UNSIGNED || temp_symbol->type_tree->token.token_number == KW_POINTER) {
+                    if (temp_symbol->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         original_line_node = line_maker(ASM_LDRH, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         original_line_node = line_maker(ASM_LDRB, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                     }
-                } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                } else if (temp_symbol->type_tree->token.token_number == KW_SIGNED) {
+                    if (temp_symbol->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 3, ASM_DATA_AREA, 0, NUM_IMM, temp_val);
                     }
                 }
                 
                 
             } else {
-                if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_UNSIGNED || symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_POINTER) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                char str[12];
+                temp_loc_alloc(temp_symbol, str);
+
+                if (temp_symbol->type_tree->token.token_number == KW_UNSIGNED || temp_symbol->type_tree->token.token_number == KW_POINTER) {
+                    if (temp_symbol->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         original_line_node = line_maker(ASM_LDRH, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         original_line_node = line_maker(ASM_LDRB, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                     }
-                } else if (symbol_finder_from_symbol_id(temp_val)->type_tree->token.token_number == KW_SIGNED) {
-                    if (symbol_finder_from_symbol_id(temp_val)->size == 4) {
+                } else if (temp_symbol->type_tree->token.token_number == KW_SIGNED) {
+                    if (temp_symbol->size == 4) {
                         original_line_node = line_maker(ASM_LDR, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 2) {
+                    } else if (temp_symbol->size == 2) {
                         original_line_node = line_maker(ASM_LDRSH, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
-                    } else if (symbol_finder_from_symbol_id(temp_val)->size == 1) {
+                    } else if (temp_symbol->size == 1) {
                         original_line_node = line_maker(ASM_LDRSB, ASM_REGISTER, 3, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
                     }
                 }
@@ -867,14 +893,14 @@ void asm_pass3_prologue_maker(Node * node) {
     }
 
     if (node->token.token_number == ASM_FUNCTION) {
-        // STR R15 R14 -(temp_count * 4 + 1)
-        int n = -((temp_count + 1) * 4);
+        // STR R15 R14 -(stack_location + 4)
+        int n = -(stack_location + 4);
         char str_r15[12];
         snprintf(str_r15, sizeof(str_r15), "%d", n);
         Node * p1 = line_maker(ASM_STR, ASM_REGISTER, 15, ASM_REGISTER, 14, NUM_IMM, lexval_manager (str_r15));
 
-        // STR R13 R14 -(temp_count * 4 + 2)
-        n = -((temp_count + 2) * 4);
+        // STR R13 R14 -(stack_location + 8)
+        n = -(stack_location + 8);
         char str_r13[12];
         snprintf(str_r13, sizeof(str_r13), "%d", n);
         Node * p2 = line_maker(ASM_STR, ASM_REGISTER, 13, ASM_REGISTER, 14, NUM_IMM, lexval_manager (str_r13));
@@ -882,8 +908,8 @@ void asm_pass3_prologue_maker(Node * node) {
         // MOV R13 R14
         Node * p3 = line_maker(ASM_MOV, ASM_REGISTER, 13, TAG_TEMP, 0, ASM_REGISTER, 14);
 
-        // ADD R14 R13 -(temp_count * 4 + 2)
-        n = -(((temp_count + 2) * 4) + 7 & ~7);
+        // ADD R14 R13 -(stack_location + 8)
+        n = -((stack_location + 8) + 7 & ~7);
         snprintf(str_r13, sizeof(str_r13), "%d", n);
         Node * p4 = line_maker(ASM_ADD, ASM_REGISTER, 14, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str_r13));
         
