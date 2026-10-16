@@ -368,6 +368,7 @@ extern Symbol_info * symbol_finder_from_symbol_id(int symbol_id);
 extern Symbol_info * symbol_finder_from_symbol_name(int symbol_name);
 extern Symbol_info ** temp_table;
 extern int type_tree_size(Node * node);
+extern int stack_location;
 
 
 
