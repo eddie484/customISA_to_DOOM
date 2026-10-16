@@ -185,6 +185,7 @@
 #define TAG_GET_ADDR    324
 #define TAG_LOAD        325
 #define TAG_STORE       326
+#define TAG_COPY_OFFSET 327
 
 #define NUM_IMM         349
 #define TYPE_BYTEWIDTH  350

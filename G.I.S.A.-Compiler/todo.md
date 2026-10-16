@@ -16,6 +16,8 @@ ASM에 추가할 명령어: SIGNEXT/ZEROEXT/BYTECUT 삼종세트, 고정소수�
 
 taggen의 casting, temp 심볼테이블 등록 부분 코드 정리 필요. - 완
 
+261015: 배열 decay 후 포인터 연산 scale 오류. *(arr[1] + 2), arr[1] - arr[0], *arr[1] 등에서 줄 크기(16)로 계산됨. &* 상쇄(taggen 705행) 시 안쪽 temp를 그대로 넘겨서 temp 타입이 줄 포인터로 남는 게 원인. arr[i][j]는 정상.
+
 
 ### 메모
 

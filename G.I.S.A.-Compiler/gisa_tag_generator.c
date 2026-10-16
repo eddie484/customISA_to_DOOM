@@ -63,6 +63,7 @@ Node * tag_nt_instr(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * tag_nt_instr_interpret_load(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * tag_derefer_load(Node * val);
 Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB);
+Node * tag_nt_init (Node * node, int dst, int offset, int temp_in_rA, int temp_in_rB);
 Node * line_op_logic_not(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_op_logic_and_or(Node * ast, int temp_in_rA, int temp_in_rB);
 Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB);
@@ -629,27 +630,25 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         } else if (ast->son->brother->token.token_number == OP_DECLR) {
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
             
-            Node * n2 = tag_nt_instr_interpret_load(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);
+            Node * n2;
             printf("enter OP_ASSIGN\n");        // 인자 1이 lside, 2가 rside.
+            Node * n;
             
-            Node * n3;
 
-            if (n1->token.token_number == TAG_DEREFER) {
-                n3 = line_maker(TAG_STORE, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value);
-                n3->token.token_value = n2->token.token_value;
-                Node * n1_cover = n1;
-                n1 = n1->son;
-                free(n1_cover);
+            if (ast->son->brother->brother->brother->token.token_number == NT_INIT) {
+                n2 = tag_nt_init(ast->son->brother->brother->brother, n1->token.token_value, 0, temp_in_rA, temp_in_rB);
+                n = node_maker(n1, NULL, TAG_LINE_SET, 0);
 
             } else {
-                n3 = line_maker(TAG_MOV, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value);
+                n2 = tag_nt_instr_interpret_load(ast->son->brother->brother->brother, temp_in_rA, temp_in_rB);
+                Node * n3 = line_maker(TAG_MOV, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n2->token.token_value);
                 n3->token.token_value = n3->son->brother->token.token_value;
+                n2->brother = n3;
+                n = node_maker(n1, NULL, TAG_LINE_SET, n3->token.token_value);
             }
             
             n1->brother = n2;
-            n2->brother = n3;
 
-            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n3->token.token_value);
 
             return n;
         } else if (ast->son->brother->token.token_number == NUM_INT || ast->son->brother->token.token_number == NUM_LONG || ast->son->brother->token.token_number == NUM_UINT || ast->son->brother->token.token_number == NUM_ULONG) {
@@ -946,6 +945,41 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     }
 }
 
+
+
+Node * tag_nt_init (Node * node, int dst, int offset, int temp_in_rA, int temp_in_rB)
+{
+    int init_count = atoi(lexval_finder(node->son->son->token.token_value));
+    Node * cur_init = node->son->brother;
+
+    Node * tag_tree = node_maker(NULL, NULL, TAG_LINE_SET, 0);
+    Node * cur_tagtree = tag_tree;
+
+    for (int i = 0; i < init_count; i++) {
+        int cur_offset = offset + type_tree_size(node->son->son->son) * i;
+        if (cur_init->token.token_number == NT_INIT) {
+            cur_tagtree->brother = tag_nt_init(cur_init, dst, cur_offset, temp_in_rA, temp_in_rB);
+        } else {
+            Node * single_init = tag_nt_instr_interpret_load(cur_init, temp_in_rA, temp_in_rB);
+            char offset_str[12];
+            snprintf(offset_str, sizeof(offset_str), "%d", cur_offset);
+            Node * copy_offser_line = line_maker(TAG_COPY_OFFSET, TAG_TEMP, single_init->token.token_value, TAG_TEMP, dst, NUM_IMM, lexval_manager(offset_str));
+            single_init->brother = copy_offser_line;
+
+            cur_tagtree->brother = node_maker(single_init, NULL, TAG_LINE_SET, 0);
+        }
+
+        cur_init = cur_init->brother;
+        cur_tagtree = cur_tagtree->brother;
+    }
+
+    cur_tagtree = tag_tree->brother;
+    free(tag_tree);
+
+    Node * n = node_maker(cur_tagtree, NULL, TAG_LINE_SET, 0);
+
+    return n;
+}
 
 
 Node * line_op_logic_not(Node * ast, int temp_in_rA, int temp_in_rB)
