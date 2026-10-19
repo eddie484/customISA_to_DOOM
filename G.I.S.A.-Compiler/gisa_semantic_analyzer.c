@@ -8,6 +8,7 @@ Node * get_type_tree_from_param_var_declr(Node * declr_node, Node * ident_node);
 Node * get_type_tree_from_func_declr(Node * declr_node, Node * ident_node);
 Node * get_type_tree_from_func_call(Node * ident_node);
 int value_cut_typesize(int input, Node * typetree);
+Node * static_init_type_checker(Node * type, Node * init_tree);
 
 
 
@@ -197,13 +198,24 @@ int symbol_maker(Node * declr_node) {
                     }
 
 
-                    if((ident_node->brother->son != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG)) { // init_option = 1로 재선언한 경우 
+                    if((ident_node->brother->son != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG || ident_node->brother->son->brother->token.token_number == NT_INIT)) { // init_option = 1로 재선언한 경우 
                         if (func_table[j]->init_option == 1) {
                             printf("오류: 초기값이 확정된 변수를 재선언하며 다시 초기값을 설졍하려고 합니다. 종료합니다.\n");
                             exit(1);
+                        } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NT_INIT)) { // 초기값이 상수인 경우
+                            // 초기값이 배열.
+                            if (func_table[j]->type_tree->token.token_number != TYPE_ARRAY) {
+                                printf("오류: 배열 타입이 아닌 변수에 배열 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                                exit(1);
+                            }
+                            func_table[j]->init_option = 1;
+                            func_table[j]->init_val_list = static_init_type_checker(func_table[j]->type_tree, ident_node->brother->son->brother);
                         } else {
                             if (func_table[j]->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
                                 printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
+                                exit(1);
+                            } else if (func_table[j]->type_tree->token.token_number == TYPE_ARRAY) {
+                                printf("오류: 배열 타입 변수에 배열이 아닌 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
                                 exit(1);
                             }
                             printf("이전 init_option이 %d이었던 변수의 초기값을 설정했습니다.\n", func_table[j]->init_option);
@@ -252,7 +264,7 @@ int symbol_maker(Node * declr_node) {
             symbol->is_global = 0;
             symbol->init_option = 0;
             symbol->init_value = 0;
-
+            symbol->init_val_list = NULL;
             
 
             // ***** 심볼을 테이블에 저장 *****
@@ -296,12 +308,23 @@ int symbol_maker(Node * declr_node) {
                         if (symbol->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
                             printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
                             exit(1);
+                        } else if (symbol->type_tree->token.token_number == TYPE_ARRAY) {
+                            printf("오류: 배열 타입 변수에 배열이 아닌 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                            exit(1);
                         }
                         symbol->init_option = 1;
                         char cut_val[12];
                         snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
                         int type_set_init_value = lexval_manager(cut_val);
                         symbol->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NT_INIT)) { // 초기값이 상수인 경우
+                        // 초기값이 배열.
+                        if (symbol->type_tree->token.token_number != TYPE_ARRAY) {
+                            printf("오류: 배열 타입이 아닌 변수에 배열 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                            exit(1);
+                        }
+                        symbol->init_option = 1;
+                        symbol->init_val_list = static_init_type_checker(symbol->type_tree, ident_node->brother->son->brother);
                     } else {    // 초기값이 있지만 상수가 아닌경우
                         printf("오류: static 키워드가 있는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                         exit(1);
@@ -317,12 +340,23 @@ int symbol_maker(Node * declr_node) {
                         if (symbol->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
                             printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
                             exit(1);
+                        } else if (symbol->type_tree->token.token_number == TYPE_ARRAY) {
+                            printf("오류: 배열 타입 변수에 배열이 아닌 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                            exit(1);
                         }
                         symbol->init_option = 1;
                         char cut_val[12];
                         snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
                         int type_set_init_value = lexval_manager(cut_val);
                         symbol->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NT_INIT)) { // 초기값이 상수인 경우
+                        // 초기값이 배열.
+                        if (symbol->type_tree->token.token_number != TYPE_ARRAY) {
+                            printf("오류: 배열 타입이 아닌 변수에 배열 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                            exit(1);
+                        }
+                        symbol->init_option = 1;
+                        symbol->init_val_list = static_init_type_checker(symbol->type_tree, ident_node->brother->son->brother);
                     } else {    // 초기값이 있지만 상수가 아닌경우
                         printf("오류: extern 키워드가 있는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                         exit(1);
@@ -338,12 +372,23 @@ int symbol_maker(Node * declr_node) {
                         if (symbol->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
                             printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
                             exit(1);
+                        } else if (symbol->type_tree->token.token_number == TYPE_ARRAY) {
+                            printf("오류: 배열 타입 변수에 배열이 아닌 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                            exit(1);
                         }
                         symbol->init_option = 1;
                         char cut_val[12];
                         snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
                         int type_set_init_value = lexval_manager(cut_val);
                         symbol->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                    } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NT_INIT)) { // 초기값이 상수인 경우
+                        // 초기값이 배열.
+                        if (symbol->type_tree->token.token_number != TYPE_ARRAY) {
+                            printf("오류: 배열 타입이 아닌 변수에 배열 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                            exit(1);
+                        }
+                        symbol->init_option = 1;
+                        symbol->init_val_list = static_init_type_checker(symbol->type_tree, ident_node->brother->son->brother);
                     } else {    // 초기값이 있지만 상수가 아닌경우
                         printf("오류: 키워드가 없는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                         exit(1);
@@ -405,6 +450,10 @@ int symbol_maker(Node * declr_node) {
         symbol->having_body = 0;
         symbol->is_linkage = 0;
         symbol->is_global = 0;
+        symbol->init_option = 0;
+        symbol->init_value = 0;
+        symbol->init_val_list = NULL;
+
         if (declr_node->son->son != NULL && declr_node->son->son->token.token_value == 1) { // static 키워드가 있는 경우
             symbol->init_option = 1;
             if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
@@ -413,11 +462,23 @@ int symbol_maker(Node * declr_node) {
                 if (symbol->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
                     printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
+                } else if (symbol->type_tree->token.token_number == TYPE_ARRAY) {
+                    printf("오류: 배열 타입 변수에 배열이 아닌 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
                 }
                 char cut_val[12];
                 snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), symbol->type_tree));
                 int type_set_init_value = lexval_manager(cut_val);
                 symbol->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                
+            } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NT_INIT)) { // 초기값이 상수인 경우
+                // 초기값이 배열.
+                if (symbol->type_tree->token.token_number != TYPE_ARRAY) {
+                    printf("오류: 배열 타입이 아닌 변수에 배열 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+                symbol->init_option = 1;
+                symbol->init_val_list = static_init_type_checker(symbol->type_tree, ident_node->brother->son->brother);
             } else {    // 초기값이 있지만 상수가 아닌경우
                 printf("오류: static 키워드가 있는 블록 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
                 exit(1);
@@ -558,6 +619,7 @@ int symbol_maker(Node * declr_node) {
         symbol->is_linkage = 1;
         symbol->init_option = 0;
         symbol->init_value = 0;
+        symbol->init_val_list = NULL;
 
         if (ident_node->brother->brother != NULL && ident_node->brother->brother->token.token_number == NT_BLOCK) {
             if (symbol_table_stack_count == 1) {
@@ -1140,6 +1202,99 @@ void init_type_checker(Node * type, Node * init_tree) {
     if(init_tree->token.token_number == NT_INIT) {
         init_tree->son = node_maker(copy_tree(type), init_tree->son, SEM_TYPE, 0);
     }
+}
+
+Node * static_init_type_checker(Node * type, Node * init_tree) {      // 아직 구현 안함, 현재는 inittypechecker와 동일한 상태.
+    Node * init = init_tree->son;
+    Node * init_type = type->son;
+    int counting_init = 0;
+
+    while (init != NULL) {
+        counting_init++;
+        if (init_type->token.token_number == TYPE_ARRAY) {
+            if (init->token.token_number == NT_INIT) {
+                init_type_checker(init_type, init);
+            } else {
+                printf("오류: 복합 초기화자가 와야 하는 자리에 단일 초기화자가 존재합니다. 종료합니다.\n");
+                exit(1);
+            }
+        } else {
+            if (init->token.token_number == NT_EXP) {
+                if (compare_tree(init_type, init->son->son) == 0) {
+                    if (init_type->token.token_number != KW_POINTER && init->son->son->token.token_number != KW_POINTER) {
+                        Node * prev_init = node_maker(init->son, NULL, NT_EXP, 0);
+                        prev_init->brother = NULL;
+                        Node * cast_node = node_maker(copy_tree(init_type), prev_init, NT_CAST, 0);
+                        init->son = cast_node;
+                    } else if (init_type->token.token_number == KW_POINTER && (init->son->brother->token.token_number == NUM_INT || init->son->brother->token.token_number == NUM_LONG || init->son->brother->token.token_number == NUM_UINT || init->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(init->son->brother->token.token_value)) == 0) {
+                        Node * prev_init = node_maker(init->son, NULL, NT_EXP, 0);
+                        prev_init->brother = NULL;
+                        Node * cast_node = node_maker(copy_tree(init_type), prev_init, NT_CAST, 0);
+                        init->son = cast_node;
+                    } else {
+                        printf("오류: 포인터 타입에 잘못된 타입을 넣으려 시도 중입니다. 종료합니다.\n");
+                        exit(1);
+                    }
+                    
+                }
+            } else {
+                printf("오류: 단일 초기화자가 와야 하는 자리에 복합 초기화자가 존재합니다. 종료합니다.\n");
+                exit(1);
+            }
+        }
+
+        if (init->brother != NULL) init = init->brother;
+        else break;
+    }
+    
+    if (counting_init > atoi(lexval_finder(type->token.token_value))) {
+        printf("오류: 배열이 받을 수 있는 초기화보다 많은 init으로 초기화를 시도하고 있습니다. 종료합니다.\n");
+        exit(1);
+    } else {
+        while (counting_init != atoi(lexval_finder(type->token.token_value))) {
+
+            if (init_type->token.token_number == TYPE_ARRAY) {
+                if (counting_init == 0) {
+                    init_tree->son = node_maker(NULL, NULL, NT_INIT, 0);
+                    init_type_checker(init_type, init_tree->son);
+                } else {
+                    init->brother = node_maker(NULL, NULL, NT_INIT, 0);
+                    init_type_checker(init_type, init->brother);
+                }
+                
+            } else {
+                Node * zero_num;
+                if (init_type->token.token_number == KW_SIGNED) {
+                    if (init_type->brother->token.token_number == KW_INT) {
+                        zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_LONG) {
+                        zero_num = node_maker(NULL, NULL, NUM_LONG, lexval_manager("0"));
+                    }
+                } else if (init_type->token.token_number == KW_UNSIGNED) {
+                    if (init_type->brother->token.token_number == KW_INT) {
+                        zero_num = node_maker(NULL, NULL, NUM_UINT, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_LONG) {
+                        zero_num = node_maker(NULL, NULL, NUM_ULONG, lexval_manager("0"));
+                    }
+                }else if (init_type->token.token_number == KW_POINTER) {
+                    zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                }
+
+                if (counting_init == 0) init_tree->son = node_maker(node_maker(copy_tree(init_type), zero_num, SEM_TYPE, 0), NULL, NT_EXP, 0);
+                else init->brother = node_maker(node_maker(copy_tree(init_type), zero_num, SEM_TYPE, 0), NULL, NT_EXP, 0);
+            }
+            if (counting_init == 0) init = init_tree->son;
+            else init = init->brother;
+            counting_init++;
+            
+        }
+    }
+
+    if(init_tree->token.token_number == NT_INIT) {
+        init_tree->son = node_maker(copy_tree(type), init_tree->son, SEM_TYPE, 0);
+    }
+
+    return node_maker(NULL, NULL, 0, 0);
 }
 
 
