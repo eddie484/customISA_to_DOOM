@@ -1226,7 +1226,26 @@ Node * static_init_type_checker(Node * type, Node * init_tree) {
                     printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
                 }
-                current_result_tree->brother = node_maker(NULL, NULL, init->token.token_number, init->token.token_value);
+                
+                char cut_val[12];
+                snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(init->token.token_value)), init_type));
+                int cut_val_lex = lexval_manager(cut_val);
+
+                if (init_type->token.token_number == KW_SIGNED) {
+                    if (init_type->brother->token.token_number == KW_INT) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, cut_val_lex);
+                    } else if (init_type->brother->token.token_number == KW_LONG) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_LONG, cut_val_lex);
+                    }
+                } else if (init_type->token.token_number == KW_UNSIGNED) {
+                    if (init_type->brother->token.token_number == KW_INT) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_UINT, cut_val_lex);
+                    } else if (init_type->brother->token.token_number == KW_LONG) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_ULONG, cut_val_lex);
+                    }
+                } else if (init_type->token.token_number == KW_POINTER) {
+                    current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, cut_val_lex);
+                }
             } else {
                 printf("오류: 단일 초기화자가 와야 하는 자리에 잘못된 초기화자가 존재합니다. 종료합니다.\n");
                 exit(1);
