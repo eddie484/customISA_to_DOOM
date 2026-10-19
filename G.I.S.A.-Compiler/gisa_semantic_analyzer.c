@@ -1204,47 +1204,40 @@ void init_type_checker(Node * type, Node * init_tree) {
     }
 }
 
-Node * static_init_type_checker(Node * type, Node * init_tree) {      // 아직 구현 안함, 현재는 inittypechecker와 동일한 상태.
+Node * static_init_type_checker(Node * type, Node * init_tree) {
     Node * init = init_tree->son;
     Node * init_type = type->son;
+    Node * result_tree = node_maker(NULL, NULL, NT_INIT, 0);
+    Node * current_result_tree = result_tree;
     int counting_init = 0;
 
     while (init != NULL) {
         counting_init++;
         if (init_type->token.token_number == TYPE_ARRAY) {
             if (init->token.token_number == NT_INIT) {
-                init_type_checker(init_type, init);
+                current_result_tree->brother = static_init_type_checker(init_type, init);
             } else {
                 printf("오류: 복합 초기화자가 와야 하는 자리에 단일 초기화자가 존재합니다. 종료합니다.\n");
                 exit(1);
             }
         } else {
-            if (init->token.token_number == NT_EXP) {
-                if (compare_tree(init_type, init->son->son) == 0) {
-                    if (init_type->token.token_number != KW_POINTER && init->son->son->token.token_number != KW_POINTER) {
-                        Node * prev_init = node_maker(init->son, NULL, NT_EXP, 0);
-                        prev_init->brother = NULL;
-                        Node * cast_node = node_maker(copy_tree(init_type), prev_init, NT_CAST, 0);
-                        init->son = cast_node;
-                    } else if (init_type->token.token_number == KW_POINTER && (init->son->brother->token.token_number == NUM_INT || init->son->brother->token.token_number == NUM_LONG || init->son->brother->token.token_number == NUM_UINT || init->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(init->son->brother->token.token_value)) == 0) {
-                        Node * prev_init = node_maker(init->son, NULL, NT_EXP, 0);
-                        prev_init->brother = NULL;
-                        Node * cast_node = node_maker(copy_tree(init_type), prev_init, NT_CAST, 0);
-                        init->son = cast_node;
-                    } else {
-                        printf("오류: 포인터 타입에 잘못된 타입을 넣으려 시도 중입니다. 종료합니다.\n");
-                        exit(1);
-                    }
-                    
+            if (init->token.token_number == NUM_INT || init->token.token_number == NUM_UINT || init->token.token_number == NUM_LONG || init->token.token_number == NUM_ULONG) {
+                if(init_type->token.token_number == KW_POINTER && atoi(lexval_finder(init->token.token_value)) != 0) {
+                    printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
                 }
+                current_result_tree->brother = node_maker(NULL, NULL, init->token.token_number, init->token.token_value);
             } else {
-                printf("오류: 단일 초기화자가 와야 하는 자리에 복합 초기화자가 존재합니다. 종료합니다.\n");
+                printf("오류: 단일 초기화자가 와야 하는 자리에 잘못된 초기화자가 존재합니다. 종료합니다.\n");
                 exit(1);
             }
         }
+        
+        current_result_tree = current_result_tree->brother;
 
-        if (init->brother != NULL) init = init->brother;
-        else break;
+        if (init->brother != NULL) {
+            init = init->brother;
+        } else break;
     }
     
     if (counting_init > atoi(lexval_finder(type->token.token_value))) {
@@ -1254,47 +1247,37 @@ Node * static_init_type_checker(Node * type, Node * init_tree) {      // 아직 
         while (counting_init != atoi(lexval_finder(type->token.token_value))) {
 
             if (init_type->token.token_number == TYPE_ARRAY) {
-                if (counting_init == 0) {
-                    init_tree->son = node_maker(NULL, NULL, NT_INIT, 0);
-                    init_type_checker(init_type, init_tree->son);
-                } else {
-                    init->brother = node_maker(NULL, NULL, NT_INIT, 0);
-                    init_type_checker(init_type, init->brother);
-                }
+                Node * empty_init = node_maker(NULL, NULL, NT_INIT, 0);
+                current_result_tree->brother = static_init_type_checker(init_type, empty_init);
+                free(empty_init);
                 
             } else {
-                Node * zero_num;
                 if (init_type->token.token_number == KW_SIGNED) {
                     if (init_type->brother->token.token_number == KW_INT) {
-                        zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                     } else if (init_type->brother->token.token_number == KW_LONG) {
-                        zero_num = node_maker(NULL, NULL, NUM_LONG, lexval_manager("0"));
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_LONG, lexval_manager("0"));
                     }
                 } else if (init_type->token.token_number == KW_UNSIGNED) {
                     if (init_type->brother->token.token_number == KW_INT) {
-                        zero_num = node_maker(NULL, NULL, NUM_UINT, lexval_manager("0"));
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_UINT, lexval_manager("0"));
                     } else if (init_type->brother->token.token_number == KW_LONG) {
-                        zero_num = node_maker(NULL, NULL, NUM_ULONG, lexval_manager("0"));
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_ULONG, lexval_manager("0"));
                     }
-                }else if (init_type->token.token_number == KW_POINTER) {
-                    zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                } else if (init_type->token.token_number == KW_POINTER) {
+                    current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                 }
 
-                if (counting_init == 0) init_tree->son = node_maker(node_maker(copy_tree(init_type), zero_num, SEM_TYPE, 0), NULL, NT_EXP, 0);
-                else init->brother = node_maker(node_maker(copy_tree(init_type), zero_num, SEM_TYPE, 0), NULL, NT_EXP, 0);
             }
-            if (counting_init == 0) init = init_tree->son;
-            else init = init->brother;
-            counting_init++;
             
+            counting_init++;
+            current_result_tree = current_result_tree->brother;
         }
     }
 
-    if(init_tree->token.token_number == NT_INIT) {
-        init_tree->son = node_maker(copy_tree(type), init_tree->son, SEM_TYPE, 0);
-    }
-
-    return node_maker(NULL, NULL, 0, 0);
+    Node * n = node_maker(result_tree->brother, NULL, NT_INIT, 0);
+    free(result_tree);
+    return n;
 }
 
 
