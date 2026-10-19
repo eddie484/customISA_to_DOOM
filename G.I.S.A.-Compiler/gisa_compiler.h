@@ -369,6 +369,7 @@ extern Symbol_info * symbol_finder_from_symbol_name(int symbol_name);
 extern Symbol_info ** temp_table;
 extern int type_tree_size(Node * node);
 extern int stack_location;
+extern Node * static_init_type_checker(Node * type, Node * init_tree);
 
 
 

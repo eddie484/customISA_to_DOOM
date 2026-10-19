@@ -98,6 +98,7 @@ int temp_registration(Node * type_tree){
     symbol->is_linkage = 0;
     symbol->init_option = 0;
     symbol->init_value = 0;
+    symbol->init_val_list = NULL;
 
     temp_table[temp_table_count++] = symbol;
 
@@ -1394,9 +1395,20 @@ Node * static_list() {
     for (int i = 1; i < symbol_id_count; i++) {
         Symbol_info * symbol = symbol_finder_from_symbol_id(i);
         if (symbol->init_option == 1 || symbol->init_option == 2) {
+            if (symbol->type_tree->token.token_number == TYPE_ARRAY && symbol->init_val_list == NULL) {
+                Node * empty_init = node_maker(NULL, NULL, NT_INIT, 0);
+                symbol->init_val_list = static_init_type_checker(symbol->type_tree, empty_init);
+                free(empty_init);
+            }
             Node * static_var_node = node_maker(NULL, NULL, TAG_STATIC_VAR, symbol->id);
             Node * static_var_node_is_global = node_maker(NULL, NULL, TAG_TEMP, symbol->is_global);
-            Node * static_var_node_init_val = node_maker(NULL, NULL, TAG_TEMP, symbol->init_value);
+            Node * static_var_node_init_val;
+            if (symbol->type_tree->token.token_number == TYPE_ARRAY) {
+                static_var_node_init_val = copy_tree(symbol->init_val_list);
+            } else {
+                static_var_node_init_val = node_maker(NULL, NULL, TAG_TEMP, symbol->init_value);
+            }
+            
 
             static_var_node->son = static_var_node_is_global;
             static_var_node_is_global->brother = static_var_node_init_val;
