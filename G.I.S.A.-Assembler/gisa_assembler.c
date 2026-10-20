@@ -2565,7 +2565,7 @@ int main(int argc, char *argv[])
             int immBb = addr & 0xFFF;
             binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
 
-            staticput(static_name, static_location);
+            if (*static_name != '-') staticput(static_name, static_location);
             static_location += static_size;
             free(static_name);
 

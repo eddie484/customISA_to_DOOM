@@ -1,9 +1,30 @@
 #include "gisa_compiler.h"
 
+int flat_limit;
 
 char * lexval_finder (int table_num) {
     //printf("주소는: %p\n", (void *)lex_val_table);
     return lex_val_table[table_num].lexeme_name;
+}
+
+int array_counter(Node * type) {
+    int count = 0;
+    if (type->token.token_number == TYPE_ARRAY) count += atoi(lexval_finder(type->token.token_value));
+    else return 1;
+    
+    if (type->son != NULL) count *= array_counter(type->son);
+    if (type->brother != NULL) count *= array_counter(type->brother);
+
+    return count;
+}
+
+int array_flatter(Node * arr, int * flatten, int count) {
+    if (arr->token.token_number != NT_INIT) flatten[count++] = atoi(lexval_finder(arr->token.token_value));
+
+    if (arr->son != NULL) count = array_flatter(arr->son, flatten, count);
+    if (arr->brother != NULL) count = array_flatter(arr->brother, flatten, count);
+
+    return count;
 }
 
 
@@ -25,51 +46,70 @@ void asm_printer(Node * node, FILE * codeemitfp){
             Symbol_info * symbol = symbol_finder_from_symbol_id(node->token.token_value);
             char * label_name = lexval_finder(symbol->name);
             int label_id = symbol->id;
-            int init_value;
-            if (symbol->init_option == 1) {
-                init_value = atoi(lexval_finder(symbol->init_value));
-            } else {
-                init_value = 0;
-            }
-            // 배열일 경우 처리 필요. 여기서 붙이지 않도록 배열이 아닐 때만. 배열일 때는 저 안에서 for에서 붙이도록. 아님 배열의 첫번째 값만 하던가.
-            if ((init_value << 12 >> 12) == init_value) {
-                printf("\tMOVI R1 #%d\n", init_value);
-                fprintf(codeemitfp, "\tMOVI R1 #%d\n", init_value);
-            } else {
-                printf("\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
-                fprintf(codeemitfp, "\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
-                printf("\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
-                fprintf(codeemitfp, "\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
-            }
 
-            if (symbol->is_global == 1) {
-                if (symbol->type_tree->token.token_number == TYPE_ARRAY) {
-                    /* init_var_array 트리와 빈 노드를 인자로 받아, 빈 노드에 flatten 트리를 넣고 init 개수를 return 하는 함수 만들어 호출
-                    첫번쨰 경우 이름을 붙여 .data 하기
-                     for (int i = 1; i < count; i++) {
-                        두번쨰부터 배열끝까진 이름없이 .data 하기
-                     }
-                     */
-                    printf(".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
-                    fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
+            if (symbol->type_tree->token.token_number == TYPE_ARRAY) {
+                flat_limit = array_counter(symbol->type_tree);
+
+                int * flat_array = malloc(sizeof(int) * flat_limit);
+                array_flatter(symbol->init_val_list, flat_array, 0);
+
+                for (int i = 0; i < flat_limit; i++) {
+                    if ((flat_array[i] << 12 >> 12) == flat_array[i]) {
+                        printf("\tMOVI R1 #%d\n", flat_array[i]);
+                        fprintf(codeemitfp, "\tMOVI R1 #%d\n", flat_array[i]);
+                    } else {
+                        printf("\tMOVH R1 #%d\n", ((flat_array[i] & 0xFFFF0000)) >> 16);
+                        fprintf(codeemitfp, "\tMOVH R1 #%d\n", ((flat_array[i] & 0xFFFF0000)) >> 16);
+                        printf("\tORI R1 R1 #%d\n", (flat_array[i] & 0x0000FFFF));
+                        fprintf(codeemitfp, "\tORI R1 R1 #%d\n", (flat_array[i] & 0x0000FFFF));
+                    }
+
+                    if (i == 0) {
+                        if (symbol->is_global == 1) {
+                            printf(".data DATA_%s %d %d\n", label_name, symbol->size / flat_limit, flat_array[i]);
+                            fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size / flat_limit, flat_array[i]);
+                        } else {
+                            printf(".data DATA_ID_%d %d %d\n", label_id, symbol->size / flat_limit, flat_array[i]);
+                            fprintf(codeemitfp, ".data DATA_ID_%d %d %d\n", label_id, symbol->size / flat_limit, flat_array[i]);
+                        }
+                    } else {
+                        if (symbol->is_global == 1) {
+                            printf(".data - %d %d\n", symbol->size / flat_limit, flat_array[i]);
+                            fprintf(codeemitfp, ".data - %d %d\n", symbol->size / flat_limit, flat_array[i]);
+                        } else {
+                            printf(".data - %d %d\n", symbol->size / flat_limit, flat_array[i]);
+                            fprintf(codeemitfp, ".data - %d %d\n", symbol->size / flat_limit, flat_array[i]);
+                        }
+                    }
                 }
+
+                free(flat_array);
+            } else {
+                int init_value;
                 if (symbol->init_option == 1) {
+                    init_value = atoi(lexval_finder(symbol->init_value));
+                } else {
+                    init_value = 0;
+                }
+
+                if ((init_value << 12 >> 12) == init_value) {
+                    printf("\tMOVI R1 #%d\n", init_value);
+                    fprintf(codeemitfp, "\tMOVI R1 #%d\n", init_value);
+                } else {
+                    printf("\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
+                    fprintf(codeemitfp, "\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
+                    printf("\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
+                    fprintf(codeemitfp, "\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
+                }
+
+                if (symbol->is_global == 1) {
                     printf(".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
                     fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
                 } else {
-                    printf(".data DATA_%s %d 0\n", label_name, symbol->size);
-                    fprintf(codeemitfp, ".data DATA_%s %d 0\n", label_name, symbol->size);
-                }
-            } else {
-                if (symbol->init_option == 1) {
                     printf(".data DATA_ID_%d %d %d\n", label_id, symbol->size, init_value);
                     fprintf(codeemitfp, ".data DATA_ID_%d %d %d\n", label_id, symbol->size, init_value);
-                } else {
-                    printf(".data DATA_ID_%d %d 0\n", label_id, symbol->size);
-                    fprintf(codeemitfp, ".data DATA_ID_%d %d 0\n", label_id, symbol->size);
                 }
             }
-            
             
             break;
         }
