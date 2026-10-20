@@ -704,7 +704,12 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
 
             if (n1->token.token_number == TAG_DEREFER) {
-                Node * n = n1->son;
+                Node * n1_son = n1->son;
+                Node * n2 = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->son), TAG_TEMP, 0, TAG_TEMP, n1_son->token.token_value);
+                n2->token.token_value = n2->son->brother->token.token_value;
+                n1_son->brother = n2;
+
+                Node * n = node_maker(n1_son, NULL, TAG_LINE_SET, n2->token.token_value);
                 free(n1);
                 return n;
             } else {
@@ -1139,6 +1144,9 @@ Node * line_op_comp(Node * ast, int temp_in_rA, int temp_in_rB)
                 break;
                             
         }
+    } else {
+        printf("오류!!!!!!! 잘못된 타입이 op_comp에 들어왔음. 타입넘버: %d\n", symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->token.token_number);
+        exit(1);
     }
     
             
