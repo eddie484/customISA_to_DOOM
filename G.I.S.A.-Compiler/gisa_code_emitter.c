@@ -31,7 +31,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
             } else {
                 init_value = 0;
             }
-
+            // 배열일 경우 처리 필요. 여기서 붙이지 않도록 배열이 아닐 때만. 배열일 때는 저 안에서 for에서 붙이도록. 아님 배열의 첫번째 값만 하던가.
             if ((init_value << 12 >> 12) == init_value) {
                 printf("\tMOVI R1 #%d\n", init_value);
                 fprintf(codeemitfp, "\tMOVI R1 #%d\n", init_value);
@@ -43,6 +43,16 @@ void asm_printer(Node * node, FILE * codeemitfp){
             }
 
             if (symbol->is_global == 1) {
+                if (symbol->type_tree->token.token_number == TYPE_ARRAY) {
+                    /* init_var_array 트리와 빈 노드를 인자로 받아, 빈 노드에 flatten 트리를 넣고 init 개수를 return 하는 함수 만들어 호출
+                    첫번쨰 경우 이름을 붙여 .data 하기
+                     for (int i = 1; i < count; i++) {
+                        두번쨰부터 배열끝까진 이름없이 .data 하기
+                     }
+                     */
+                    printf(".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
+                    fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
+                }
                 if (symbol->init_option == 1) {
                     printf(".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
                     fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
