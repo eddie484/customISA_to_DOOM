@@ -103,8 +103,12 @@
 
 #define OPEN_BRACK      77   // [
 #define CLOSE_BRACK     78   // ]
-#define TYPE_ARRAY       79
-#define OP_DECLR      80
+#define TYPE_ARRAY      79
+#define OP_DECLR        80
+
+#define KW_CHAR         81
+#define NUM_CHAR        82
+#define STR_CHAR        83
 
 
 #define NT_PROGRAM      100
@@ -149,7 +153,7 @@
 #define NT_UNARY_EXP    140
 #define NT_ARRAY_EXP    141
 #define NT_NUM          142
-#define NT_             143
+#define NT_STRING_LIST  143
 
 #define NT_FUNCTION     145
 

@@ -86,7 +86,9 @@ static const int lexing_state_table[128] = {
     [':'] = 24,
     [','] = 25,
     ['['] = 26,
-    [']'] = 27
+    [']'] = 27,
+    ['\''] = 28,
+    ['\"'] = 29
 };
 
 static const Char_macro_mix lexing_result_table[128] = {
@@ -387,6 +389,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     //printf("DEFAULT");
                 } else if (!strcmp(get_str, "unsigned")) {
                     lexeme[lexeme_count].token_number = KW_UNSIGNED;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("DEFAULT");
+                } else if (!strcmp(get_str, "char")) {
+                    lexeme[lexeme_count].token_number = KW_CHAR;
                     lexeme[lexeme_count].token_value = 0;
                     //printf("DEFAULT");
                 } else {
@@ -868,6 +874,117 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                 }
 
 
+
+
+            // state = 28. '로 시작하는 경우. char.
+            } else if (cur_state == 28) {
+                if (buf[cur_index] == '\\') {    // 이스케이프 시퀀스인 경우
+                    char escape_sequence[3];
+                    escape_sequence[0] = buf[cur_index];
+                    escape_sequence[1] = buf[cur_index + 1];
+                    escape_sequence[2] = '\0';
+
+                    if (buf[cur_index + 1] != '\'' && buf[cur_index + 1] != '\"' && buf[cur_index + 1] != '?' && buf[cur_index + 1] != '\\' && buf[cur_index + 1] != 'a' && buf[cur_index + 1] != 'b' && buf[cur_index + 1] != 'f' && buf[cur_index + 1] != 'n' && buf[cur_index + 1] != 'r' && buf[cur_index + 1] != 't' && buf[cur_index + 1] != 'v') {
+                        printf("오류: 잘못된 이스케이프가 왔습니다: \\%c. 종료합니다.\n", buf[cur_index + 1]);
+                        exit(1);
+                    }
+
+                    if (buf[cur_index + 2] != '\'') {
+                        printf("오류: \'\' 속에 여러 문자를 넣으려고 시도하고 있습니다. 종료합니다.\n");
+                        exit(1);
+                    }
+
+                    lexeme[lexeme_count].token_number = NUM_CHAR;
+                    lexeme[lexeme_count].token_value = lexval_manager(escape_sequence);
+
+                    printf("<%d, %d>, %s\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value, escape_sequence);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index += 3;    // 네 글자 토큰이므로 cur_index = 4이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else if (buf[cur_index] != 39) {    // 글자 하나인 경우
+                    char char_value[2];
+                    char_value[0] = buf[cur_index];
+                    char_value[1] = '\0';
+
+                    if (buf[cur_index + 1] != '\'') {
+                        printf("오류: \'\' 속에 여러 문자를 넣으려고 시도하고 있습니다. 종료합니다.\n");
+                        exit(1);
+                    }
+
+                    lexeme[lexeme_count].token_number = NUM_CHAR;
+                    lexeme[lexeme_count].token_value = lexval_manager(char_value);
+
+                    printf("<%d, %d>, %c\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value, buf[cur_index]);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index += 2;    // 세 글자 토큰이므로 cur_index = 3이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else {
+                    printf("오류: 빈 \'\'이 사용되었습니다. 종료합니다.\n");
+                    exit(1);
+                }
+
+
+            // state = 29. "로 시작하는 경우. string.
+            } else if (cur_state == 29) {
+                if (buf[cur_index] == '\"') {    // 빈 문자열인 경우
+                    lexeme[lexeme_count].token_number = STR_CHAR;
+                    lexeme[lexeme_count].token_value = lexval_manager("");
+
+                    printf("<%d, %d>, \n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index++;    // 두 글자 토큰이므로 cur_index = 2이다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                } else {
+                    int str_count = 0;
+                    while (buf[cur_index + str_count] != '\"') {
+                        if (buf[cur_index + str_count] == '\n' || buf[cur_index + str_count] == '\0') {
+                            printf("오류: 종료 \"가 없습니다. 종료합니다.\n");
+                            exit(1);
+                        }
+
+                        if (buf[cur_index + str_count] == '\\') {
+                            if (buf[cur_index + str_count + 1] == '\'' || buf[cur_index + str_count + 1] == '\"' || buf[cur_index + str_count + 1] == '?' || buf[cur_index + str_count + 1] == '\\' || buf[cur_index + str_count + 1] == 'a' || buf[cur_index + str_count + 1] == 'b' || buf[cur_index + str_count + 1] == 'f' || buf[cur_index + str_count + 1] == 'n' || buf[cur_index + str_count + 1] == 'r' || buf[cur_index + str_count + 1] == 't' || buf[cur_index + str_count + 1] == 'v') {
+                                str_count++;
+                            } else {
+                                printf("오류: 잘못된 이스케이프가 왔습니다: \\%c. 종료합니다.\n", buf[cur_index + str_count + 1]);
+                                exit(1);
+                            }
+                        } 
+
+                        str_count++;
+                    }
+
+                    char * string_value = malloc(sizeof(char) * (str_count + 1));
+                    for (int i = 0; i < str_count; i++) {
+                        string_value[i] = buf[cur_index + i];
+                    }
+                    string_value[str_count] = '\0';
+
+                    lexeme[lexeme_count].token_number = STR_CHAR;
+                    lexeme[lexeme_count].token_value = lexval_manager(string_value);
+
+                    printf("<%d, %d>, %s\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value, string_value);
+                    fprintf(lexfp, "<%d, %d>\n", lexeme[lexeme_count].token_number, lexeme[lexeme_count].token_value);
+                    lexeme_count++;
+                    cur_index += str_count + 1;    // 토큰의 글자 수 + 1(뒤의 ")만큼 cur_index를 증가시킨다.
+                    cur_state = 0;
+                    memmove(buf, buf + cur_index, 1024 - cur_index);
+                    cur_index = 0;
+
+                    free(string_value);
+                }
 
 
             // 한 글자 짜리 토큰들 처리
