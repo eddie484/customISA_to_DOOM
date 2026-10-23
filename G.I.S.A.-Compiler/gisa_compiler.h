@@ -109,6 +109,7 @@
 #define KW_CHAR         81
 #define NUM_CHAR        82
 #define STR_CHAR        83
+#define KW_NOSIGN       84
 
 
 #define NT_PROGRAM      100

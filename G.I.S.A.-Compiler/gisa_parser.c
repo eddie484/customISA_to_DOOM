@@ -855,15 +855,14 @@ void type_placing_checking(Node * x1) {
         if (count_unsigned) {
             x1->token.token_number = KW_UNSIGNED;
             x1->token.token_value = 0;
-            x1->brother = node_maker(NULL, NULL, KW_CHAR, 0);
         } else if (count_signed) {
             x1->token.token_number = KW_SIGNED;
             x1->token.token_value = 0;
-            x1->brother = node_maker(NULL, NULL, KW_CHAR, 0);
         } else {
-            x1->token.token_number = KW_CHAR;
+            x1->token.token_number = KW_NOSIGN;
             x1->token.token_value = 0;
         } 
+        x1->brother = node_maker(NULL, NULL, KW_CHAR, 0);
     } else if (count_unsigned) {
         x1->token.token_number = KW_UNSIGNED;
         x1->token.token_value = 0;

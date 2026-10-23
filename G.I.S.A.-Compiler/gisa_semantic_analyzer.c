@@ -57,10 +57,12 @@ int type_rank_change(int type, int direction) {
         if (type == KW_INT) return 6;
         else if (type == KW_LONG) return 9;
         else if (type == KW_SHORT) return 3;
+        else if (type == KW_CHAR) return 1;
     } else if (direction == 1) {    // rank to type
         if (type == 6) return KW_INT;
         else if (type == 9) return KW_LONG;
         else if (type == 3) return KW_SHORT;
+        else if (type == 1) return KW_CHAR;
     }
 }
 
@@ -69,6 +71,7 @@ int type_size_calc(Node * type) {
     else if (type->token.token_number == KW_LONG) return 4;
     else if (type->token.token_number == KW_POINTER) return 4;
     else if (type->token.token_number == KW_SHORT) return 2;
+    else if (type->token.token_number == KW_CHAR) return 1;
     else if (type->token.token_number == TYPE_ARRAY) return atoi(lexval_finder(type->token.token_value));
     else if (type->token.token_number == TYPE_BYTEWIDTH) return type->token.token_value;
     else return 0;
@@ -1015,6 +1018,9 @@ int value_cut_typesize(int input, Node * type_tree) {
     } else if (type_tree->brother != NULL && (type_tree->brother->token.token_number == KW_SHORT) && type_tree->brother->brother == NULL) {
         printf("인풋 값 %d를 16비트 사이즈로 자릅니다. 변환된 값: %d\n", input, (uint16_t)input);
         return (uint16_t)input;
+    } else if (type_tree->brother != NULL && (type_tree->brother->token.token_number == KW_CHAR) && type_tree->brother->brother == NULL) {
+        printf("인풋 값 %d를 16비트 사이즈로 자릅니다. 변환된 값: %d\n", input, (uint8_t)input);
+        return (uint8_t)input;
     } else if (type_tree->token.token_number == KW_POINTER) {
         printf("인풋은 포인터 타입입니다. %d를 32비트 사이즈로 내보냅니다. 변환된 값: %d\n", input, (uint32_t)input);
         return (uint32_t)input;
@@ -1178,14 +1184,24 @@ void init_type_checker(Node * type, Node * init_tree) {
                         zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                     } else if (init_type->brother->token.token_number == KW_LONG) {
                         zero_num = node_maker(NULL, NULL, NUM_LONG, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_SHORT) {
+                        zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_CHAR) {
+                        zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                     }
                 } else if (init_type->token.token_number == KW_UNSIGNED) {
                     if (init_type->brother->token.token_number == KW_INT) {
                         zero_num = node_maker(NULL, NULL, NUM_UINT, lexval_manager("0"));
                     } else if (init_type->brother->token.token_number == KW_LONG) {
                         zero_num = node_maker(NULL, NULL, NUM_ULONG, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_SHORT) {
+                        zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_CHAR) {
+                        zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                     }
-                }else if (init_type->token.token_number == KW_POINTER) {
+                } else if (init_type->token.token_number == KW_POINTER) {
+                    zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                } else if (init_type->brother->token.token_number == KW_CHAR) {
                     zero_num = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                 }
 
@@ -1236,14 +1252,24 @@ Node * static_init_type_checker(Node * type, Node * init_tree) {
                         current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, cut_val_lex);
                     } else if (init_type->brother->token.token_number == KW_LONG) {
                         current_result_tree->brother = node_maker(NULL, NULL, NUM_LONG, cut_val_lex);
+                    } else if (init_type->brother->token.token_number == KW_SHORT) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, cut_val_lex);
+                    } else if (init_type->brother->token.token_number == KW_CHAR) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, cut_val_lex);
                     }
                 } else if (init_type->token.token_number == KW_UNSIGNED) {
                     if (init_type->brother->token.token_number == KW_INT) {
                         current_result_tree->brother = node_maker(NULL, NULL, NUM_UINT, cut_val_lex);
                     } else if (init_type->brother->token.token_number == KW_LONG) {
                         current_result_tree->brother = node_maker(NULL, NULL, NUM_ULONG, cut_val_lex);
+                    } else if (init_type->brother->token.token_number == KW_SHORT) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, cut_val_lex);
+                    } else if (init_type->brother->token.token_number == KW_CHAR) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, cut_val_lex);
                     }
                 } else if (init_type->token.token_number == KW_POINTER) {
+                    current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, cut_val_lex);
+                } else if (init_type->brother->token.token_number == KW_CHAR) {
                     current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, cut_val_lex);
                 }
             } else {
@@ -1276,14 +1302,24 @@ Node * static_init_type_checker(Node * type, Node * init_tree) {
                         current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                     } else if (init_type->brother->token.token_number == KW_LONG) {
                         current_result_tree->brother = node_maker(NULL, NULL, NUM_LONG, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_SHORT) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_CHAR) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                     }
                 } else if (init_type->token.token_number == KW_UNSIGNED) {
                     if (init_type->brother->token.token_number == KW_INT) {
                         current_result_tree->brother = node_maker(NULL, NULL, NUM_UINT, lexval_manager("0"));
                     } else if (init_type->brother->token.token_number == KW_LONG) {
                         current_result_tree->brother = node_maker(NULL, NULL, NUM_ULONG, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_SHORT) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                    } else if (init_type->brother->token.token_number == KW_CHAR) {
+                        current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                     }
                 } else if (init_type->token.token_number == KW_POINTER) {
+                    current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
+                } else if (init_type->brother->token.token_number == KW_CHAR) {
                     current_result_tree->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager("0"));
                 }
 
@@ -1297,6 +1333,17 @@ Node * static_init_type_checker(Node * type, Node * init_tree) {
     Node * n = node_maker(result_tree->brother, NULL, NT_INIT, 0);
     free(result_tree);
     return n;
+}
+
+Node * int_promotion (Node * input) {
+    if (type_rank_change(input->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
+        Node * previous_exp = input;
+        Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), previous_exp, NT_CAST, 0);
+        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+        previous_exp->brother = NULL;
+        return exp;
+    }
+    else return input;
 }
 
 
@@ -1508,14 +1555,10 @@ void ident_symbolizer(Node * node) {
                 printf("오류: 포인터에 산술연산을 시도하고 있습니다. 종료합니다.\n");
                 exit(1);
             }
-            /*if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
-                Node * previous_exp = node->son->brother;
-                Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother = exp;
-            }
-            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);*/ Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0); // short 지원할 때 사용할 것.
+
+            node->son->brother = int_promotion(node->son->brother);
+
+            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
             
@@ -1544,16 +1587,23 @@ void ident_symbolizer(Node * node) {
                 exit(1);
             } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (node->son->brother->brother->son->son->token.token_number != KW_POINTER)) {
                 printf("포인터 + 정수 연산입니다.\n");
+                node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
+
                 Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
             } else if ((node->son->brother->son->son->token.token_number != KW_POINTER) && (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
                 printf("정수 + 포인터 연산입니다.\n");
+                node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
+
                 Node * type = node_maker(copy_tree(node->son->brother->brother->son->son), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
             } else {
                 printf("정수와 정수의 덧셈입니다.\n");
+                node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
+                node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
+
                 type_checking_binop(node);
                 Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
@@ -1577,11 +1627,16 @@ void ident_symbolizer(Node * node) {
                 node->son = type;
             } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (node->son->brother->brother->son->son->token.token_number != KW_POINTER)) {
                 printf("포인터 - 정수 연산입니다.\n");
+                node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
+
                 Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
             } else {
                 printf("정수 - 정수 연산입니다.\n");
+                node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
+                node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
+
                 type_checking_binop(node);
                 Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
@@ -1595,6 +1650,8 @@ void ident_symbolizer(Node * node) {
                 printf("오류: 포인터에 산술연산을 시도하고 있습니다. 종료합니다.\n");
                 exit(1);
             }
+            node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
+            node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
 
             type_checking_binop(node);
             
@@ -1607,21 +1664,9 @@ void ident_symbolizer(Node * node) {
                 printf("오류: 포인터에 산술연산을 시도하고 있습니다. 종료합니다.\n");
                 exit(1);
             }
-            /*if (type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
-                Node * previous_exp = node->son->brother;
-                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother = exp;
-            }
-            
-            if (type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
-                Node * previous_exp = node->son->brother->brother;
-                Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), previous_exp, NT_CAST, 0);
-                Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
-                previous_exp->brother = NULL;
-                node->son->brother->brother = exp;
-            }*/
+            node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
+            node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
+
             Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
             type->brother = node->son;
             node->son = type;
@@ -1649,6 +1694,8 @@ void ident_symbolizer(Node * node) {
                     exit(1);
                 }
             } else {    // 포인터가 아닌 경우들
+                node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
+                node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
                 type_checking_binop(node);
             }
 
@@ -1673,6 +1720,8 @@ void ident_symbolizer(Node * node) {
                     exit(1);
                 }
             } else {
+                node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
+                node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
                 type_checking_binop(node);
 
                 Node * type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), NULL, SEM_TYPE, 0);
@@ -1792,6 +1841,9 @@ void ident_symbolizer(Node * node) {
                     exit(1);
                 }
             } else {    // 포인터가 아닌 경우들
+                node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자1 정수승격
+                node->son->brother->brother->brother = int_promotion(node->son->brother->brother->brother);   // 인자2 정수승격
+
                 if (compare_tree(node->son->brother->brother->son->son, node->son->brother->brother->brother->son->son) != 1) {   // 경우 1
                     if (node->son->brother->brother->son->son->token.token_number == node->son->brother->brother->brother->son->son->token.token_number) {    // 경우 2
                         if (type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0) > type_rank_change(node->son->brother->brother->brother->son->son->brother->token.token_number, 0)) {
@@ -1918,12 +1970,14 @@ void ident_symbolizer(Node * node) {
                 node->son->brother = node_maker(NULL, NULL, NT_ARRAY_EXP, 0);
                 node->son->brother->brother = node_maker(copy_tree(array_tree->son), NULL, NT_EXP, 0);
                 node->son->brother->brother->brother = node_maker(copy_tree(array_tree->brother->son->son), NULL, NT_EXP, 0);
+                node->son->brother->brother->brother = int_promotion(node->son->brother->brother->brother);   // 인자2 정수승격
             }
             else if (node->son->son->son->token.token_number != KW_POINTER && node->son->brother->son->son->son->token.token_number == KW_POINTER) {
                 node->son = node_maker(copy_tree(node->son->brother->son->son->son->son), NULL, SEM_TYPE, 0);
                 node->son->brother = node_maker(NULL, NULL, NT_ARRAY_EXP, 0);
                 node->son->brother->brother = node_maker(copy_tree(array_tree->brother->son->son), NULL, NT_EXP, 0);
                 node->son->brother->brother->brother = node_maker(copy_tree(array_tree->son), NULL, NT_EXP, 0);
+                node->son->brother->brother->brother = int_promotion(node->son->brother->brother->brother);   // 인자2 정수승격
             } 
             else {
                 printf("오류: 잘못된 배열 배치입니다.\n");
