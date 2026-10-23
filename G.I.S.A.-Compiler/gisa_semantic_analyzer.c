@@ -1129,6 +1129,16 @@ void init_type_checker(Node * type, Node * init_tree) {
         if (init_type->token.token_number == TYPE_ARRAY) {
             if (init->token.token_number == NT_INIT) {
                 init_type_checker(init_type, init);
+            } else if (init->son->brother->token.token_number == STR_CHAR) {
+                if ((init_type->son->brother == NULL || init_type->son->brother->token.token_number != KW_CHAR)) {
+                    printf("오류: char array가 아닌 곳에 문자열을 선언하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                } else if (atoi(lexval_finder(init_type->token.token_value)) < strlen(lexval_finder(init->son->brother->token.token_value))) {
+                    printf("오류: char array 크기보다 큰 문자열을 선언하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+                
+
             } else {
                 printf("오류: 복합 초기화자가 와야 하는 자리에 단일 초기화자가 존재합니다. 종료합니다.\n");
                 exit(1);
@@ -1346,6 +1356,20 @@ Node * int_promotion (Node * input) {
     else return input;
 }
 
+void string_arr_to_pointer_checker(Node * type, Node * right_tree) {
+    if (type->token.token_number == TYPE_ARRAY) {
+        if (type->son->token.token_number == TYPE_ARRAY) {
+            Node * rt_son = right_tree->son;
+            while (rt_son != NULL) {
+                string_arr_to_pointer_checker(type->son, rt_son);
+                rt_son = rt_son->brother;
+            }
+        } else if (type->son->brother != NULL && type->son->brother->token.token_number == KW_CHAR && right_tree->token.token_number == NT_EXP && right_tree->son->token.token_number == STR_CHAR) {
+            right_tree->token.token_value = 1;
+        }
+    }
+}
+
 
 
 
@@ -1391,6 +1415,15 @@ void ident_symbolizer(Node * node) {
             assign = node_maker(NULL, symbol, OP_DECLR, 0);
             exp = node_maker(assign, NULL, NT_EXP, 0);
             // declr_to_content = node_maker(exp, node->brother, NT_CONTENT, 0);
+            string_arr_to_pointer_checker(symbol_finder_from_symbol_id(symbol_id)->type_tree, right_val);
+            /*if (right_val->token.token_number == NT_EXP && right_val->son->token.token_number == STR_CHAR && symbol_finder_from_symbol_id(symbol_id)->type_tree->token.token_number == TYPE_ARRAY) right_val->token.token_value = 1;
+            Node * type = symbol_finder_from_symbol_id(symbol_id)->type_tree;
+            Node * right_tree = right_val->son;
+            while (type != NULL) {
+                if (type->son != NULL && type->son->token.token_number == TYPE_ARRAY) {
+                    e`
+                } else if (type->token.token_number == )
+            }*/
 
             free(ident_node->brother->son);
             free(ident_node->brother);
@@ -1549,6 +1582,12 @@ void ident_symbolizer(Node * node) {
             node->son->brother = symbol;
             node->son->token.token_number = SEM_TYPE;
             node->son->token.token_value = 0;
+            
+        } else if (node->son->token.token_number == STR_CHAR) {
+            char str[12];
+            snprintf(str, sizeof(str), "%d", (int)strlen(lexval_finder(node->son->token.token_value)) + 1);
+            Node * type = node_maker(node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_CHAR, 0), KW_NOSIGN, 0), NULL, TYPE_ARRAY, lexval_manager(str)), node->son, SEM_TYPE, 0);
+            node->son = type;
             
         } else if (node->son->token.token_number == OP_TILDE || node->son->token.token_number == OP_NEG) {
             if (node->son->brother->son->son->token.token_number == KW_POINTER) {
@@ -1780,6 +1819,19 @@ void ident_symbolizer(Node * node) {
                 node->son = node_maker(copy_tree(node->son->brother->son->son), node->son, SEM_TYPE, 0);
 
 
+            } else if (node->son->brother->brother->son->son->token.token_number == TYPE_ARRAY && node->son->brother->brother->son->son->son->brother != NULL && node->son->brother->brother->son->son->son->brother->token.token_number == KW_CHAR) {
+                if (node->son->brother->son->son->token.token_number != TYPE_ARRAY || (node->son->brother->son->son->token.token_number == TYPE_ARRAY && (node->son->brother->son->son->son->brother == NULL || node->son->brother->son->son->son->brother->token.token_number != KW_CHAR))) {
+                    printf("오류: char array가 아닌 곳에 문자열을 선언하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                } else if (atoi(lexval_finder(node->son->brother->son->son->token.token_value)) < strlen(lexval_finder(node->son->brother->brother->son->brother->token.token_value))) {
+                    printf("오류: char array 크기보다 큰 문자열을 선언하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+                
+                Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                type->brother = node->son;
+                node->son = type;
+
             } else {
                 if (node->son->brother->son->son->token.token_number == TYPE_ARRAY) {
                     printf("오류: 배열의 초기화값으로 단일 초기화자가 왔습니다. 종료합니다.\n");
@@ -1952,7 +2004,7 @@ void ident_symbolizer(Node * node) {
                 /*Node * under_type = node->son->brother->son->son->son;
                 free(node->son->brother->son->son);
                 node->son->brother->son->son = under_type;*/
-            if ((node->son->brother->son->brother->token.token_number == SEM_SYMBOL && symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 0) || node->son->brother->son->brother->token.token_number == OP_DEREFER || node->son->brother->son->brother->token.token_number == NT_ARRAY_EXP) {
+            if ((node->son->brother->son->brother->token.token_number == SEM_SYMBOL && symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 0) || node->son->brother->son->brother->token.token_number == OP_DEREFER || node->son->brother->son->brother->token.token_number == NT_ARRAY_EXP || node->son->brother->son->brother->token.token_number == STR_CHAR) {
                 Node * type = node_maker(node_maker(copy_tree(node->son->brother->son->son), NULL, KW_POINTER, 0), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
