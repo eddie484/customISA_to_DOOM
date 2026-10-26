@@ -325,7 +325,7 @@ typedef struct Symbol_info {
     int is_global;  // 0: global 아님, 1: global임
     int init_option;    // 0: init 없음(일반변수 or 함수), 1: init_value로 초기값 확정, 2: 아직 모름, 3: 초기화 안함
     int init_value; // init_option이 1인 경우만 활성화.
-    Node * init_val_list; // init_option이 1이고 타입이 type_array인 경우만 활성화.
+    Node * init_val_list; // init_option이 1이고 NULL이 아닌 경우만 활성화.
 } Symbol_info;
 
 typedef struct Label_info {
@@ -375,6 +375,7 @@ extern Symbol_info ** temp_table;
 extern int type_tree_size(Node * node);
 extern int stack_location;
 extern Node * static_init_type_checker(Node * type, Node * init_tree);
+extern int char_to_ascii (char * val);
 
 
 

@@ -209,3 +209,56 @@ int is_tree_having_token_number(Node * node, int number) {
     
     return result;
 }
+
+int char_to_ascii (char * val) {
+    int ascii_val;
+    if (val[0] == '\\') {
+        switch (val[1]) {
+            case '\'': {
+                ascii_val = 39;
+                break;
+            }                
+            case '\"': {
+                ascii_val = 34;
+                break;
+            }                
+            case '\?': {
+                ascii_val = 63;
+                break;
+            }                
+            case '\\': {
+                ascii_val = 92;
+                break;
+            }                
+            case 'a': {
+                ascii_val = 7;
+                break;
+            }                
+            case 'b': {
+                ascii_val = 8;
+                break;
+            }                
+            case 'f': {
+                ascii_val = 12;
+                break;
+            }                
+            case 'n': {
+                ascii_val = 10;
+                break;
+            }                
+            case 'r': {
+                ascii_val = 13;
+                break;
+            }                
+            case 't': {
+                ascii_val = 9;
+                break;
+            }                
+            case 'v': {
+                ascii_val = 11;
+                break;
+            }                
+        }
+    } else ascii_val = val[0];
+    return ascii_val;
+}

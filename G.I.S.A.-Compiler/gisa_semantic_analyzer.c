@@ -201,19 +201,34 @@ int symbol_maker(Node * declr_node) {
                     }
 
 
-                    if((ident_node->brother->son != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG || ident_node->brother->son->brother->token.token_number == NT_INIT)) { // init_option = 1로 재선언한 경우 
+                    if((ident_node->brother->son != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG || ident_node->brother->son->brother->token.token_number == NT_INIT || ident_node->brother->son->brother->son->token.token_number == STR_CHAR)) { // init_option = 1로 재선언한 경우 
                         if (func_table[j]->init_option == 1) {
                             printf("오류: 초기값이 확정된 변수를 재선언하며 다시 초기값을 설졍하려고 합니다. 종료합니다.\n");
                             exit(1);
-                        } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NT_INIT)) { // 초기값이 상수인 경우
-                            // 초기값이 배열.
-                            if (func_table[j]->type_tree->token.token_number != TYPE_ARRAY) {
-                                printf("오류: 배열 타입이 아닌 변수에 배열 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
-                                exit(1);
+                        } 
+                        
+                        if ((func_table[j]->type_tree->token.token_number == TYPE_ARRAY && func_table[j]->type_tree->son->brother != NULL && func_table[j]->type_tree->son->brother->token.token_number == KW_CHAR) && (ident_node->brother->son != NULL && ident_node->brother->son->brother->token.token_number == NT_EXP && ident_node->brother->son->brother->son->token.token_number == STR_CHAR)) {    // 초기값이 문자열인 경우. 문자열을 ascii 배열로 바꾼다.
+                            char * string = lexval_finder(ident_node->brother->son->brother->son->token.token_value);
+                            Node * init = node_maker(NULL, NULL, NT_INIT, 0);
+                            Node * cur_init = init;
+                            for (int i = 0; string[i] != '\0'; i++) {
+                                unsigned char ith_ascii = string[i];
+                                char str[4];
+                                snprintf(str, sizeof(str), "%d", ith_ascii);
+                    
+                                cur_init->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager(str));
+                                cur_init = cur_init->brother;
                             }
-                            func_table[j]->init_option = 1;
-                            func_table[j]->init_val_list = static_init_type_checker(func_table[j]->type_tree, ident_node->brother->son->brother);
-                        } else {
+                            init->son = init->brother;
+                            init->brother = ident_node->brother->son->brother->brother;
+                            tree_malloc_cleaner(ident_node->brother->son->brother->son);
+                            free(ident_node->brother->son->brother);
+                            ident_node->brother->son->brother = init;
+
+                        }
+                        
+                         if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG)) { 
+                            // 초기값이 상수인 경우
                             if (func_table[j]->type_tree->token.token_number == KW_POINTER && atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)) != 0) {
                                 printf("오류: 포인터에 널 포인트 초기값이 아닌 정수를 대입하려 시도하고 있습니다. 종료합니다.\n");
                                 exit(1);
@@ -227,6 +242,17 @@ int symbol_maker(Node * declr_node) {
                             snprintf(cut_val, sizeof(cut_val), "%d", value_cut_typesize(atoi(lexval_finder(ident_node->brother->son->brother->token.token_value)), func_table[j]->type_tree));
                             int type_set_init_value = lexval_manager(cut_val);
                             func_table[j]->init_value = type_set_init_value;    // 주의: 실제 상수값이 아니라 lexeme number이 저장된다. lexval_manager에서 꺼내 사용해야 함!
+                         } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NT_INIT)) { // 초기값이 상수인 경우
+                            // 초기값이 배열.
+                            if (func_table[j]->type_tree->token.token_number != TYPE_ARRAY) {
+                                printf("오류: 배열 타입이 아닌 변수에 배열 초기값을 대입하려 시도하고 있습니다. 종료합니다.\n");
+                                exit(1);
+                            }
+                            func_table[j]->init_option = 1;
+                            func_table[j]->init_val_list = static_init_type_checker(func_table[j]->type_tree, ident_node->brother->son->brother);
+                        } else {    // 초기값이 있지만 상수가 아닌경우
+                            printf("오류: extern 키워드가 있는 파일 스코프 변수는 초기값으로 상수 외의 값을 가질 수 없습니다. 종료합니다.\n");
+                            exit(1);
                         }
 
                     } else if (!(declr_node->son->son->brother->token.token_value == 1) && (ident_node->brother->son == NULL)) { // init_option = 2로 재선언한 경우 
@@ -304,6 +330,27 @@ int symbol_maker(Node * declr_node) {
                 if (declr_node->son->son->token.token_value == 1) { // static 키워드가 있는 경우
                     symbol->is_global = 0;
                     printf("\tIs Global: NO\n");
+
+                    if ((symbol->type_tree->token.token_number == TYPE_ARRAY && symbol->type_tree->son->brother != NULL && symbol->type_tree->son->brother->token.token_number == KW_CHAR) && (ident_node->brother->son != NULL && ident_node->brother->son->brother->token.token_number == NT_EXP && ident_node->brother->son->brother->son->token.token_number == STR_CHAR)) {    // 초기값이 문자열인 경우. 문자열을 ascii 배열로 바꾼다.
+                        char * string = lexval_finder(ident_node->brother->son->brother->son->token.token_value);
+                        Node * init = node_maker(NULL, NULL, NT_INIT, 0);
+                        Node * cur_init = init;
+                        for (int i = 0; string[i] != '\0'; i++) {
+                            unsigned char ith_ascii = string[i];
+                            char str[4];
+                            snprintf(str, sizeof(str), "%d", ith_ascii);
+                
+                            cur_init->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager(str));
+                            cur_init = cur_init->brother;
+                        }
+                        init->son = init->brother;
+                        init->brother = ident_node->brother->son->brother->brother;
+                        tree_malloc_cleaner(ident_node->brother->son->brother->son);
+                        free(ident_node->brother->son->brother);
+                        ident_node->brother->son->brother = init;
+
+                    }
+
                     if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                         symbol->init_option = 2;
                         symbol->init_value = 0;
@@ -336,6 +383,27 @@ int symbol_maker(Node * declr_node) {
                 } else if (declr_node->son->son->brother->token.token_value == 1) { // extern 키워드가 있는 경우
                     symbol->is_global = 1;
                     printf("\tIs Global: YES\n");
+
+                    if ((symbol->type_tree->token.token_number == TYPE_ARRAY && symbol->type_tree->son->brother != NULL && symbol->type_tree->son->brother->token.token_number == KW_CHAR) && (ident_node->brother->son != NULL && ident_node->brother->son->brother->token.token_number == NT_EXP && ident_node->brother->son->brother->son->token.token_number == STR_CHAR)) {    // 초기값이 문자열인 경우. 문자열을 ascii 배열로 바꾼다.
+                        char * string = lexval_finder(ident_node->brother->son->brother->son->token.token_value);
+                        Node * init = node_maker(NULL, NULL, NT_INIT, 0);
+                        Node * cur_init = init;
+                        for (int i = 0; string[i] != '\0'; i++) {
+                            unsigned char ith_ascii = string[i];
+                            char str[4];
+                            snprintf(str, sizeof(str), "%d", ith_ascii);
+                
+                            cur_init->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager(str));
+                            cur_init = cur_init->brother;
+                        }
+                        init->son = init->brother;
+                        init->brother = ident_node->brother->son->brother->brother;
+                        tree_malloc_cleaner(ident_node->brother->son->brother->son);
+                        free(ident_node->brother->son->brother);
+                        ident_node->brother->son->brother = init;
+
+                    }
+                    
                     if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                         symbol->init_option = 3;
                         symbol->init_value = 0;
@@ -368,6 +436,27 @@ int symbol_maker(Node * declr_node) {
                 } else {    // 키워드가 없는 경우
                     symbol->is_global = 1;
                     printf("\tIs Global: YES\n");
+
+                    if ((symbol->type_tree->token.token_number == TYPE_ARRAY && symbol->type_tree->son->brother != NULL && symbol->type_tree->son->brother->token.token_number == KW_CHAR) && (ident_node->brother->son != NULL && ident_node->brother->son->brother->token.token_number == NT_EXP && ident_node->brother->son->brother->son->token.token_number == STR_CHAR)) {    // 초기값이 문자열인 경우. 문자열을 ascii 배열로 바꾼다.
+                        char * string = lexval_finder(ident_node->brother->son->brother->son->token.token_value);
+                        Node * init = node_maker(NULL, NULL, NT_INIT, 0);
+                        Node * cur_init = init;
+                        for (int i = 0; string[i] != '\0'; i++) {
+                            unsigned char ith_ascii = string[i];
+                            char str[4];
+                            snprintf(str, sizeof(str), "%d", ith_ascii);
+                
+                            cur_init->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager(str));
+                            cur_init = cur_init->brother;
+                        }
+                        init->son = init->brother;
+                        init->brother = ident_node->brother->son->brother->brother;
+                        tree_malloc_cleaner(ident_node->brother->son->brother->son);
+                        free(ident_node->brother->son->brother);
+                        ident_node->brother->son->brother = init;
+
+                    }
+                    
                     if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                         symbol->init_option = 2;
                         symbol->init_value = 0;
@@ -459,6 +548,27 @@ int symbol_maker(Node * declr_node) {
 
         if (declr_node->son->son != NULL && declr_node->son->son->token.token_value == 1) { // static 키워드가 있는 경우
             symbol->init_option = 1;
+
+            if ((symbol->type_tree->token.token_number == TYPE_ARRAY && symbol->type_tree->son->brother != NULL && symbol->type_tree->son->brother->token.token_number == KW_CHAR) && (ident_node->brother->son != NULL && ident_node->brother->son->brother->token.token_number == NT_EXP && ident_node->brother->son->brother->son->token.token_number == STR_CHAR)) {    // 초기값이 문자열인 경우. 문자열을 ascii 배열로 바꾼다.
+                char * string = lexval_finder(ident_node->brother->son->brother->son->token.token_value);
+                Node * init = node_maker(NULL, NULL, NT_INIT, 0);
+                Node * cur_init = init;
+                for (int i = 0; string[i] != '\0'; i++) {
+                    unsigned char ith_ascii = string[i];
+                    char str[4];
+                    snprintf(str, sizeof(str), "%d", ith_ascii);
+        
+                    cur_init->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager(str));
+                    cur_init = cur_init->brother;
+                }
+                init->son = init->brother;
+                init->brother = ident_node->brother->son->brother->brother;
+                tree_malloc_cleaner(ident_node->brother->son->brother->son);
+                free(ident_node->brother->son->brother);
+                ident_node->brother->son->brother = init;
+
+            }
+
             if (ident_node->brother->son == NULL) { // 초기값이 없는 경우. 
                 symbol->init_value = 0;
             } else if ((ident_node->brother->son->brother != NULL) && (ident_node->brother->son->brother->token.token_number == NUM_INT || ident_node->brother->son->brother->token.token_number == NUM_LONG || ident_node->brother->son->brother->token.token_number == NUM_UINT || ident_node->brother->son->brother->token.token_number == NUM_ULONG)) { // 초기값이 상수인 경우
@@ -1240,6 +1350,28 @@ Node * static_init_type_checker(Node * type, Node * init_tree) {
     while (init != NULL) {
         counting_init++;
         if (init_type->token.token_number == TYPE_ARRAY) {
+
+            if ((init_type->token.token_number == TYPE_ARRAY && init_type->son->brother != NULL && init_type->son->brother->token.token_number == KW_CHAR) && (init->token.token_number == NT_EXP && init->son->token.token_number == STR_CHAR)) {    // 초기값이 문자열인 경우. 문자열을 ascii 배열로 바꾼다.
+                char * string = lexval_finder(init->son->token.token_value);
+                Node * new_init = node_maker(NULL, NULL, NT_INIT, 0);
+                Node * cur_init = new_init;
+                for (int i = 0; string[i] != '\0'; i++) {
+                    unsigned char ith_ascii = string[i];
+                    char str[4];
+                    snprintf(str, sizeof(str), "%d", ith_ascii);
+                
+                    cur_init->brother = node_maker(NULL, NULL, NUM_INT, lexval_manager(str));
+                    cur_init = cur_init->brother;
+                }
+                
+                tree_malloc_cleaner(init->son);
+                init->son = new_init->brother;
+                init->token.token_number = new_init->token.token_number;
+                init->token.token_value = new_init->token.token_value;
+
+                free(new_init);
+            }
+
             if (init->token.token_number == NT_INIT) {
                 current_result_tree->brother = static_init_type_checker(init_type, init);
             } else {
