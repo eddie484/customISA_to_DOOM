@@ -842,7 +842,7 @@ void type_placing_checking(Node * x1) {
         printf("ERROR: 잘못된 타입 배치가 이루어졌습니다. long과 short가 모두 사용되었습니다. 종료합니다.\n");
         bin_tree_printer(x1);
         exit(1);
-    } else if (count_char >= 1 && (count_long >= 1 || count_short >= 1)) {
+    } else if (count_char >= 1 && (count_int >= 1 || count_long >= 1 || count_short >= 1)) {
         printf("ERROR: 잘못된 타입 배치가 이루어졌습니다. char가 다른 타입과 함께 사용되었습니다. 종료합니다.\n");
         bin_tree_printer(x1);
         exit(1);

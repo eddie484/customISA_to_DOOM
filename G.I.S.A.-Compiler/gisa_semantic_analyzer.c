@@ -1519,7 +1519,8 @@ void string_arr_to_pointer_checker(Node * type, Node * right_tree) {
     }
 }
 
-Node * string_to_init(char * string) {
+Node * string_to_init(char * string_in) {
+    char * string = strdup(string_in);
     Node * init = node_maker(NULL, NULL, NT_INIT, 0);
     Node * cur_init = init;
     for (int i = 0; string[i] != '\0'; i++) {
@@ -1533,10 +1534,12 @@ Node * string_to_init(char * string) {
     init->son = init->brother;
     init->brother = NULL;
 
+    free(string);
     return init;
 }
 
-Symbol_info * string_to_symbol(char * string) {
+Symbol_info * string_to_symbol(char * string_in) {
+    char * string = strdup(string_in);
     Symbol_info * str_symbol = malloc(sizeof(Symbol_info));
     Node * init = string_to_init(string);
     str_symbol->name = lexval_manager(".string_data_symbol");
@@ -1561,6 +1564,7 @@ Symbol_info * string_to_symbol(char * string) {
         symbol_table_stack[symbol_table_stack_count - 1] = realloc(symbol_table_stack[symbol_table_stack_count - 1], sizeof(Symbol_info*) * symbol_table_limit[symbol_table_stack_count - 1]);
     }
 
+    free(string);
     return str_symbol;
 }
 
