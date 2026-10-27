@@ -122,8 +122,13 @@ Node * type_regulation(Node * node) {
     } else if ((node->token.token_number == KW_SHORT) && node->brother == NULL) {
         node->token.token_number = TYPE_BYTEWIDTH;
         node->token.token_value = 2;
+    } else if ((node->token.token_number == KW_CHAR) && node->brother == NULL) {
+        node->token.token_number = TYPE_BYTEWIDTH;
+        node->token.token_value = 1;
     } else if ((node->token.token_number == KW_POINTER) && node->brother == NULL) {
         node->token.token_value = 4;
+    } else if (node->token.token_number == KW_NOSIGN) {
+        node->token.token_number = KW_SIGNED;
     } else if (((node->token.token_number == TYPE_BYTEWIDTH || node->token.token_number == TYPE_FUNC) && node->brother == NULL) || ((node->token.token_number == KW_UNSIGNED || node->token.token_number == KW_SIGNED) && node->brother != NULL) || node->token.token_number == TYPE_ARRAY) {
         
     } else {

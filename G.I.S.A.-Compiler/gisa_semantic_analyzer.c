@@ -1514,7 +1514,15 @@ void string_arr_to_pointer_checker(Node * type, Node * right_tree) {
                 rt_son = rt_son->brother;
             }
         } else if (type->son->brother != NULL && type->son->brother->token.token_number == KW_CHAR && right_tree->token.token_number == NT_EXP && right_tree->son->token.token_number == STR_CHAR) {
-            right_tree->token.token_value = 1;
+            char * string = lexval_finder(right_tree->son->token.token_value);
+            Node * new_init = string_to_init(string);
+                                
+            tree_malloc_cleaner(right_tree->son);
+            right_tree->son = new_init->son;
+            right_tree->token.token_number = new_init->token.token_number;
+            right_tree->token.token_value = new_init->token.token_value;
+
+            free(new_init);
         }
     }
 }
@@ -1557,6 +1565,7 @@ Symbol_info * string_to_symbol(char * string_in) {
     str_symbol->init_option = 1;
     str_symbol->init_value = 0;
     str_symbol->init_val_list = static_init_type_checker(str_symbol->type_tree, init);
+    tree_malloc_cleaner(init);
 
     symbol_table_stack[symbol_table_stack_count - 1][symbol_table_count[symbol_table_stack_count - 1]++] = str_symbol;
     if (symbol_table_count[symbol_table_stack_count - 1] == symbol_table_limit[symbol_table_stack_count - 1]) {
@@ -1711,6 +1720,10 @@ void ident_symbolizer(Node * node) {
     } else if (node->token.token_number == OP_ADDROF) {
         node->brother->token.token_value = 1;   // 이 하위 exp가 배열이라면 자동 변환 하지 않도록 하는 메모값.
                                             // 만약 이후 exp의 token value가 다른곳에서도 쓰이게 된다면, 해당 exp가 배열인지 확인 후 value값 세팅하도록 로직을 추가해야 함.
+    } else if (node->token.token_number == STR_CHAR) {     // static에 들어가지 않고, 배열에 대입하지 않는 문자열의 경우. 배열로 변환해 심볼에 등록 후 문자열 자리에 심볼을 넣어 가리키도록 만든다.
+        Symbol_info * str_symbol = string_to_symbol(lexval_finder(node->token.token_value));
+        node->token.token_number = SEM_SYMBOL;
+        node->token.token_value = str_symbol->id;
     } else if (node->son != NULL && node->son->brother != NULL && node->son->brother->token.token_number == NT_ARRAY_EXP) {
         while (node->son->brother->son->brother != NULL && node->son->brother->son->brother->token.token_number == NT_ARRAY_EXP) {
             Node * prev_content = node->son;
