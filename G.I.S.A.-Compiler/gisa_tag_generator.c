@@ -1502,6 +1502,12 @@ Node * tag_generator(Node * parse_input, char * tagtree_name)
     tag_static_var->brother = tag_top->son;
     tag_global_sym->brother = tag_static_var;
     tag_top->son = tag_global_sym;
+    
+    printf("심볼의 타입 KW_NOSIGN을 KW_SIGNEd로 변환.\n");
+    for (int i = 1; i < symbol_id_count; i++) {
+        Symbol_info * symbol = symbol_finder_from_symbol_id(i);
+        if (symbol->type_tree->token.token_number == KW_NOSIGN) symbol->type_tree->token.token_number = KW_SIGNED;
+    }
 
     bin_tree_printer(tag_top);
     bin_tree_file_printer(tag_top, taggenfp);

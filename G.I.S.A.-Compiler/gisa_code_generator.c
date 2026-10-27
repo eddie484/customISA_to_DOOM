@@ -458,17 +458,26 @@ Node * asm_pass1_nt_instr_loop(Node * tag){
         } else if (tag->son->token.token_number == TAG_COPY_OFFSET) {
             int init_temp = tag->son->brother->token.token_value;
             int offset_imm = tag->son->brother->brother->brother->token.token_value;
+            int offset_value = atoi(lexval_finder(offset_imm));
             int arr_var_temp = tag->son->brother->brother->token.token_value;
+            int offset_size = symbol_finder_from_symbol_id(init_temp)->size;
 
             Symbol_info * arr_var_symbol = symbol_finder_from_symbol_id(arr_var_temp);
             char arr_var[12];
             temp_loc_alloc(arr_var_symbol, arr_var);
-            int arr_location = -arr_var_symbol->location.location + atoi(lexval_finder(offset_imm));
+            int arr_location = -arr_var_symbol->location.location + offset_value;
 
             char str[12];
             snprintf(str, sizeof(str), "%d", arr_location);
 
-            Node * n1 = line_maker(ASM_STR, tag->son->brother->token.token_number, init_temp, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+            Node * n1;
+            if (offset_size == 4) {
+                n1 = line_maker(ASM_STR, tag->son->brother->token.token_number, init_temp, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+            } else if (offset_size == 2) {
+                n1 = line_maker(ASM_STRH, tag->son->brother->token.token_number, init_temp, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+            } else if (offset_size == 1) {
+                n1 = line_maker(ASM_STRB, tag->son->brother->token.token_number, init_temp, ASM_REGISTER, 13, NUM_IMM, lexval_manager (str));
+            }
 
             return n1;
         } else {
