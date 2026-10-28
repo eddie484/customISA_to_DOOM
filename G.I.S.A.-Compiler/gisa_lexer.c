@@ -395,6 +395,10 @@ Lexer_result lexer(char *prep_name, char *lex_name)
                     lexeme[lexeme_count].token_number = KW_CHAR;
                     lexeme[lexeme_count].token_value = 0;
                     //printf("DEFAULT");
+                } else if (!strcmp(get_str, "sizeof")) {
+                    lexeme[lexeme_count].token_number = KW_SIZEOF;
+                    lexeme[lexeme_count].token_value = 0;
+                    //printf("DEFAULT");
                 } else {
                     lexeme[lexeme_count].token_number = IDENT;
                     lexeme[lexeme_count].token_value = lexval_manager (get_str);
