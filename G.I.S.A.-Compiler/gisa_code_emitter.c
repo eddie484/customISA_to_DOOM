@@ -18,11 +18,20 @@ int array_counter(Node * type) {
     return count;
 }
 
-int array_flatter(Node * arr, int * flatten, int count) {
-    if (arr->token.token_number != NT_INIT) flatten[count++] = atoi(lexval_finder(arr->token.token_value));
+int array_flatter(Node * arr, int * flatten, int * type, int count) {
+    if (arr->token.token_number != NT_INIT) {
+        if (arr->token.token_number == SEM_SYMBOL) {
+            flatten[count] = arr->token.token_value; // 배열의 내용물이 심볼인 경우. 심볼 id를 배열 값으로 사용한다.
+        }
+        else {
+            flatten[count] = atoi(lexval_finder(arr->token.token_value));    // 배열의 내용물이 정수값인 경우. lexeme value를 찾아 배열 값으로 사용한다.
+        }
 
-    if (arr->son != NULL) count = array_flatter(arr->son, flatten, count);
-    if (arr->brother != NULL) count = array_flatter(arr->brother, flatten, count);
+        type[count++] = arr->token.token_number;
+    }
+
+    if (arr->son != NULL) count = array_flatter(arr->son, flatten, type, count);
+    if (arr->brother != NULL) count = array_flatter(arr->brother, flatten, type, count);
 
     return count;
 }
@@ -51,18 +60,25 @@ void asm_printer(Node * node, FILE * codeemitfp){
                 flat_limit = array_counter(symbol->type_tree);
 
                 int * flat_array = malloc(sizeof(int) * flat_limit);
-                array_flatter(symbol->init_val_list, flat_array, 0);
+                int * flat_array_type = malloc(sizeof(int) * flat_limit);   // token_number를 기록.
+                array_flatter(symbol->init_val_list, flat_array, flat_array_type, 0);
 
                 for (int i = 0; i < flat_limit; i++) {
-                    if ((flat_array[i] << 12 >> 12) == flat_array[i]) {
-                        printf("\tMOVI R1 #%d\n", flat_array[i]);
-                        fprintf(codeemitfp, "\tMOVI R1 #%d\n", flat_array[i]);
+                    if (symbol->init_val_list != NULL && flat_array_type[i] == SEM_SYMBOL) {
+                        printf("\tMOVI R1 DATA_ID_%d\n", flat_array[i]);
+                        fprintf(codeemitfp, "\tMOVI R1 DATA_ID_%d\n", flat_array[i]);
                     } else {
-                        printf("\tMOVH R1 #%d\n", ((flat_array[i] & 0xFFFF0000)) >> 16);
-                        fprintf(codeemitfp, "\tMOVH R1 #%d\n", ((flat_array[i] & 0xFFFF0000)) >> 16);
-                        printf("\tORI R1 R1 #%d\n", (flat_array[i] & 0x0000FFFF));
-                        fprintf(codeemitfp, "\tORI R1 R1 #%d\n", (flat_array[i] & 0x0000FFFF));
+                        if ((flat_array[i] << 12 >> 12) == flat_array[i]) {
+                            printf("\tMOVI R1 #%d\n", flat_array[i]);
+                            fprintf(codeemitfp, "\tMOVI R1 #%d\n", flat_array[i]);
+                        } else {
+                            printf("\tMOVH R1 #%d\n", ((flat_array[i] & 0xFFFF0000)) >> 16);
+                            fprintf(codeemitfp, "\tMOVH R1 #%d\n", ((flat_array[i] & 0xFFFF0000)) >> 16);
+                            printf("\tORI R1 R1 #%d\n", (flat_array[i] & 0x0000FFFF));
+                            fprintf(codeemitfp, "\tORI R1 R1 #%d\n", (flat_array[i] & 0x0000FFFF));
+                        }
                     }
+                    
 
                     if (i == 0) {
                         if (symbol->is_global == 1) {
@@ -84,6 +100,7 @@ void asm_printer(Node * node, FILE * codeemitfp){
                 }
 
                 free(flat_array);
+                free(flat_array_type);
             } else {
                 int init_value;
                 if (symbol->init_option == 1) {
@@ -92,19 +109,24 @@ void asm_printer(Node * node, FILE * codeemitfp){
                     init_value = 0;
                 }
 
-                if ((init_value << 12 >> 12) == init_value) {
-                    printf("\tMOVI R1 #%d\n", init_value);
-                    fprintf(codeemitfp, "\tMOVI R1 #%d\n", init_value);
+                if (symbol->init_val_list != NULL && symbol->init_val_list->token.token_number == SEM_SYMBOL) {
+                    printf("\tMOVI R1 DATA_ID_%d\n", symbol->init_val_list->token.token_value);
+                    fprintf(codeemitfp, "\tMOVI R1 DATA_ID_%d\n", symbol->init_val_list->token.token_value);
                 } else {
-                    printf("\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
-                    fprintf(codeemitfp, "\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
-                    printf("\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
-                    fprintf(codeemitfp, "\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
+                    if ((init_value << 12 >> 12) == init_value) {
+                        printf("\tMOVI R1 #%d\n", init_value);
+                        fprintf(codeemitfp, "\tMOVI R1 #%d\n", init_value);
+                    } else {
+                        printf("\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
+                        fprintf(codeemitfp, "\tMOVH R1 #%d\n", ((init_value & 0xFFFF0000)) >> 16);
+                        printf("\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
+                        fprintf(codeemitfp, "\tORI R1 R1 #%d\n", (init_value & 0x0000FFFF));
+                    }
                 }
 
-                if (symbol->is_global == 1) {
-                    printf(".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
-                    fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size, init_value);
+                if (symbol->is_global == 1) {  
+                    printf(".data DATA_%s %d %d\n", label_name, symbol->size, init_value);  // 여기의 마지막 인자 value는 사용되지 않음. 가독성을 위해 프린팅하는 것.
+                    fprintf(codeemitfp, ".data DATA_%s %d %d\n", label_name, symbol->size, init_value); // 실제 value는 현재 R1에 있는 값을 이용한다.
                 } else {
                     printf(".data DATA_ID_%d %d %d\n", label_id, symbol->size, init_value);
                     fprintf(codeemitfp, ".data DATA_ID_%d %d %d\n", label_id, symbol->size, init_value);
