@@ -143,6 +143,19 @@ int main(int argc, char *argv[])
             continue;
         }
 
+        if (strstr(buf, ".data") != NULL) {   // .data label들을 등록할 곳. 라벨 이름만 등록하고 값은 이후 코드 수행 단계에서 저장한다.
+            char data_line[100];
+            strcpy(data_line, buf);
+            char *data_tok = strtok(data_line, " \t\n");  // .data 토큰 날리기
+            data_tok = strtok(NULL, " \t\n");
+            char * static_name = strdup(data_tok);
+            data_tok = strtok(NULL, " \t\n");
+            int static_size = atoi(data_tok);
+
+            if (*static_name != '-') staticput(static_name, static_location);
+            static_location += static_size;
+        }
+
         if (count >= cap - 2) {         // 라인 수가 배열 크기 한계에 도달한다면
             cap *= 2;               // 배열 크기 한계를 두배로 늘린다.
             lines = realloc(lines, cap * sizeof(char *));   // realloc를 통해 lines 배열 크기를 두배로 늘어난 cap에 맞춘다.
@@ -165,6 +178,7 @@ int main(int argc, char *argv[])
         printf("%d     %s", count, lines[count]);       // 검증을 위해, lines에 저장한 어셈블리를 출력한다.
         count++;        // 다음 라인 처리를 위해 라인 수를 1 증가시킨다.
     }
+    static_location = 0;    // .data 카운터가 라벨 등록 과정에서 마지막 데이터를 가리키게 되었으니 0으로 초기화한다.
 
     printf("\n\n--- 어셈블리 불러오기 완료! ---\n\n\n");
 
@@ -2565,7 +2579,6 @@ int main(int argc, char *argv[])
             int immBb = addr & 0xFFF;
             binary |= ((immBf << 16 | immBb) & 0x00ff0fffU);
 
-            if (*static_name != '-') staticput(static_name, static_location);
             static_location += static_size;
             free(static_name);
 
