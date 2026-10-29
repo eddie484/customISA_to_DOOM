@@ -111,6 +111,7 @@
 #define STR_CHAR        83
 #define KW_NOSIGN       84
 #define KW_SIZEOF       85
+#define KW_NOPARAM      86
 
 
 #define NT_PROGRAM      100
@@ -156,6 +157,9 @@
 #define NT_ARRAY_EXP    141
 #define NT_NUM          142
 #define NT_STRING_LIST  143
+#define NT_RETURN_EXP   144
+#define NT_CAST_UNARY_EXP   146
+#define NT_SIZEOF_EXP   147
 
 #define NT_FUNCTION     145
 
