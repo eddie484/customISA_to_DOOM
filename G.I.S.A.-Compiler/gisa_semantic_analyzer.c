@@ -985,7 +985,7 @@ void func_typetree_validate(Node * symbol_node) {
                     Node * input_node_typetree_copy = symbol_node->brother->son;
                     Node * current_input_typetree = input_node_typetree_copy;
                     Node * func_typetree = func_node->type_tree->brother;
-                    if (func_typetree->son->token.token_number == KW_VOID) {
+                    if (func_typetree->son->token.token_number == KW_NOPARAM) {
                         if (current_input_typetree == NULL) {
                             printf("정상:이전에 선언된 함수의 인자와 같은 인자로 호출했습니다.\n");
                         } else {
@@ -1022,7 +1022,15 @@ void func_typetree_validate(Node * symbol_node) {
                                     current_input_typetree->token.token_number = NT_EXP;
                                     current_input_typetree->token.token_value = 0;
                                 } else if (compare_tree(current_input_typetree->son->son, func_typetree->son)) {
-                                } else {
+                                } /*else if (((current_input_typetree->son->son->son != NULL && current_input_typetree->son->son->son->brother->token.token_number == KW_VOID) && (func_typetree->son->son != NULL && func_typetree->son->son->brother->token.token_number != KW_VOID)) || ((current_input_typetree->son->son->son != NULL && current_input_typetree->son->son->son->brother->token.token_number != KW_VOID) && (func_typetree->son->son != NULL && func_typetree->son->son->brother->token.token_number == KW_VOID))) {
+                                    // 한 인자가 널 포인터, 다른 인자가 일반 포인터일 경우
+                                    Node * current_exp_content = current_input_typetree->son;
+                                    Node * cast = node_maker(copy_tree(func_typetree->son), node_maker(current_exp_content, NULL, NT_EXP, 0), NT_CAST, 0);
+                                    current_input_typetree->son = cast;
+                                    current_input_typetree->token.token_number = NT_EXP;
+                                    current_input_typetree->token.token_value = 0;
+                                                    
+                                } */else {
                                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                                     exit(1);
                                 }
@@ -1087,7 +1095,7 @@ Node * get_type_tree_from_func_declr(Node * declr_node, Node * ident_node) {
     return type_tree;
 }
 
-Node * get_type_tree_from_func_call(Node * ident_node) {
+/*Node * get_type_tree_from_func_call(Node * ident_node) {
     // arg1_type-arg2type-arg3type...
     Node * param_node = ident_node->brother->son;
     Node * type_tree = node_maker(NULL, NULL, SEM_TYPE, 0);
@@ -1139,7 +1147,7 @@ Node * get_type_tree_from_func_call(Node * ident_node) {
 
     return type_tree_current;
 
-}
+}*/
 
 
 
@@ -1692,7 +1700,7 @@ void ident_symbolizer(Node * node) {
         push();
 
         Node * param_node = ident_node->brother->son;
-        while (param_node != NULL && param_node->token.token_number == NT_PARAM && param_node->son->son->token.token_number != KW_VOID) {
+        while (param_node != NULL && param_node->token.token_number == NT_PARAM && param_node->son->son->token.token_number != KW_NOPARAM) {
             int param_node_id = symbol_maker(param_node);
 
             tree_malloc_cleaner(param_node->son);
@@ -1924,6 +1932,7 @@ void ident_symbolizer(Node * node) {
         } else if (node->son->token.token_number == OP_EQ || node->son->token.token_number == OP_NE) {
             if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
                 if ((node->son->brother->brother->son->brother->token.token_number == NUM_INT || node->son->brother->brother->son->brother->token.token_number == NUM_UINT || node->son->brother->brother->son->brother->token.token_number == NUM_LONG || node->son->brother->brother->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(node->son->brother->brother->son->brother->token.token_value)) == 0) {
+                    // 인자 1이 포인터, 인자 2가 널 포인터 상수일 경우
                     Node * previous_exp = node->son->brother->brother;
                     Node * cast = node_maker(copy_tree(node->son->brother->son->son), previous_exp, NT_CAST, 0);
                     Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
@@ -1931,6 +1940,7 @@ void ident_symbolizer(Node * node) {
                     node->son->brother->brother = exp;
                     
                 } else if ((node->son->brother->son->brother->token.token_number == NUM_INT || node->son->brother->son->brother->token.token_number == NUM_UINT || node->son->brother->son->brother->token.token_number == NUM_LONG || node->son->brother->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(node->son->brother->son->brother->token.token_value)) == 0) {
+                    // 인자 1이 널 포인터 상수, 인자 2가 포인터일 경우
                     Node * previous_exp = node->son->brother;
                     Node * cast = node_maker(copy_tree(node->son->brother->brother->son->son), previous_exp, NT_CAST, 0);
                     Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
@@ -1938,7 +1948,24 @@ void ident_symbolizer(Node * node) {
                     node->son->brother = exp;
                     
                 } else if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son)) {
+                    // 인자 1과 인자 2의 타입이 같을 경우
                     // EQ/NE if문 끝에서 한번에 type노드를 채운다.
+                } else if ((node->son->brother->son->son->son != NULL && node->son->brother->son->son->son->brother->token.token_number == KW_VOID) && (node->son->brother->brother->son->son->son != NULL && node->son->brother->brother->son->son->son->brother->token.token_number != KW_VOID)) {
+                    // 인자 1이 널 포인터, 인자 2가 일반 포인터일 경우
+                    Node * previous_exp = node->son->brother->brother;
+                    Node * cast = node_maker(copy_tree(node->son->brother->son->son), previous_exp, NT_CAST, 0);
+                    Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                    previous_exp->brother = NULL;
+                    node->son->brother->brother = exp;
+                                    
+                } else if ((node->son->brother->son->son->son != NULL && node->son->brother->son->son->son->brother->token.token_number != KW_VOID) && (node->son->brother->brother->son->son->son != NULL && node->son->brother->brother->son->son->son->brother->token.token_number == KW_VOID)) {
+                    // 인자 1이 일반 포인터, 인자 2가 널 포인터일 경우
+                    Node * previous_exp = node->son->brother;
+                    Node * cast = node_maker(copy_tree(node->son->brother->brother->son->son), previous_exp, NT_CAST, 0);
+                    Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                    previous_exp->brother = NULL;
+                    node->son->brother = exp;
+                                  
                 } else {
                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
@@ -2000,6 +2027,18 @@ void ident_symbolizer(Node * node) {
                     Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                     type->brother = node->son;
                     node->son = type;
+                } else if (((node->son->brother->son->son->son != NULL && node->son->brother->son->son->son->brother->token.token_number == KW_VOID) && (node->son->brother->brother->son->son->son != NULL && node->son->brother->brother->son->son->son->brother->token.token_number != KW_VOID)) || ((node->son->brother->son->son->son != NULL && node->son->brother->son->son->son->brother->token.token_number != KW_VOID) && (node->son->brother->brother->son->son->son != NULL && node->son->brother->brother->son->son->son->brother->token.token_number == KW_VOID))) {
+                    // 한 인자가 널 포인터, 다른 인자가 일반 포인터일 경우
+                    Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                    Node * previous_exp = node->son->brother->brother;
+                    Node * cast = node_maker(copy_tree(node->son->brother->son->son), previous_exp, NT_CAST, 0);
+                    Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                    previous_exp->brother = NULL;
+                    node->son->brother->brother = exp;
+                    
+                    type->brother = node->son;
+                    node->son = type;
+                                    
                 } else {
                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
@@ -2063,6 +2102,18 @@ void ident_symbolizer(Node * node) {
                         Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                         type->brother = node->son;
                         node->son = type;
+                    } else if (((node->son->brother->son->son->son != NULL && node->son->brother->son->son->son->brother->token.token_number == KW_VOID) && (node->son->brother->brother->son->son->son != NULL && node->son->brother->brother->son->son->son->brother->token.token_number != KW_VOID)) || ((node->son->brother->son->son->son != NULL && node->son->brother->son->son->son->brother->token.token_number != KW_VOID) && (node->son->brother->brother->son->son->son != NULL && node->son->brother->brother->son->son->son->brother->token.token_number == KW_VOID))) {
+                        // 한 인자가 널 포인터, 다른 인자가 일반 포인터일 경우
+                        Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                        Node * previous_exp = node->son->brother->brother;
+                        Node * cast = node_maker(copy_tree(node->son->brother->son->son), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                        
+                        type->brother = node->son;
+                        node->son = type;
+                                        
                     } else {
                         printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                         exit(1);
@@ -2099,6 +2150,22 @@ void ident_symbolizer(Node * node) {
                     
                 } else if (compare_tree(node->son->brother->brother->son->son, node->son->brother->brother->brother->son->son)) {
                     // QUESTION if문 끝에서 한번에 type노드를 채운다.
+                } else if ((node->son->brother->brother->son->son->son != NULL && node->son->brother->brother->son->son->son->brother->token.token_number == KW_VOID) && (node->son->brother->brother->brother->son->son->son != NULL && node->son->brother->brother->brother->son->son->son->brother->token.token_number != KW_VOID)) {
+                    // 인자 1이 널 포인터, 인자 2가 일반 포인터일 경우
+                    Node * previous_exp = node->son->brother->brother->brother;
+                    Node * cast = node_maker(copy_tree(node->son->brother->brother->son->son), previous_exp, NT_CAST, 0);
+                    Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                    previous_exp->brother = NULL;
+                    node->son->brother->brother->brother = exp;
+                                    
+                } else if ((node->son->brother->brother->son->son->son != NULL && node->son->brother->brother->son->son->son->brother->token.token_number != KW_VOID) && (node->son->brother->brother->brother->son->son->son != NULL && node->son->brother->brother->brother->son->son->son->brother->token.token_number == KW_VOID)) {
+                    // 인자 1이 일반 포인터, 인자 2가 널 포인터일 경우
+                    Node * previous_exp = node->son->brother->brother;
+                    Node * cast = node_maker(copy_tree(node->son->brother->brother->brother->son->son), previous_exp, NT_CAST, 0);
+                    Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                    previous_exp->brother = NULL;
+                    node->son->brother->brother = exp;
+                                  
                 } else {
                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
@@ -2308,7 +2375,19 @@ void ident_symbolizer(Node * node) {
                 Node * type = node_maker(copy_tree(node->brother->son->son), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
-            } else {
+            } /*else if (((node->brother->son->son->son != NULL && node->brother->son->son->son->brother->token.token_number == KW_VOID) && (current_func_typetree->son != NULL && current_func_typetree->son->brother->token.token_number != KW_VOID)) || ((node->brother->son->son->son != NULL && node->brother->son->son->son->brother->token.token_number != KW_VOID) && (current_func_typetree->son != NULL && current_func_typetree->son->brother->token.token_number == KW_VOID))) {
+                        // 한 인자가 널 포인터, 다른 인자가 일반 포인터일 경우
+                        Node * type = node_maker(copy_tree(node->brother->son->son), NULL, SEM_TYPE, 0);
+                        Node * previous_exp = node->son->brother->brother;
+                        Node * cast = node_maker(copy_tree(node->son->brother->son->son), previous_exp, NT_CAST, 0);
+                        Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
+                        previous_exp->brother = NULL;
+                        node->son->brother->brother = exp;
+                        
+                        type->brother = node->son;
+                        node->son = type;
+                                        
+                    } */else {
                 printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                 exit(1);
             }
