@@ -318,7 +318,7 @@ Node * p_nt_param_multi(Lexer_result lex_input);
 Node * p_nt_type_list_calling(Lexer_result lex_input);
 Node * p_nt_type_list(Lexer_result lex_input);
 Node * p_nt_type_multi(Lexer_result lex_input);
-Node * p_nt_func_content(Lexer_result lex_input);
+Node * p_nt_func_content(Lexer_result lex_input, int is_void);
 Node * p_nt_block(Lexer_result lex_input);
 Node * p_nt_instr_list(Lexer_result lex_input);
 Node * p_nt_instr(Lexer_result lex_input);
@@ -739,7 +739,7 @@ Node * p_nt_program(Lexer_result lex_input){    //     <program> ::= <declr> <pr
     } else error(2, nextSymbol);
 }
 
-Node * p_nt_func_declr(Lexer_result lex_input){   // <func_declr> ::= <specifier_list> IDENT "OPEN_PAREN" <param_list> "CLOSE_PAREN" <func_content>
+/*Node * p_nt_func_declr(Lexer_result lex_input){   // <func_declr> ::= <specifier_list> IDENT "OPEN_PAREN" <param_list> "CLOSE_PAREN" <func_content>
     if (nextSymbol.token_number == OPEN_PAREN) {
         printf("parsing: nt_func_declr\n");
         Node * x3 = p_terminal(lex_input, OPEN_PAREN);
@@ -754,7 +754,7 @@ Node * p_nt_func_declr(Lexer_result lex_input){   // <func_declr> ::= <specifier
 
         return x4;
     } else error(2, nextSymbol);
-}
+}*/
 
 Node * p_nt_specifier_list_calling(Lexer_result lex_input) {
     if (first(nextSymbol.token_number, NT_SPECIFIER)) {
@@ -894,10 +894,9 @@ void type_placing_checking(Node * x1) {
     if (x1->brother != NULL) tree_malloc_cleaner(x1->brother);
     
     if (count_void) {
-        x1->token.token_number = KW_NOSIGN;
+        x1->token.token_number = KW_VOID;
         x1->token.token_value = 0;
         
-        x1->brother = node_maker(NULL, NULL, KW_VOID, 0);
     } else if (count_char) {
         if (count_unsigned) {
             x1->token.token_number = KW_UNSIGNED;
@@ -1209,7 +1208,7 @@ Node * p_nt_type_multi(Lexer_result lex_input) {   // <param_type_multi> ::= <pa
     } else error(2, nextSymbol);
 }
 
-Node * p_nt_func_content(Lexer_result lex_input){      // <func_content> ::= <block> | "PN_SEMI"
+Node * p_nt_func_content(Lexer_result lex_input, int is_void){      // <func_content> ::= <block> | "PN_SEMI"
     if (first(nextSymbol.token_number, NT_BLOCK)) {
         printf("parsing: nt_func_content->nt_block\n");
         Node * x1 = p_nt_block(lex_input);
@@ -1217,7 +1216,10 @@ Node * p_nt_func_content(Lexer_result lex_input){      // <func_content> ::= <bl
         if (x1->son == NULL) {  // 빈 함수
             Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
             Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
-            Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
+            Node * zero;
+
+            if (is_void) zero = NULL;
+            else zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
 
             content->son = ret;
             ret->brother = zero;
@@ -1231,7 +1233,10 @@ Node * p_nt_func_content(Lexer_result lex_input){      // <func_content> ::= <bl
 
             Node * content = node_maker(NULL, NULL, NT_CONTENT, 0);
             Node * ret = node_maker(NULL, NULL, KW_RETURN, 0);
-            Node * zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
+            Node * zero;
+
+            if (is_void) zero = NULL;
+            else zero = node_maker(NULL, NULL, NUM_INT, lexval_manager ("0"));
 
             content->son = ret;
             ret->brother = zero;
@@ -1597,6 +1602,7 @@ Node * p_nt_declr(Lexer_result lex_input){   // <declr> ::= <func_declr> | <var_
         printf("parsing: nt_declr->nt_specifier_list\n");
         Node * x1 = p_nt_specifier_list_calling(lex_input);
         Node * x2 = p_nt_ident_declr(lex_input);
+        
 
         specifier_declr_setting(x1, x2);
 
@@ -1615,7 +1621,8 @@ Node * p_nt_declr(Lexer_result lex_input){   // <declr> ::= <func_declr> | <var_
             n = node_maker(x1, NULL, NT_VAR_DECLR, 0);
         } else if (x1->brother->brother->token.token_number == NT_PARAM_LIST) {
             printf("parsing: nt_declr->nt_func_declr\n");
-            x3 = p_nt_func_content(lex_input);
+            int is_void = (x1->son->brother->brother->son->token.token_number == KW_VOID);
+            x3 = p_nt_func_content(lex_input, is_void);
             
             x1->brother->brother->brother = x3;
 
