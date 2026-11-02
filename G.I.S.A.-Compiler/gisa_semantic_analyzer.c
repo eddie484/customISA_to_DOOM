@@ -11,6 +11,8 @@ int value_cut_typesize(int input, Node * typetree);
 Node * static_init_type_checker(Node * type, Node * init_tree);
 Node * string_to_init(char * string);
 Symbol_info * string_to_symbol(char * string);
+int is_number(Node * type);
+void array_size_validate(Node * node);
 
 
 
@@ -1034,7 +1036,7 @@ void func_typetree_validate(Node * symbol_node) {
                                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                                     exit(1);
                                 }
-                            } else {    // 포인터가 아닌 경우들
+                            } else if (is_number(current_input_typetree->son->son) && is_number(func_typetree->son)) {
                                 if (compare_tree(current_input_typetree->son->son, func_typetree->son) == 0) {
                                     Node * current_exp_content = current_input_typetree->son;
                                     Node * cast = node_maker(copy_tree(func_typetree->son), node_maker(current_exp_content, NULL, NT_EXP, 0), NT_CAST, 0);
@@ -1042,6 +1044,9 @@ void func_typetree_validate(Node * symbol_node) {
                                     current_input_typetree->token.token_number = NT_EXP;
                                     current_input_typetree->token.token_value = 0;
                                 }
+                            } else {
+                                printf("오류: 정수도 포인터도 아닌 잘못된 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
+                                exit(1);
                             }
 
                             current_input_typetree = current_input_typetree->brother;
@@ -1588,8 +1593,35 @@ Symbol_info * string_to_symbol(char * string_in) {
 int is_scalar(Node * type) {
     int type_number = type->token.token_number;
     switch (type_number) {
+        case (KW_SIGNED): case (KW_UNSIGNED): case (KW_NOSIGN): case (KW_POINTER): return 1;
         case (KW_VOID): case (TYPE_ARRAY): case (TYPE_FUNC): return 0;
-        default: return 1;
+        default: return 0;
+    }
+}
+
+int is_number(Node * type) {
+    int type_number = type->token.token_number;
+    switch (type_number) {
+        case (KW_SIGNED): case (KW_UNSIGNED): case (KW_NOSIGN): return 1;
+        case (KW_VOID): case (TYPE_ARRAY): case (TYPE_FUNC): return 0;
+        default: return 0;
+    }
+}
+
+void array_size_validate(Node * node) {
+    switch (node->token.token_number) {
+        case (TYPE_ARRAY): {
+            if (type_tree_size(node) != 0) array_size_validate(node->son);
+            else {
+                printf("오류: type size가 존재하지 않는 불완전 타입 배열을 사용하고 있습니다. 종료합니다.\n");
+                exit(1);
+            }
+            break;
+        }
+
+        case (KW_POINTER): array_size_validate(node->son); break;
+        case (TYPE_FUNC): array_size_validate(node->son); break;
+        default: return;
     }
 }
 
@@ -1620,6 +1652,13 @@ void ident_symbolizer(Node * node) {
         push();
 
     } else if (node->token.token_number == NT_VAR_DECLR) {    // NT_VAR_DECLR 구조: <DECLR>->
+        if (node->son->son->brother->brother->token.token_number == KW_VOID) {
+            printf("오류: void 타입의 변수를 선언하려 시도하고 있습니다. 종료합니다.\n");
+            exit(1);
+        }
+
+        array_size_validate(node->son->son->brother->brother); 
+
         int symbol_id = symbol_maker(node);
         Node * ident_node = node->son;
 
@@ -1695,21 +1734,36 @@ void ident_symbolizer(Node * node) {
             printf("ERROR: 블록 스코프에서 static 함수를 선언하고 있습니다. 종료합니다.\n");
             exit(1);
         }
-        int symbol_id = symbol_maker(node);
-        func_depth++;
-        Node * ident_node = node->son;
 
+        Node * ident_node = node->son;
         while (ident_node->token.token_number != IDENT) {
             ident_node = get_brother(ident_node);
         }
+        Node * param_node = ident_node->brother->son;
+
+        // 매개변수에 있는 배열에 대해 완전타입 검사.
+        array_size_validate(node->son->son->brother->brother); 
+        while (param_node != NULL && param_node->token.token_number == NT_PARAM && param_node->son->son->token.token_number != KW_NOPARAM) {
+            array_size_validate(param_node->son->son); 
+            param_node = param_node->brother;
+        }
+
+        // 함수 심볼 만들기
+        int symbol_id = symbol_maker(node);
+        func_depth++;
+
         
         ident_node->token.token_number = SEM_SYMBOL;
         ident_node->token.token_value = symbol_id;
 
         push();
 
-        Node * param_node = ident_node->brother->son;
+        param_node = ident_node->brother->son;
         while (param_node != NULL && param_node->token.token_number == NT_PARAM && param_node->son->son->token.token_number != KW_NOPARAM) {
+            if (param_node->son->son->token.token_number == KW_VOID) {
+                printf("오류: void 타입의 매개변수를 선언하려 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            }
             int param_node_id = symbol_maker(param_node);
 
             tree_malloc_cleaner(param_node->son);
@@ -1818,8 +1872,8 @@ void ident_symbolizer(Node * node) {
             node->son = type;
             
         } else if (node->son->token.token_number == OP_TILDE || node->son->token.token_number == OP_NEG) {
-            if (node->son->brother->son->son->token.token_number == KW_POINTER) {
-                printf("오류: 포인터에 산술연산을 시도하고 있습니다. 종료합니다.\n");
+            if (!is_number(node->son->brother->son->son)) {
+                printf("오류: 정수가 아닌 타입에 산술연산을 시도하고 있습니다. 종료합니다.\n");
                 exit(1);
             }
 
@@ -1857,25 +1911,10 @@ void ident_symbolizer(Node * node) {
                 printf("오류: 배열 타입으로 캐스팅을 시도하고 있습니다. 종료합니다.\n");
                 exit(1);
             }
+            array_size_validate(node->son->son); 
+
         } else if (node->son->token.token_number == OP_ADD) {
-            if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
-                printf("오류: 포인터와 포인터의 산술연산을 시도하고 있습니다. 종료합니다.\n");
-                exit(1);
-            } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (node->son->brother->brother->son->son->token.token_number != KW_POINTER)) {
-                printf("포인터 + 정수 연산입니다.\n");
-                node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
-
-                Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
-                type->brother = node->son;
-                node->son = type;
-            } else if ((node->son->brother->son->son->token.token_number != KW_POINTER) && (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
-                printf("정수 + 포인터 연산입니다.\n");
-                node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
-
-                Node * type = node_maker(copy_tree(node->son->brother->brother->son->son), NULL, SEM_TYPE, 0);
-                type->brother = node->son;
-                node->son = type;
-            } else {
+            if ((is_number(node->son->brother->son->son)) && (is_number(node->son->brother->brother->son->son))) {
                 printf("정수와 정수의 덧셈입니다.\n");
                 node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
                 node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
@@ -1884,31 +1923,42 @@ void ident_symbolizer(Node * node) {
                 Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
-            }
-            
-            
-            
-        } else if (node->son->token.token_number == OP_SUB) {
-            if ((node->son->brother->son->son->token.token_number != KW_POINTER) && (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
-                printf("오류: 정수 - 포인터 연산을 시도하고 있습니다. 종료합니다.\n");
-                exit(1);
-            } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
-                printf("포인터 - 포인터 연산입니다.\n");
-                if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son) == 0) {
-                    printf("서로 다른 타입의 포인터끼리 뺄셈을 시도하고 있습니다.\n");
+            } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (is_number(node->son->brother->brother->son->son))) {
+                printf("포인터 + 정수 연산입니다.\n");
+                if (type_tree_size(node->son->brother->son->son->son) == 0) {   // 포인터의 son 타입의 사이즈를 검사한다. 0일 경우, 사이즈를 알 수 없는 불완전 타입이라는 의미이므로 오류처리한다.
+                    printf("오류: type size가 없는 void 타입을 가리키는 포인터에 덧셈을 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
                 }
-                Node * type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), NULL, SEM_TYPE, 0);
-                type->brother = node->son;
-                node->son = type;
-            } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (node->son->brother->brother->son->son->token.token_number != KW_POINTER)) {
-                printf("포인터 - 정수 연산입니다.\n");
+
                 node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
 
                 Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
+            } else if ((is_number(node->son->brother->son->son)) && (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                printf("정수 + 포인터 연산입니다.\n");
+                if (type_tree_size(node->son->brother->brother->son->son->son) == 0) {   // 포인터의 son 타입의 사이즈를 검사한다. 0일 경우, 사이즈를 알 수 없는 불완전 타입이라는 의미이므로 오류처리한다.
+                    printf("오류: type size가 없는 void 타입을 가리키는 포인터에 덧셈을 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+                
+                node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
+
+                Node * type = node_maker(copy_tree(node->son->brother->brother->son->son), NULL, SEM_TYPE, 0);
+                type->brother = node->son;
+                node->son = type;
+            } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                printf("오류: 포인터와 포인터의 산술연산을 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
             } else {
+                printf("오류: 정수가 아닌 타입 사이의 산술연산을 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            }
+            
+            
+            
+        } else if (node->son->token.token_number == OP_SUB) {
+            if ((is_number(node->son->brother->son->son)) && (is_number(node->son->brother->brother->son->son))) {
                 printf("정수 - 정수 연산입니다.\n");
                 node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
                 node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
@@ -1917,13 +1967,45 @@ void ident_symbolizer(Node * node) {
                 Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
+            } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                printf("포인터 - 포인터 연산입니다.\n");
+                if (compare_tree(node->son->brother->son->son, node->son->brother->brother->son->son) == 0) {
+                    printf("서로 다른 타입의 포인터끼리 뺄셈을 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+                if (type_tree_size(node->son->brother->son->son->son) == 0) {   // 포인터의 son 타입의 사이즈를 검사한다. 0일 경우, 사이즈를 알 수 없는 불완전 타입이라는 의미이므로 오류처리한다.
+                    printf("오류: type size가 없는 void 타입을 가리키는 포인터끼리 뺄셈을 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+
+                Node * type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), NULL, SEM_TYPE, 0);
+                type->brother = node->son;
+                node->son = type;
+            } else if ((node->son->brother->son->son->token.token_number == KW_POINTER) && (is_number(node->son->brother->brother->son->son))) {
+                printf("포인터 - 정수 연산입니다.\n");
+                if (type_tree_size(node->son->brother->son->son->son) == 0) {   // 포인터의 son 타입의 사이즈를 검사한다. 0일 경우, 사이즈를 알 수 없는 불완전 타입이라는 의미이므로 오류처리한다.
+                    printf("오류: type size가 없는 void 타입을 가리키는 포인터에 뺄셈을 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+
+                node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
+
+                Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                type->brother = node->son;
+                node->son = type;
+            } else if ((is_number(node->son->brother->son->son)) && (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
+                printf("오류: 정수 - 포인터 연산을 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            } else {
+                printf("오류: 허용되지 않는 타입 사이의 산술연산을 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
             }
             
             
             
         } else if (node->son->token.token_number == OP_MUL || node->son->token.token_number == OP_DIV || node->son->token.token_number == OP_MOD || node->son->token.token_number == OP_AND || node->son->token.token_number == OP_OR || node->son->token.token_number == OP_XOR) {
-            if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
-                printf("오류: 포인터에 산술연산을 시도하고 있습니다. 종료합니다.\n");
+            if ((!is_number(node->son->brother->son->son)) || (!is_number(node->son->brother->brother->son->son))) {
+                printf("오류: 정수가 아닌 타입 사이의 산술연산을 시도하고 있습니다. 종료합니다.\n");
                 exit(1);
             }
             node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
@@ -1936,8 +2018,8 @@ void ident_symbolizer(Node * node) {
             node->son = type;
             
         } else if (node->son->token.token_number == OP_SHL || node->son->token.token_number == OP_ASR) {
-            if ((node->son->brother->son->son->token.token_number == KW_POINTER) || (node->son->brother->brother->son->son->token.token_number == KW_POINTER)) {
-                printf("오류: 포인터에 산술연산을 시도하고 있습니다. 종료합니다.\n");
+            if ((!is_number(node->son->brother->son->son)) || (!is_number(node->son->brother->brother->son->son))) {
+                printf("오류: 정수가 아닌 타입 사이의 산술연산을 시도하고 있습니다. 종료합니다.\n");
                 exit(1);
             }
             node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
@@ -1988,10 +2070,13 @@ void ident_symbolizer(Node * node) {
                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
                 }
-            } else {    // 포인터가 아닌 경우들
+            } else if ((is_number(node->son->brother->son->son)) && (is_number(node->son->brother->brother->son->son))) {    // 두 피연산자가 모두 정수인 경우
                 node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
                 node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
                 type_checking_binop(node);
+            } else {
+                printf("오류: 정수가 아닌 타입 사이의 비교 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
             }
 
             Node * type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), NULL, SEM_TYPE, 0);
@@ -2014,7 +2099,7 @@ void ident_symbolizer(Node * node) {
                     printf("오류: 포인터와 정수의 대소비교를 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
                 }
-            } else {
+            } else if ((is_number(node->son->brother->son->son)) && (is_number(node->son->brother->brother->son->son))) {    // 두 피연산자가 모두 정수인 경우
                 node->son->brother = int_promotion(node->son->brother);   // 인자1 정수승격
                 node->son->brother->brother = int_promotion(node->son->brother->brother);   // 인자2 정수승격
                 type_checking_binop(node);
@@ -2022,6 +2107,9 @@ void ident_symbolizer(Node * node) {
                 Node * type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
+            } else {
+                printf("오류: 정수가 아닌 타입 사이의 비교를 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
             }
             
         } else if (node->son->token.token_number == OP_LOGIC_AND || node->son->token.token_number == OP_LOGIC_OR) {
@@ -2065,7 +2153,7 @@ void ident_symbolizer(Node * node) {
                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
                 }
-            } else {    // 포인터가 아닌 경우들
+            } else if ((is_number(node->son->brother->son->son)) && (is_number(node->son->brother->brother->son->son))) {    // 두 피연산자가 모두 정수인 경우
                 Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                 if ((type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) != type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) || (node->son->brother->son->son->token.token_number != node->son->brother->brother->son->son->token.token_number)) {
                     Node * previous_exp = node->son->brother->brother;
@@ -2076,6 +2164,9 @@ void ident_symbolizer(Node * node) {
                 }
                 type->brother = node->son;
                 node->son = type;
+            } else {
+                printf("오류: 정수가 아닌 타입 사이의 대입을 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
             }
             
             
@@ -2140,7 +2231,7 @@ void ident_symbolizer(Node * node) {
                         printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                         exit(1);
                     }
-                } else {    // 포인터가 아닌 경우들
+                } else if ((is_number(node->son->brother->son->son)) && (is_number(node->son->brother->brother->son->son))) {    // 두 피연산자가 모두 정수인 경우
                     Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
                     if ((type_rank_change(node->son->brother->son->son->brother->token.token_number, 0) != type_rank_change(node->son->brother->brother->son->son->brother->token.token_number, 0)) || (node->son->brother->son->son->token.token_number != node->son->brother->brother->son->son->token.token_number)) {
                         Node * previous_exp = node->son->brother->brother;
@@ -2151,6 +2242,9 @@ void ident_symbolizer(Node * node) {
                     }
                     type->brother = node->son;
                     node->son = type;
+                } else {
+                    printf("오류: 정수가 아닌 타입 사이의 대입을 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
                 }
             }
             
@@ -2304,6 +2398,10 @@ void ident_symbolizer(Node * node) {
         } else if (node->son->token.token_number == OP_DEREFER) {
             printf("DEREFER!!!!!!!!!!!!!!!!! :%d\n\n\n\n\n", node->son->brother->son->son->token.token_number);
             if (node->son->brother->son->son->token.token_number == KW_POINTER) {
+                if (node->son->brother->son->son->son->token.token_number == KW_VOID) {
+                    printf("VOID를 가리키는 포인터의 dereference를 사용 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
                 /*Node * under_type = node->son->brother->son->son->son;
                 free(node->son->brother->son->son);
                 node->son->brother->son->son = under_type;*/
@@ -2312,7 +2410,7 @@ void ident_symbolizer(Node * node) {
                 type->brother = node->son;
                 node->son = type;
             } else {
-                printf("포인터가 아닌 곳에 dereference를 사용 시도하고 있습니다 종료합니다.\n");
+                printf("포인터가 아닌 곳에 dereference를 사용 시도하고 있습니다. 종료합니다.\n");
                 exit(1);
             }
         } else if (node->son->token.token_number == OP_ADDROF) {
@@ -2329,18 +2427,27 @@ void ident_symbolizer(Node * node) {
                 exit(1);
             }
             
-        } else if (node->son->token.token_number == NT_EXP && node->son->brother->token.token_number == NT_ARRAY_EXP) {
+        } else if (node->son->token.token_number == NT_EXP && node->son->brother->token.token_number == NT_ARRAY_EXP) { // 첨자 연산 타입검사.
             printf("subscript executing\n");
             Node * array_tree = node->son;
             
-            if (node->son->son->son->token.token_number == KW_POINTER && node->son->brother->son->son->son->token.token_number != KW_POINTER) {
+            if (node->son->son->son->token.token_number == KW_POINTER && is_number(node->son->brother->son->son->son)) {    // arr[5] 형식
+                if (type_tree_size(node->son->son->son->son) == 0) {   // 포인터의 son 타입의 사이즈를 검사한다. 0일 경우, 사이즈를 알 수 없는 불완전 타입이라는 의미이므로 오류처리한다.
+                    printf("오류: type size가 없는 void 타입을 가리키는 배열에 첨자 연산을 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+
                 node->son = node_maker(copy_tree(node->son->son->son->son), NULL, SEM_TYPE, 0);
                 node->son->brother = node_maker(NULL, NULL, NT_ARRAY_EXP, 0);
                 node->son->brother->brother = node_maker(copy_tree(array_tree->son), NULL, NT_EXP, 0);
                 node->son->brother->brother->brother = node_maker(copy_tree(array_tree->brother->son->son), NULL, NT_EXP, 0);
                 node->son->brother->brother->brother = int_promotion(node->son->brother->brother->brother);   // 인자2 정수승격
-            }
-            else if (node->son->son->son->token.token_number != KW_POINTER && node->son->brother->son->son->son->token.token_number == KW_POINTER) {
+            } else if (is_number(node->son->son->son) && node->son->brother->son->son->son->token.token_number == KW_POINTER) {   // 5[arr] 형식
+                if (type_tree_size(node->son->brother->son->son->son->son) == 0) {   // 포인터의 son 타입의 사이즈를 검사한다. 0일 경우, 사이즈를 알 수 없는 불완전 타입이라는 의미이므로 오류처리한다.
+                    printf("오류: type size가 없는 void 타입을 가리키는 배열에 첨자 연산을 시도하고 있습니다. 종료합니다.\n");
+                    exit(1);
+                }
+
                 node->son = node_maker(copy_tree(node->son->brother->son->son->son->son), NULL, SEM_TYPE, 0);
                 node->son->brother = node_maker(NULL, NULL, NT_ARRAY_EXP, 0);
                 node->son->brother->brother = node_maker(copy_tree(array_tree->brother->son->son), NULL, NT_EXP, 0);
@@ -2436,7 +2543,7 @@ void ident_symbolizer(Node * node) {
                     printf("오류: 포인터에 다른 타입을 대입하려고 시도하고 있습니다. 종료합니다.\n");
                     exit(1);
                 }
-            } else {    // 포인터가 아닌 경우들
+            } else if (is_number(node->brother->son->son) && is_number(current_func_typetree)) {
                 if (compare_tree(node->brother->son->son, current_func_typetree) == 0) {
                     Node * previous_exp = node->brother;
                     Node * cast = node_maker(copy_tree(current_func_typetree), previous_exp, NT_CAST, 0);
@@ -2444,6 +2551,9 @@ void ident_symbolizer(Node * node) {
                     previous_exp->brother = NULL;
                     node->brother = exp;
                 }
+            } else {
+                printf("오류: 정수도 포인터도 아닌 잘못된 타입을 리턴하고 있습니다. 종료합니다.\n");
+                exit(1);
             }
         }
 
