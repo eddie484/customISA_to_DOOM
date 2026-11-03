@@ -776,7 +776,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager (type_size_str));   // size를 temp에 mov
             n1->token.token_value = n1->son->brother->token.token_value;
 
-            Node * n = node_maker(n1, NULL, TAG_LINE, n1->token.token_value);
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n1->token.token_value);
             return n;
 
         // Symbol일 경우
