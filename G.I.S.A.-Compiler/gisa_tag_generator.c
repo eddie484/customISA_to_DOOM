@@ -129,7 +129,10 @@ Node * type_regulation(Node * node) {
         node->token.token_value = 4;
     } else if (node->token.token_number == KW_NOSIGN) {
         node->token.token_number = KW_SIGNED;
-    } else if (((node->token.token_number == TYPE_BYTEWIDTH || node->token.token_number == TYPE_FUNC) && node->brother == NULL) || ((node->token.token_number == KW_UNSIGNED || node->token.token_number == KW_SIGNED) && node->brother != NULL) || node->token.token_number == TYPE_ARRAY) {
+    } else if (node->token.token_number == KW_VOID) {
+        node->token.token_number = TYPE_VOID;
+        node->token.token_value = 0;
+    } else if (((node->token.token_number == TYPE_BYTEWIDTH || node->token.token_number == TYPE_FUNC || node->token.token_number == TYPE_VOID) && node->brother == NULL) || ((node->token.token_number == KW_UNSIGNED || node->token.token_number == KW_SIGNED) && node->brother != NULL) || node->token.token_number == TYPE_ARRAY) {
         
     } else {
         printf("오류: 잘못 정의된 타입트리입니다.\n");
@@ -180,8 +183,8 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
     Node * original_type = ast->son->brother->son->son;
     Node * casting_instr;
 
-    int casting_type_size = (casting_type->token.token_number == KW_POINTER) ? 4 : casting_type->brother->token.token_value;
-    int original_type_size = (original_type->token.token_number == KW_POINTER) ? 4 : original_type->brother->token.token_value;
+    int casting_type_size = (casting_type->token.token_number == KW_POINTER) ? 4 : (casting_type->token.token_number == TYPE_VOID) ? 0 : casting_type->brother->token.token_value;
+    int original_type_size = (original_type->token.token_number == KW_POINTER) ? 4 : (original_type->token.token_number == TYPE_VOID) ? 0 : original_type->brother->token.token_value;
 
 
     if (compare_tree(casting_type, original_type) == 1) {
@@ -190,6 +193,10 @@ Node * tag_nt_cast(Node * ast, int temp_in_rA, int temp_in_rB) {
         
         return n;
 
+    } else if (casting_type->token.token_number == TYPE_VOID) {
+        Node * n = tag_nt_instr_interpret_load(ast->son->brother, temp_in_rA, temp_in_rB);
+        
+        return n;
     } else if (casting_type_size == original_type_size) {
         Node * n1 = tag_nt_instr_interpret_load(ast->son->brother, temp_in_rA, temp_in_rB);
         Node * n2 = line_maker(TAG_MOV, TAG_TEMP, temp_registration(casting_type), TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
@@ -278,7 +285,13 @@ Node * tag_symbol(Node * ast){
             n1->son = tag_arg_start;
         } 
         
-        Node * n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(symbol->type_tree->son->son));
+        Node * n2;
+
+        if (symbol->type_tree->son->son->token.token_number != KW_VOID) {
+            n2 = node_maker(NULL, NULL, TAG_TEMP, temp_registration(symbol->type_tree->son->son));
+        } else {
+            n2 = node_maker(NULL, NULL, TAG_TEMP, 0);
+        }
 
         n1->brother = n2;
         
@@ -467,14 +480,21 @@ Node * tag_derefer_load(Node * val) {
 Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
     if (ast->token.token_number == KW_RETURN) {
         printf("enter KW_RETURN\n");
-        Node * n1 = tag_nt_instr_interpret_load(ast->brother, temp_in_rA, temp_in_rB);
-        Node * n2 = line_maker(KW_RETURN, TAG_TEMP, 0, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
+        Node * n;
 
-        n2->token.token_value = n2->son->brother->token.token_value;
-        n1->brother = n2;
+        if (ast->brother != NULL) {
+            Node * n1 = tag_nt_instr_interpret_load(ast->brother, temp_in_rA, temp_in_rB);
+            Node * n2 = line_maker(KW_RETURN, TAG_TEMP, 0, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
 
-        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
+            n2->token.token_value = n2->son->brother->token.token_value;
+            n1->brother = n2;
 
+            n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
+        } else {
+            Node * n1 = line_maker(KW_RETURN, TAG_TEMP, 0, TAG_TEMP, 0, TAG_TEMP, 0);
+            n = node_maker(n1, NULL, TAG_LINE_SET, n1->token.token_value);
+        }
+        
         return n;
 
     } else if (ast->token.token_number == NT_EXP) {
@@ -747,6 +767,17 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n_derefer = node_maker(n, NULL, TAG_DEREFER, n->token.token_value);
 
             return n_derefer;
+        } else if (ast->son->brother->token.token_number == KW_SIZEOF) {
+            int type_size = type_tree_size(ast->son->brother->brother->son->son);
+            char type_size_str[12];
+            snprintf(type_size_str, sizeof(type_size_str), "%d", type_size);
+
+            int return_val_temp = temp_registration(ast->son->son); // size 값 저장.
+            Node * n1 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, NUM_IMM, lexval_manager (type_size_str));   // size를 temp에 mov
+            n1->token.token_value = n1->son->brother->token.token_value;
+
+            Node * n = node_maker(n1, NULL, TAG_LINE, n1->token.token_value);
+            return n;
 
         // Symbol일 경우
         } else if (ast->son->brother->token.token_number == SEM_SYMBOL) {
@@ -1206,41 +1237,76 @@ Node * line_if(Node * ast, int temp_in_rA, int temp_in_rB)
 
 Node * line_op_question(Node * ast, int temp_in_rA, int temp_in_rB)
 {
-    int return_val_temp = temp_registration(ast->son->son); // true/false값 저장.
+    Node * n;
+    if (ast->son->son->token.token_number != KW_VOID && ast->son->son->token.token_number != TYPE_VOID) {
+        int return_val_temp = temp_registration(ast->son->son); // true/false값 저장.
 
-    Node * op = ast->son->brother;
+        Node * op = ast->son->brother;
 
-    Node * n1 = tag_nt_instr_interpret_load(op->brother, temp_in_rA, temp_in_rB);           // 분기 조건 계산
-    Node * n2 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value, NUM_IMM, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
+        Node * n1 = tag_nt_instr_interpret_load(op->brother, temp_in_rA, temp_in_rB);           // 분기 조건 계산
+        Node * n2 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value, NUM_IMM, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
+        
+        Node * n4 = tag_nt_instr_interpret_load(op->brother->brother, temp_in_rA, temp_in_rB);           // then 수행
+        Node * n5 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, TAG_TEMP, n4->token.token_value);   // then 결과 저장
+
+        Node * n7 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: then_end
+        n7->token.token_value = n7->son->brother->token.token_value;
+
+        Node * n3 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);   // 분기 조건이 false인 경우. then의 끝으로 이동한다.
+        
+        Node * n8 = tag_nt_instr_interpret_load(op->brother->brother->brother, temp_in_rA, temp_in_rB);           // else 수행
+        Node * n9 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, TAG_TEMP, n8->token.token_value);   // else 결과 저장
+        Node * n10 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: else_end
+        n10->token.token_value = n10->son->brother->token.token_value;
+
+        Node * n6 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n10->token.token_value);   // then을 수행한 경우. else의 끝으로 이동한다.
+        
+        n1->brother = n2;
+        n2->brother = n3;
+        n3->brother = n4;
+        n4->brother = n5;
+        n5->brother = n6;
+        n6->brother = n7;
+        n7->brother = n8;
+        n8->brother = n9;
+        n9->brother = n10;
+
+        // int return_val_temp = n1->token.token_value ? n4->token.token_value : n7 ->token.token_value;
+        // token_value는 값이 담긴 위치이지, 값이 아니다. 따라서 조건으로 두면 안 된다.
+        n = node_maker(n1, NULL, TAG_LINE_SET, return_val_temp);
+
+    } else {    // type이 void일 경우, return temp도 없고 결과값 mov도 없이 연산만 진행한다.
+        Node * op = ast->son->brother;
+
+        Node * n1 = tag_nt_instr_interpret_load(op->brother, temp_in_rA, temp_in_rB);           // 분기 조건 계산
+        Node * n2 = line_maker(TAG_CMP, TAG_TEMP, 0, TAG_TEMP, n1->token.token_value, NUM_IMM, lexval_manager ("0"));  // 분기 조건을 0과 비교, setcc
+        
+        Node * n4 = tag_nt_instr_interpret_load(op->brother->brother, temp_in_rA, temp_in_rB);           // then 수행
+
+        Node * n7 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: then_end
+        n7->token.token_value = n7->son->brother->token.token_value;
+
+        Node * n3 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);   // 분기 조건이 false인 경우. then의 끝으로 이동한다.
+        
+        Node * n8 = tag_nt_instr_interpret_load(op->brother->brother->brother, temp_in_rA, temp_in_rB);           // else 수행
+        Node * n10 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: else_end
+        n10->token.token_value = n10->son->brother->token.token_value;
+
+        Node * n6 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n10->token.token_value);   // then을 수행한 경우. else의 끝으로 이동한다.
+        
+        n1->brother = n2;
+        n2->brother = n3;
+        n3->brother = n4;
+        n4->brother = n6;
+        n6->brother = n7;
+        n7->brother = n8;
+        n8->brother = n10;
+
+        // int return_val_temp = n1->token.token_value ? n4->token.token_value : n7 ->token.token_value;
+        // token_value는 값이 담긴 위치이지, 값이 아니다. 따라서 조건으로 두면 안 된다.
+        n = node_maker(n1, NULL, TAG_LINE_SET, 0);
+    }
     
-    Node * n4 = tag_nt_instr_interpret_load(op->brother->brother, temp_in_rA, temp_in_rB);           // then 수행
-    Node * n5 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, TAG_TEMP, n4->token.token_value);   // then 결과 저장
-
-    Node * n7 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: then_end
-    n7->token.token_value = n7->son->brother->token.token_value;
-
-    Node * n3 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_EQ, TAG_LABEL, n7->token.token_value);   // 분기 조건이 false인 경우. then의 끝으로 이동한다.
-    
-    Node * n8 = tag_nt_instr_interpret_load(op->brother->brother->brother, temp_in_rA, temp_in_rB);           // else 수행
-    Node * n9 = line_maker(TAG_MOV, TAG_TEMP, return_val_temp, TAG_TEMP, 0, TAG_TEMP, n8->token.token_value);   // else 결과 저장
-    Node * n10 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, label_count++, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: else_end
-    n10->token.token_value = n10->son->brother->token.token_value;
-
-    Node * n6 = line_maker(TAG_BRANCH, TAG_TEMP, 0, TAG_COND, COND_AL, TAG_LABEL, n10->token.token_value);   // then을 수행한 경우. else의 끝으로 이동한다.
-    
-    n1->brother = n2;
-    n2->brother = n3;
-    n3->brother = n4;
-    n4->brother = n5;
-    n5->brother = n6;
-    n6->brother = n7;
-    n7->brother = n8;
-    n8->brother = n9;
-    n9->brother = n10;
-
-    // int return_val_temp = n1->token.token_value ? n4->token.token_value : n7 ->token.token_value;
-    // token_value는 값이 담긴 위치이지, 값이 아니다. 따라서 조건으로 두면 안 된다.
-    Node * n = node_maker(n1, NULL, TAG_LINE_SET, return_val_temp);
 
     return n;
 }
