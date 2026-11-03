@@ -1291,12 +1291,17 @@ void init_type_checker(Node * type, Node * init_tree) {
         } else {
             if (init->token.token_number == NT_EXP) {
                 if (compare_tree(init_type, init->son->son) == 0) {
-                    if (init_type->token.token_number != KW_POINTER && init->son->son->token.token_number != KW_POINTER) {
+                    if (is_number(init_type) && is_number(init->son->son)) {
                         Node * prev_init = node_maker(init->son, NULL, NT_EXP, 0);
                         prev_init->brother = NULL;
                         Node * cast_node = node_maker(copy_tree(init_type), prev_init, NT_CAST, 0);
                         init->son = cast_node;
                     } else if (init_type->token.token_number == KW_POINTER && (init->son->brother->token.token_number == NUM_INT || init->son->brother->token.token_number == NUM_LONG || init->son->brother->token.token_number == NUM_UINT || init->son->brother->token.token_number == NUM_ULONG) && atoi(lexval_finder(init->son->brother->token.token_value)) == 0) {
+                        Node * prev_init = node_maker(init->son, NULL, NT_EXP, 0);
+                        prev_init->brother = NULL;
+                        Node * cast_node = node_maker(copy_tree(init_type), prev_init, NT_CAST, 0);
+                        init->son = cast_node;
+                    } else if ((init_type->token.token_number == KW_POINTER && init_type->son->token.token_number != KW_VOID) && (init->son->son->token.token_number == KW_POINTER && init->son->son->son->token.token_number == KW_VOID) || (init_type->token.token_number == KW_POINTER && init_type->son->token.token_number == KW_VOID) && (init->son->son->token.token_number == KW_POINTER && init->son->son->son->token.token_number != KW_VOID)) {
                         Node * prev_init = node_maker(init->son, NULL, NT_EXP, 0);
                         prev_init->brother = NULL;
                         Node * cast_node = node_maker(copy_tree(init_type), prev_init, NT_CAST, 0);
@@ -1791,6 +1796,9 @@ void ident_symbolizer(Node * node) {
     } else if (node->token.token_number == OP_ADDROF) {
         node->brother->token.token_value = 1;   // 이 하위 exp가 배열이라면 자동 변환 하지 않도록 하는 메모값.
                                             // 만약 이후 exp의 token value가 다른곳에서도 쓰이게 된다면, 해당 exp가 배열인지 확인 후 value값 세팅하도록 로직을 추가해야 함.
+    } else if (node->token.token_number == KW_SIZEOF) {
+        node->brother->token.token_value = 1;   // 이 하위 exp가 배열이라면 자동 변환 하지 않도록 하는 메모값.
+
     } else if (node->token.token_number == STR_CHAR) {     // static에 들어가지 않고, 배열에 대입하지 않는 문자열의 경우. 배열로 변환해 심볼에 등록 후 문자열 자리에 심볼을 넣어 가리키도록 만든다.
         Symbol_info * str_symbol = string_to_symbol(lexval_finder(node->token.token_value));
         node->token.token_number = SEM_SYMBOL;
@@ -2460,6 +2468,18 @@ void ident_symbolizer(Node * node) {
             }
 
             tree_malloc_cleaner(array_tree);
+
+        } else if (node->son->token.token_number == KW_SIZEOF) {
+            printf("sizeof operand\n");
+            if (type_tree_size(node->son->brother->son->son) == 0) {   // 포인터의 son 타입의 사이즈를 검사한다. 0일 경우, 사이즈를 알 수 없는 불완전 타입이라는 의미이므로 오류처리한다.
+                printf("오류: type size가 없는 void 타입의 사이즈를 찾으려 시도하고 있습니다. 종료합니다.\n");
+                exit(1);
+            }
+            array_size_validate(node->son->brother->son->son); 
+
+            Node * type = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_LONG, 0), KW_UNSIGNED, 0), NULL, SEM_TYPE, 0);
+            type->brother = node->son;
+            node->son = type;
         }
 
 
