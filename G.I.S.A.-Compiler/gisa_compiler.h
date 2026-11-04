@@ -199,6 +199,7 @@
 
 #define NUM_IMM         349
 #define TYPE_BYTEWIDTH  350
+#define TYPE_VOID       351
 
 #define COND_EQ         385
 #define COND_NE         386

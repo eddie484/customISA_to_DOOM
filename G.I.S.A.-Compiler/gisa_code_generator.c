@@ -33,6 +33,9 @@ int stack_location = 0;
 void temp_loc_alloc(Symbol_info * temp_symbol, char * str) {
     if (temp_symbol->location.location == 0) {    // 아직 위치 배정이 안 된 temp의 경우, stack_location을 증가시켜 위치를 배정한다.
         int temp_size = temp_symbol->size;
+        /*int align_size = 
+        int align_val = 4 - (stack_location % temp_size);
+        stack_location += (temp_size + align_val);*/
         stack_location += temp_size;
         temp_symbol->location.location = stack_location;
         snprintf(str, 12, "%d", -stack_location);
@@ -248,21 +251,38 @@ Node * asm_pass1_nt_func_call(Node * tag){
 
     
     Node * func_calling = line_maker(ASM_JMPL, ASM_REGISTER, 15, TAG_TEMP, 0, TAG_LABEL, tag->token.token_value);
-    Node * ret_val_saving = line_maker(ASM_MOV, TAG_TEMP, tag->brother->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 0);
-
+    Node * ret_val_saving;
+    
     Node * n = NULL;
-    if (param_count >= 4) {
-        stack_space_making_for_param->brother = param_set;
-        param_set->brother = func_calling;
-        func_calling->brother = ret_val_saving;
-        ret_val_saving->brother = stack_space_return_for_param;
 
-        n = node_maker(stack_space_making_for_param, NULL, ASM_LINE_SET, 0);
+    if (tag->brother->token.token_value == 0) { // 리턴 temp id여야 할 value가 0이라는 것은, 리턴값을 저장하지 않는 함수, 즉 타입이 void인 함수임을 의미한다.
+        if (param_count >= 4) {
+            stack_space_making_for_param->brother = param_set;
+            param_set->brother = func_calling;
+            func_calling->brother = stack_space_return_for_param;
+
+            n = node_maker(stack_space_making_for_param, NULL, ASM_LINE_SET, 0);
+        } else {
+            param_set->brother = func_calling;
+
+            n = node_maker(param_set, NULL, ASM_LINE_SET, 0);
+        }
     } else {
-        param_set->brother = func_calling;
-        func_calling->brother = ret_val_saving;
+        ret_val_saving = line_maker(ASM_MOV, TAG_TEMP, tag->brother->token.token_value, TAG_TEMP, 0, ASM_REGISTER, 0);
 
-        n = node_maker(param_set, NULL, ASM_LINE_SET, 0);
+        if (param_count >= 4) {
+            stack_space_making_for_param->brother = param_set;
+            param_set->brother = func_calling;
+            func_calling->brother = ret_val_saving;
+            ret_val_saving->brother = stack_space_return_for_param;
+
+            n = node_maker(stack_space_making_for_param, NULL, ASM_LINE_SET, 0);
+        } else {
+            param_set->brother = func_calling;
+            func_calling->brother = ret_val_saving;
+
+            n = node_maker(param_set, NULL, ASM_LINE_SET, 0);
+        }
     }
 
     
