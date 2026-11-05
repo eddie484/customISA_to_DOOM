@@ -31,13 +31,13 @@
     <for_exp> ::= <exp> | ε
     <exp> ::= <cast_unary_exp> | <exp> <binary_op> <exp> | <exp> "?" <exp> ":" <exp>
     <cast_unary_exp> ::= <unary_exp> | "(" <type_list> <cast_declr> ")" <cast_unary_exp>
-    <unary_exp> ::= <unary_op> <cast_unary_exp> | "*" <cast_unary_exp> | "&" <cast_unary_exp> | <factor> <array_exp> | "sizeof" <sizeof_exp>
-    <array_exp> ::= "[" <exp> "]" <array_exp> | ε
+    <unary_exp> ::= <unary_op> <cast_unary_exp> | "*" <cast_unary_exp> | "&" <cast_unary_exp> | <factor> <postfix> | "sizeof" <sizeof_exp>
+    <array_exp> ::= "[" <exp> "]"
     <sizeof_exp> ::= <unary_exp> | "(" <type_list> <cast_declr> ")"
-    <factor> ::= <num> | IDENT <postfix> | "(" <exp> ")" | STR_CHAR <string_list>
+    <factor> ::= <num> | IDENT | "(" <exp> ")" | STR_CHAR <string_list>
     <string_list> ::= STR_CHAR <string_list> | ε
     <cast_declr> ::= "*" <cast_declr> | "(" <cast_declr> ")" <array> | <array>
-    <postfix> ::= "++" | "--" | "(" <arg_list> ")" | ε
+    <postfix> ::= "++" <postfix> | "--" <postfix> | "(" <arg_list> ")" <postfix> | <array_exp> <postfix> | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "," <exp> <arg> | ε
     <num> ::= NUM_INT | NUM_LONG | NUM_UINT | NUM_ULONG | NUM_CHAR
@@ -78,13 +78,13 @@
     <for_exp> ::= <exp> | ε
     <exp> ::= <cast_unary_exp> | <exp> <binary_op> <exp> | <exp> "OP_QUESTION" <exp> "OP_COLON" <exp>
     <cast_unary_exp> ::= <unary_exp> | "OPEN_PAREN" <type_list> <cast_declr> "CLOSE_PAREN" <cast_unary_exp>
-    <unary_exp> ::= <unary_op> <cast_unary_exp> | "OP_MUL" <cast_unary_exp> | "OP_AND" <cast_unary_exp> | <factor> <array_exp> | "KW_SIZEOF" <sizeof_exp>
-    <array_exp> ::= "OPEN_BRACK" <exp> "CLOSE_BRACK" <array_exp> | ε
+    <unary_exp> ::= <unary_op> <cast_unary_exp> | "OP_MUL" <cast_unary_exp> | "OP_AND" <cast_unary_exp> | <factor> <postfix> | "KW_SIZEOF" <sizeof_exp>
+    <array_exp> ::= "OPEN_BRACK" <exp> "CLOSE_BRACK"
     <sizeof_exp> ::= <unary_exp> | "OPEN_PAREN" <type_list> <cast_declr> "CLOSE_PAREN"
-    <factor> ::= <num> | IDENT <postfix> | "OPEN_PAREN" <exp> "CLOSE_PAREN" | STR_CHAR <string_list>
+    <factor> ::= <num> | IDENT | "OPEN_PAREN" <exp> "CLOSE_PAREN" | STR_CHAR <string_list>
     <string_list> ::= STR_CHAR <string_list> | ε
     <cast_declr> ::= "OP_MUL" <cast_declr> | "OPEN_PAREN" <cast_declr> "CLOSE_PAREN" <array> | <array>
-    <postfix> ::= "OP_INCREMENT" | "OP_DECREMENT" | "OPEN_PAREN" <arg_list> "CLOSE_PAREN" | ε
+    <postfix> ::= "OP_INCREMENT" <postfix> | "OP_DECREMENT" <postfix> | "OPEN_PAREN" <arg_list> "CLOSE_PAREN" <postfix> | <array_exp> <postfix> | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= "PN_COMMA" <exp> <arg> | ε
     <unary_op> ::= "OP_TILDE" | "OP_MINUS" | "OP_LOGIC_NOT" | "OP_INCREMENT" | "OP_DECREMENT"
@@ -125,13 +125,13 @@
     <for_exp> ::= <exp> | ε
     <exp> ::= <cast_unary_exp> | <exp> <binary_op> <exp> | <exp> 51 <exp> 52 <exp>
     <cast_unary_exp> ::= <unary_exp> | 5 <type_list> <cast_declr> 6 <cast_unary_exp>
-    <unary_exp> ::= <unary_op> <cast_unary_exp> | 16 <cast_unary_exp> | 19 <cast_unary_exp> | <factor> <array_exp> | 85 <sizeof_exp>
-    <array_exp> ::= 77 <exp> 78 <array_exp> | ε
+    <unary_exp> ::= <unary_op> <cast_unary_exp> | 16 <cast_unary_exp> | 19 <cast_unary_exp> | <factor> <postfix> | 85 <sizeof_exp>
+    <array_exp> ::= 77 <exp> 78
     <sizeof_exp> ::= <unary_exp> | 5 <type_list> <cast_declr> 6
-    <factor> ::= <num> | 0 <postfix> | 5 <exp> 6 | 83 <string_list>
+    <factor> ::= <num> | 0 | 5 <exp> 6 | 83 <string_list>
     <string_list> ::= 83 <string_list> | ε
     <cast_declr> ::= 16 <cast_declr> | 5 <cast_declr> 6 <array> | <array>
-    <postfix> ::= 13 | 44 | 5 <arg_list> 6 | ε
+    <postfix> ::= 13 <postfix> | 44 <postfix> | 5 <arg_list> 6 <postfix> | <array_exp> <postfix> | ε
     <arg_list> ::= <exp> <arg> | ε
     <arg> ::= 62 <exp> <arg> | ε
     <num> ::= 1 | 65 | 68 | 69 | 82
@@ -175,12 +175,12 @@
 	FIRST(<exp>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, 82, 83, 85}
 	FIRST(<cast_unary_exp>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, 82, 83, 85}
 	FIRST(<unary_exp>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, 82, 83, 85}
-	FIRST(<array_exp>) = {77, ε}
+	FIRST(<array_exp>) = {77}
 	FIRST(<sizeof_exp>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, 82, 83, 85}
 	FIRST(<factor>) = {0, 1, 5, 65, 68, 69, 82, 83}
 	FIRST(<string_list>) = {83, ε}
 	FIRST(<cast_declr>) = {5, 16, 77, ε}
-	FIRST(<postfix>) = {5, 13, 44, ε}
+	FIRST(<postfix>) = {5, 13, 44, 77, ε}
 	FIRST(<arg_list>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, 82, 83, 85, ε}
 	FIRST(<arg>) = {62, ε}
 	FIRST(<num>) = {1, 65, 68, 69, 82}
@@ -220,15 +220,15 @@
 	FOLLOW(<exp>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
 	FOLLOW(<cast_unary_exp>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
 	FOLLOW(<unary_exp>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
-	FOLLOW(<array_exp>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
+	FOLLOW(<array_exp>) = {5, 6, 8, 9, 11, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 51, 52, 62, 77, 78}
 	FOLLOW(<sizeof_exp>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
-	FOLLOW(<factor>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 77, 78}
-	FOLLOW(<string_list>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 77, 78}
+	FOLLOW(<factor>) = {5, 6, 8, 9, 11, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 51, 52, 62, 77, 78}
+	FOLLOW(<string_list>) = {5, 6, 8, 9, 11, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 51, 52, 62, 77, 78}
 	FOLLOW(<cast_declr>) = {6}
-	FOLLOW(<postfix>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 77, 78}
+	FOLLOW(<postfix>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
 	FOLLOW(<arg_list>) = {6}
 	FOLLOW(<arg>) = {6}
-	FOLLOW(<num>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 77, 78}
+	FOLLOW(<num>) = {5, 6, 8, 9, 11, 13, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 51, 52, 62, 77, 78}
 	FOLLOW(<unary_op>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, 82, 83, 85}
 	FOLLOW(<binary_op>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, 82, 83, 85}
 
@@ -492,7 +492,7 @@ int first(int input_token, int nt_set){
             return (input_token == 5 || input_token == 16 || input_token == 77);
 
         case NT_POSTFIX:
-            return (input_token == 5 || input_token == 13 || input_token == 44);
+            return (input_token == 5 || input_token == 13 || input_token == 44 || input_token == 77);
 
         case NT_ARG_LIST:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 65 || input_token == 68 || input_token == 69 || input_token == 82 || input_token == 83 || input_token == 85);
@@ -618,22 +618,22 @@ int follow(int input_token, int nt_set){
             return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 78);
 
         case NT_ARRAY_EXP:
-            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 78);
+            return (input_token == 5 || input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 13 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 44 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
 
         case NT_SIZEOF_EXP:
             return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 78);
 
         case NT_FACTOR:
-            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
+            return (input_token == 5 || input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 13 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 44 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
 
         case NT_STRING_LIST:
-            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
+            return (input_token == 5 || input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 13 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 44 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
 
         case NT_CAST_DECLR:
             return (input_token == 6);
 
         case NT_POSTFIX:
-            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
+            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 78);
 
         case NT_ARG_LIST:
             return (input_token == 6);
@@ -642,7 +642,7 @@ int follow(int input_token, int nt_set){
             return (input_token == 6);
 
         case NT_NUM:
-            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
+            return (input_token == 5 || input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 13 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 44 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
 
         case NT_UNARY_OP:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 65 || input_token == 68 || input_token == 69 || input_token == 82 || input_token == 83 || input_token == 85);
@@ -1898,7 +1898,7 @@ Node * p_nt_unary_exp(Lexer_result lex_input) {
     } else if (first(nextSymbol.token_number, NT_FACTOR)) {
         printf("parsing: nt_unary_exp\n");
         Node * x1 = p_nt_factor(lex_input);
-        Node * x2 = p_nt_array_exp(lex_input);
+        Node * x2 = p_nt_postfix(lex_input);
 
         if (x2 == NULL) {
             return x1;
@@ -1932,9 +1932,6 @@ Node * p_nt_array_exp(Lexer_result lex_input) {
         Node * x1 = p_terminal(lex_input, OPEN_BRACK);
         Node * x2 = p_nt_exp(lex_input, 0);
         Node * x3 = p_terminal(lex_input, CLOSE_BRACK);
-        Node * x4 = p_nt_array_exp(lex_input);
-
-        x2->brother = x4;
 
         free(x1);
         free(x3);
@@ -1942,8 +1939,6 @@ Node * p_nt_array_exp(Lexer_result lex_input) {
         Node * n = node_maker(x2, NULL, NT_ARRAY_EXP, 0);
 
         return n;
-    } else if (follow(nextSymbol.token_number, NT_ARRAY_EXP)) {
-        return NULL;
     } else error(2, nextSymbol);
 }
 
@@ -1985,13 +1980,8 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= <num> | IDENT
     } else if (nextSymbol.token_number == IDENT) {
         printf("parsing: nt_factor\n");
         Node * x1 = p_terminal(lex_input, IDENT);
-        Node * x2 = p_nt_postfix(lex_input);     
-        
-        x1->brother = x2;
 
-        Node * n = node_maker(x1, NULL, NT_EXP, 0);
-
-        return n;
+        return x1;
     } else if (nextSymbol.token_number == OPEN_PAREN && first(peek(lex_input, 1).token_number, NT_EXP)) {
         printf("parsing: nt_factor\n");
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
@@ -2165,6 +2155,9 @@ Node * p_nt_cast_declr(Lexer_result lex_input) {
 Node * p_nt_postfix(Lexer_result lex_input){   // <postfix> ::= "OP_INCREMENT" | "OP_DECREMENT" | "OPEN_PAREN" <arg_list> "CLOSE_PAREN" | ε
     if (nextSymbol.token_number == OP_INCREMENT || nextSymbol.token_number == OP_DECREMENT) {
         Node * x1 = p_t_OP_INCRE_DECRE(lex_input, 1);    // 0: pre, 1: post
+        Node * x2 = p_nt_postfix(lex_input);
+
+        x1->brother = x2;
         
         Node * n = node_maker(x1, NULL, NT_POSTFIX, 0);
 
@@ -2174,16 +2167,28 @@ Node * p_nt_postfix(Lexer_result lex_input){   // <postfix> ::= "OP_INCREMENT" |
         Node * x1 = p_terminal(lex_input, OPEN_PAREN);
         Node * x2 = p_nt_arg_list(lex_input);
         Node * x3 = p_terminal(lex_input, CLOSE_PAREN);
+        Node * x4 = p_nt_postfix(lex_input);
+
+        x2->brother = x4;
 
         free(x1);
         free(x3);
-
+        
         return x2;
-    } else if (follow(nextSymbol.token_number, NT_POSTFIX)) {
-        printf("parsing: nt_postfix_null\n");
-        Node * n = NULL;
+    } else if (first(nextSymbol.token_number, NT_ARRAY_EXP)) {
+        printf("parsing: nt_postfix->nt_array_exp\n");
+        Node * x1 = p_nt_array_exp(lex_input);    // 0: pre, 1: post
+        Node * x2 = p_nt_postfix(lex_input);
+
+        x1->brother = x2;
+        
+        Node * n = node_maker(x1, NULL, NT_POSTFIX, 0);
 
         return n;
+    } else if (follow(nextSymbol.token_number, NT_POSTFIX)) {
+        printf("parsing: nt_postfix_null\n");
+
+        return NULL;
     } else error(2, nextSymbol);
 }
 
