@@ -1662,6 +1662,14 @@ void ident_symbolizer(Node * node) {
     printf("Ident_Symbolizer Start: Node <%d, %d>\n", node->token.token_number, node->token.token_value);
 
     // *** IN ***
+    if (node->token.token_number == NT_EXP) {   // 무의미한 중복 NT_EXP 제거.
+        while (node->son->token.token_number == NT_EXP && node->son->brother == NULL) {
+            Node * empty_exp = node->son;
+            node->son = node->son->son;
+            free(empty_exp);
+        }
+    }
+
     if (node->token.token_number == NT_BLOCK) {
         push();
 
@@ -1797,11 +1805,6 @@ void ident_symbolizer(Node * node) {
         node->token.token_number = SEM_SYMBOL;
         node->token.token_value = symbol_id;
         
-    } else if (node->token.token_number == OP_PRE_INCRE || node->token.token_number == OP_PRE_DECRE) {
-        if (node->brother->son->token.token_number != IDENT && node->brother->son->token.token_number != SEM_SYMBOL) {
-            printf("오류: OP_PRE_INCRE/OP_PRE_DECRE 연산자의 인자로 변수가 아닌 노드 <%d, %d>를 사용하려 합니다. 종료합니다.\n", node->brother->token.token_number, node->brother->token.token_value);
-            exit(1);    // 미선언 변수 사용 시도한 경우.
-        }
     } else if (node->token.token_number == OP_ADDROF) {
         node->brother->token.token_value = 1;   // 이 하위 exp가 배열이라면 자동 변환 하지 않도록 하는 메모값.
                                             // 만약 이후 exp의 token value가 다른곳에서도 쓰이게 된다면, 해당 exp가 배열인지 확인 후 value값 세팅하도록 로직을 추가해야 함.
@@ -1813,6 +1816,13 @@ void ident_symbolizer(Node * node) {
         node->token.token_number = SEM_SYMBOL;
         node->token.token_value = str_symbol->id;
 
+    } else if (node->son != NULL && (node->son->token.token_number == IDENT || node->son->token.token_number == STR_CHAR) && node->son->brother != NULL && (node->son->brother->token.token_number == NT_ARRAY_EXP || node->son->brother->token.token_number == OP_POST_INCRE || node->son->brother->token.token_number == OP_POST_DECRE) && node->son->brother->brother == NULL) {
+        Node * ident_exp = node_maker(node->son, node->son->brother, NT_EXP, 0);
+        node->son->brother = NULL;
+        node->son = ident_exp;
+
+        postfix_placing_correcter(node->son);
+        
     } else if (node->son != NULL && node->son->brother != NULL && (node->son->brother->token.token_number == NT_ARRAY_EXP || node->son->brother->token.token_number == NT_ARG_LIST || node->son->brother->token.token_number == OP_POST_INCRE || node->son->brother->token.token_number == OP_POST_DECRE)) {
         while (node->son->brother != NULL && node->son->brother->brother != NULL) {
             Node * prev_content = node->son;
@@ -1824,12 +1834,6 @@ void ident_symbolizer(Node * node) {
 
         postfix_placing_correcter(node->son);
         
-    } else if (node->token.token_number == NT_EXP) {
-        while (node->son->token.token_number == NT_EXP && node->son->brother == NULL) {
-            Node * empty_exp = node->son;
-            node->son = node->son->son;
-            free(empty_exp);
-        }
     }
 
 
@@ -1921,14 +1925,30 @@ void ident_symbolizer(Node * node) {
             type->brother = node->son;
             node->son = type;
             
-        } else if (node->son->token.token_number == OP_PRE_INCRE || node->son->token.token_number == OP_PRE_DECRE) {
-            if (node->son->brother->son->son->token.token_number == KW_POINTER) {
-                printf("오류: 포인터에 증감연산을 시도하고 있습니다. 종료합니다.\n");
+        } else if (node->son->token.token_number == OP_PRE_INCRE || node->son->token.token_number == OP_PRE_DECRE || node->son->token.token_number == OP_POST_INCRE || node->son->token.token_number == OP_POST_DECRE) {
+            if ((node->son->brother->son->brother->token.token_number == SEM_SYMBOL && symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 0) || node->son->brother->son->brother->token.token_number == OP_DEREFER || node->son->brother->son->brother->token.token_number == NT_ARRAY_EXP || node->son->brother->son->brother->token.token_number == STR_CHAR) {
+                if (node->son->brother->son->son->token.token_number == KW_POINTER) {
+                    printf("포인터에 증감연산을 수행합니다.\n");
+                    if (type_tree_size(node->son->brother->son->son->son) == 0) {   // 포인터의 son 타입의 사이즈를 검사한다. 0일 경우, 사이즈를 알 수 없는 불완전 타입이라는 의미이므로 오류처리한다.
+                        printf("오류: type size가 없는 void 타입을 가리키는 포인터에 증감 연산을 시도하고 있습니다. 종료합니다.\n");
+                        exit(1);
+                    }
+
+                    Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                    type->brother = node->son;
+                    node->son = type;
+                } else {
+                    printf("정수에 증감연산을 수행합니다.\n");
+                    Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
+                    type->brother = node->son;
+                    node->son = type;
+                }
+            } else {
+                printf("오류: lvalue가 아닌 곳에 증감연산을 시도하고 있습니다 종료합니다.\n");
                 exit(1);
             }
-            Node * type = node_maker(copy_tree(node->son->brother->son->son), NULL, SEM_TYPE, 0);
-            type->brother = node->son;
-            node->son = type;
+
+            
             
         } else if (node->son->token.token_number == NT_CAST) {
             if (node->son->son->token.token_number != KW_VOID && ((!is_scalar(node->son->son) || !is_scalar(node->son->brother->son->son)))) {

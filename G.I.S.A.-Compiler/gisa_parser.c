@@ -1996,11 +1996,13 @@ Node * p_nt_factor(Lexer_result lex_input){        // <factor> ::= <num> | IDENT
         free(x1);
         free(x3);
 
-        x2->brother = x4;
+        if (x4 != NULL) {
+            x2->brother = x4;
 
-        Node * n = node_maker(x2, NULL, NT_EXP, 0);
+            Node * n = node_maker(x2, NULL, NT_EXP, 0);
 
-        return n;
+            return n;
+        } else return x2;
 
     } else if (nextSymbol.token_number == STR_CHAR) {
         printf("parsing: nt_factor\n");
