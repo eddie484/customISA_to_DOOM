@@ -382,6 +382,9 @@ extern int type_tree_size(Node * node);
 extern int stack_location;
 extern Node * static_init_type_checker(Node * type, Node * init_tree);
 extern int char_to_ascii (char * val);
+extern void node_token_changer(Node * node_A, Node * node_B);
+extern void node_son_changer(Node * node_A, Node * node_B);
+extern void node_brother_changer(Node * node_A, Node * node_B);
 
 
 

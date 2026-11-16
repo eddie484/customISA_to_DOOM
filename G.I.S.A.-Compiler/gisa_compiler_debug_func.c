@@ -262,3 +262,31 @@ int char_to_ascii (char * val) {
     } else ascii_val = val[0];
     return ascii_val;
 }
+
+
+void node_token_changer(Node * node_A, Node * node_B) {
+    Lexeme a_token = node_A->token;
+
+    node_A->token = node_B->token;
+    node_B->token = a_token;
+
+    return;
+}
+
+void node_son_changer(Node * node_A, Node * node_B) {
+    Node * a_son = node_A->son;
+
+    node_A->son = node_B->son;
+    node_B->son = a_son;
+
+    return;
+}
+
+void node_brother_changer(Node * node_A, Node * node_B) {
+    Node * a_brother = node_A->brother;
+
+    node_A->brother = node_B->brother;
+    node_B->brother = a_brother;
+    
+    return;
+}

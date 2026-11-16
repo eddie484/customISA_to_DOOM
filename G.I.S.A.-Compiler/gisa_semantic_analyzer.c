@@ -1630,6 +1630,15 @@ void array_size_validate(Node * node) {
     }
 }
 
+void postfix_placing_correcter(Node * node) {
+    if (node->brother != NULL && (node->brother->token.token_number == OP_POST_INCRE || node->brother->token.token_number == OP_POST_DECRE)) {
+        node_token_changer(node, node->brother);
+        node_son_changer(node, node->brother);
+    }
+
+    if (node->son != NULL) postfix_placing_correcter(node->son);
+}
+
 
 
 
@@ -1803,12 +1812,23 @@ void ident_symbolizer(Node * node) {
         Symbol_info * str_symbol = string_to_symbol(lexval_finder(node->token.token_value));
         node->token.token_number = SEM_SYMBOL;
         node->token.token_value = str_symbol->id;
-    } else if (node->son != NULL && node->son->brother != NULL && node->son->brother->token.token_number == NT_ARRAY_EXP) {
-        while (node->son->brother->son->brother != NULL && node->son->brother->son->brother->token.token_number == NT_ARRAY_EXP) {
+
+    } else if (node->son != NULL && node->son->brother != NULL && (node->son->brother->token.token_number == NT_ARRAY_EXP || node->son->brother->token.token_number == NT_ARG_LIST || node->son->brother->token.token_number == OP_POST_INCRE || node->son->brother->token.token_number == OP_POST_DECRE)) {
+        while (node->son->brother != NULL && node->son->brother->brother != NULL) {
             Node * prev_content = node->son;
             node->son = node_maker(prev_content, NULL, NT_EXP, 0);
-            node->son->brother = prev_content->brother->son->brother;
-            prev_content->brother->son->brother = NULL;
+            node->son->brother = prev_content->brother->brother;
+
+            node->son->son->brother->brother = NULL;
+        }
+
+        postfix_placing_correcter(node->son);
+        
+    } else if (node->token.token_number == NT_EXP) {
+        while (node->son->token.token_number == NT_EXP && node->son->brother == NULL) {
+            Node * empty_exp = node->son;
+            node->son = node->son->son;
+            free(empty_exp);
         }
     }
 
