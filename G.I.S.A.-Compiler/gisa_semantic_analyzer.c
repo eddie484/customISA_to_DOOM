@@ -1613,6 +1613,17 @@ int is_number(Node * type) {
     }
 }
 
+int is_lvalue(Node * node) {
+    if ((node->token.token_number == SEM_SYMBOL && symbol_finder_from_symbol_id(node->token.token_value)->is_func == 0) || node->token.token_number == OP_DEREFER || node->token.token_number == NT_ARRAY_EXP || node->token.token_number == STR_CHAR) return 1;
+    else return 0;
+}
+
+int is_modifiable_lvalue(Node * node) {
+    if (is_lvalue(node) == 0) return 0;
+    else if (node->token.token_number == STR_CHAR) return 0;
+    else return 1;
+}
+
 void array_size_validate(Node * node) {
     switch (node->token.token_number) {
         case (TYPE_ARRAY): {
@@ -1635,8 +1646,6 @@ void postfix_placing_correcter(Node * node) {
         node_token_changer(node, node->brother);
         node_son_changer(node, node->brother);
     }
-
-    if (node->son != NULL) postfix_placing_correcter(node->son);
 }
 
 
@@ -1816,21 +1825,26 @@ void ident_symbolizer(Node * node) {
         node->token.token_number = SEM_SYMBOL;
         node->token.token_value = str_symbol->id;
 
-    } else if (node->son != NULL && (node->son->token.token_number == IDENT || node->son->token.token_number == STR_CHAR) && node->son->brother != NULL && (node->son->brother->token.token_number == NT_ARRAY_EXP || node->son->brother->token.token_number == OP_POST_INCRE || node->son->brother->token.token_number == OP_POST_DECRE) && node->son->brother->brother == NULL) {
-        Node * ident_exp = node_maker(node->son, node->son->brother, NT_EXP, 0);
-        node->son->brother = NULL;
-        node->son = ident_exp;
-
-        postfix_placing_correcter(node->son);
-        
+    // postfix가 나열된 형태면 if문 진입
     } else if (node->son != NULL && node->son->brother != NULL && (node->son->brother->token.token_number == NT_ARRAY_EXP || node->son->brother->token.token_number == NT_ARG_LIST || node->son->brother->token.token_number == OP_POST_INCRE || node->son->brother->token.token_number == OP_POST_DECRE)) {
-        while (node->son->brother != NULL && node->son->brother->brother != NULL) {
-            Node * prev_content = node->son;
-            node->son = node_maker(prev_content, NULL, NT_EXP, 0);
-            node->son->brother = prev_content->brother->brother;
+        // ident/string이고 피연산자가 하나뿐이며 함수 호출이 아닌 경우(post_incre/decre인 경우)
+        if ((node->son->token.token_number == IDENT || node->son->token.token_number == STR_CHAR) && node->son->brother->token.token_number != NT_ARG_LIST && node->son->brother->brother == NULL) {
+            Node * ident_exp = node_maker(node->son, node->son->brother, NT_EXP, 0);
+            node->son->brother = NULL;
+            node->son = ident_exp;
 
-            node->son->son->brother->brother = NULL;
+        // 그 외의 경우
+        } else {
+            // 나열된 postfix가 두개 이상 남은 경우 계속 중첩시키는 루프.
+            while (node->son->brother != NULL && node->son->brother->brother != NULL) {
+                Node * prev_content = node->son;
+                node->son = node_maker(prev_content, NULL, NT_EXP, 0);
+                node->son->brother = prev_content->brother->brother;
+
+                node->son->son->brother->brother = NULL;
+            }
         }
+        
 
         postfix_placing_correcter(node->son);
         
@@ -1876,13 +1890,9 @@ void ident_symbolizer(Node * node) {
         type->brother = num;
 
     } else if (node->token.token_number == NT_EXP) {
-        if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number != NT_EXP && ((node->son->brother->son->brother->token.token_number != SEM_SYMBOL || symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 1) && (node->son->brother->son->brother->token.token_number != OP_DEREFER && node->son->brother->son->brother->token.token_number != NT_ARRAY_EXP))) {
-            printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
-            exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
-        } else if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && node->son->brother->token.token_number == NT_EXP && ((node->son->brother->son->brother->token.token_number != SEM_SYMBOL || symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 1) && (node->son->brother->son->brother->token.token_number != OP_DEREFER && node->son->brother->son->brother->token.token_number != NT_ARRAY_EXP))) {
-
-            printf("ERROR: Symbol이 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
-            exit(1);   // Symbol이 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
+        if ((node->son->token.token_number >= OP_ASSIGN && node->son->token.token_number <= OP_ASREQ) && !(is_modifiable_lvalue(node->son->brother->son->brother))) {
+            printf("ERROR: Modifiable lvalue가 아닌 토큰 <%d, %d>에 값 대입중. 종료합니다.\n", node->son->brother->token.token_number, node->son->brother->token.token_value);
+            exit(1);   // Modifiable lvalue가 아닌 토큰에 값 대입중. 잘못된 표현식이므로 오류.
         }
 
         // NT_EXP에 타입 붙이기.
@@ -1926,7 +1936,7 @@ void ident_symbolizer(Node * node) {
             node->son = type;
             
         } else if (node->son->token.token_number == OP_PRE_INCRE || node->son->token.token_number == OP_PRE_DECRE || node->son->token.token_number == OP_POST_INCRE || node->son->token.token_number == OP_POST_DECRE) {
-            if ((node->son->brother->son->brother->token.token_number == SEM_SYMBOL && symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 0) || node->son->brother->son->brother->token.token_number == OP_DEREFER || node->son->brother->son->brother->token.token_number == NT_ARRAY_EXP || node->son->brother->son->brother->token.token_number == STR_CHAR) {
+            if (is_modifiable_lvalue(node->son->brother->son->brother)) {
                 if (node->son->brother->son->son->token.token_number == KW_POINTER) {
                     printf("포인터에 증감연산을 수행합니다.\n");
                     if (type_tree_size(node->son->brother->son->son->son) == 0) {   // 포인터의 son 타입의 사이즈를 검사한다. 0일 경우, 사이즈를 알 수 없는 불완전 타입이라는 의미이므로 오류처리한다.
@@ -1944,7 +1954,7 @@ void ident_symbolizer(Node * node) {
                     node->son = type;
                 }
             } else {
-                printf("오류: lvalue가 아닌 곳에 증감연산을 시도하고 있습니다 종료합니다.\n");
+                printf("오류: Modifiable lvalue가 아닌 곳에 증감연산을 시도하고 있습니다 종료합니다.\n");
                 exit(1);
             }
 
@@ -2466,7 +2476,7 @@ void ident_symbolizer(Node * node) {
                 /*Node * under_type = node->son->brother->son->son->son;
                 free(node->son->brother->son->son);
                 node->son->brother->son->son = under_type;*/
-            if ((node->son->brother->son->brother->token.token_number == SEM_SYMBOL && symbol_finder_from_symbol_id(node->son->brother->son->brother->token.token_value)->is_func == 0) || node->son->brother->son->brother->token.token_number == OP_DEREFER || node->son->brother->son->brother->token.token_number == NT_ARRAY_EXP || node->son->brother->son->brother->token.token_number == STR_CHAR) {
+            if (is_lvalue(node->son->brother->son->brother)) {
                 Node * type = node_maker(node_maker(copy_tree(node->son->brother->son->son), NULL, KW_POINTER, 0), NULL, SEM_TYPE, 0);
                 type->brother = node->son;
                 node->son = type;
