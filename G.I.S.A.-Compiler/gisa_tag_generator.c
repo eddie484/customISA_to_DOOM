@@ -694,15 +694,95 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
             return n;
         } else if (ast->son->brother->token.token_number == OP_PRE_INCRE || ast->son->brother->token.token_number == OP_PRE_DECRE) {
-            Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);
-            Node * n2 = tag_nt_instr_interpreting(ast->son->brother, 0, n1->token.token_value);
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);    // value
+            Node * n2;
+            if (n1->token.token_number == TAG_DEREFER) {
+                n2 = line_maker(TAG_LOAD, TAG_TEMP, temp_registration(ast->son->son), TAG_TEMP, 0, TAG_TEMP, n1->son->token.token_value);
+                n2->token.token_value = n2->son->brother->token.token_value;
+            } else {
+                n2 = n1;
+            }
+            int op = (ast->son->brother->token.token_number == OP_PRE_INCRE) ? OP_ADD : OP_SUB;
+            Node * n3;
+            Node * n4;
+
+            if (symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->token.token_number == KW_POINTER) {
+                char n3_temp_size[12];
+                snprintf(n3_temp_size, sizeof(n3_temp_size), "%d", type_tree_size(symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->son));
+
+                n3 = line_maker(op, TAG_TEMP, temp_registration(ast->son->son), TAG_TEMP, n2->token.token_value, NUM_IMM, lexval_manager(n3_temp_size));
+                n3->token.token_value = n3->son->brother->token.token_value;
+            } else {
+                n3 = line_maker(op, TAG_TEMP, temp_registration(ast->son->son), TAG_TEMP, n2->token.token_value, NUM_IMM, lexval_manager("1"));
+                n3->token.token_value = n3->son->brother->token.token_value;
+            }
+
+
+            if (n1->token.token_number == TAG_DEREFER) {
+                n4 = line_maker(TAG_STORE, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value);
+                n4->token.token_value = n3->token.token_value;
+                Node * n1_cover = n1;
+                n1 = n1->son;
+                free(n1_cover);
+
+            } else {
+                n4 = line_maker(TAG_MOV, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value);
+                n4->token.token_value = n4->son->brother->token.token_value;
+            }
 
             n1->brother = n2;
+            n2->brother = n3;
+            n3->brother = n4;
+
+            Node * n = node_maker(n1, NULL, TAG_LINE_SET, n4->token.token_value);
+            
+            return n;
+        } else if (ast->son->brother->token.token_number == OP_POST_INCRE || ast->son->brother->token.token_number == OP_POST_DECRE) {
+            Node * n1 = tag_nt_instr_interpreting(ast->son->brother->brother, temp_in_rA, temp_in_rB);    // value
+            Node * n2;
+            if (n1->token.token_number == TAG_DEREFER) {
+                n2 = line_maker(TAG_LOAD, TAG_TEMP, temp_registration(ast->son->son), TAG_TEMP, 0, TAG_TEMP, n1->son->token.token_value);
+                n2->token.token_value = n2->son->brother->token.token_value;
+            } else {
+                n2 = line_maker(TAG_MOV, TAG_TEMP, temp_registration(ast->son->son), TAG_TEMP, 0, TAG_TEMP, n1->token.token_value);
+                n2->token.token_value = n2->son->brother->token.token_value;
+            }
+            int op = (ast->son->brother->token.token_number == OP_POST_INCRE) ? OP_ADD : OP_SUB;
+            Node * n3;
+            Node * n4;
+
+            if (symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->token.token_number == KW_POINTER) {
+                char n3_temp_size[12];
+                snprintf(n3_temp_size, sizeof(n3_temp_size), "%d", type_tree_size(symbol_finder_from_symbol_id(n2->token.token_value)->type_tree->son));
+
+                n3 = line_maker(op, TAG_TEMP, temp_registration(ast->son->son), TAG_TEMP, n2->token.token_value, NUM_IMM, lexval_manager(n3_temp_size));
+                n3->token.token_value = n3->son->brother->token.token_value;
+            } else {
+                n3 = line_maker(op, TAG_TEMP, temp_registration(ast->son->son), TAG_TEMP, n2->token.token_value, NUM_IMM, lexval_manager("1"));
+                n3->token.token_value = n3->son->brother->token.token_value;
+            }
+
+
+            if (n1->token.token_number == TAG_DEREFER) {
+                n4 = line_maker(TAG_STORE, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value);
+                n4->token.token_value = n3->token.token_value;
+                Node * n1_cover = n1;
+                n1 = n1->son;
+                free(n1_cover);
+
+            } else {
+                n4 = line_maker(TAG_MOV, TAG_TEMP, n1->token.token_value, TAG_TEMP, 0, TAG_TEMP, n3->token.token_value);
+                n4->token.token_value = n4->son->brother->token.token_value;
+            }
+
+            n1->brother = n2;
+            n2->brother = n3;
+            n3->brother = n4;
 
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n2->token.token_value);
-
+            
             return n;
-        } else if ((ast->son->brother->token.token_number == SEM_SYMBOL) && (ast->son->brother->brother != NULL && (ast->son->brother->brother->token.token_number == NT_POSTFIX)) && (ast->son->brother->brother->son != NULL && (ast->son->brother->brother->son->token.token_number == OP_POST_INCRE || ast->son->brother->brother->son->token.token_number == OP_POST_DECRE))) {
+        } /*else if ((ast->son->brother->token.token_number == SEM_SYMBOL) && (ast->son->brother->brother != NULL && (ast->son->brother->brother->token.token_number == NT_POSTFIX)) && (ast->son->brother->brother->son != NULL && (ast->son->brother->brother->son->token.token_number == OP_POST_INCRE || ast->son->brother->brother->son->token.token_number == OP_POST_DECRE))) {
             Node * n1 = tag_symbol(ast->son->brother);
             Node * n3 = tag_nt_instr_interpreting(ast->son->brother->brother->son, 0, n1->token.token_value);
 
@@ -712,7 +792,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
             Node * n = node_maker(n1, NULL, TAG_LINE_SET, n1->token.token_value);
 
             return n;
-        } else if (ast->son->brother->token.token_number == OP_QUESTION) {
+        }*/ else if (ast->son->brother->token.token_number == OP_QUESTION) {
             printf("enter line_op_question\n");
             Node * n = line_op_question(ast, temp_in_rA, temp_in_rB);
 
@@ -839,7 +919,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
     // *** 트리 밑바닥 ***
     // 증감 연산자일 경우
-    } else if (ast->token.token_number >= OP_PRE_INCRE && ast->token.token_number <= OP_POST_DECRE) {
+    } /*else if (ast->token.token_number >= OP_PRE_INCRE && ast->token.token_number <= OP_POST_DECRE) {
         printf("enter INCRE/DECRE OP\n");
 
         int op = (ast->token.token_number == OP_PRE_INCRE || ast->token.token_number == OP_POST_INCRE) ? OP_ADD : OP_SUB;
@@ -849,7 +929,7 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
 
         return n;
 
-    } else if (ast->token.token_number == NT_CONTENT) {
+    }*/ else if (ast->token.token_number == NT_CONTENT) {
         if (ast->son != NULL) {
             Node * n = tag_nt_instr_interpreting(ast->son, temp_in_rA, temp_in_rB);   
             return n;
