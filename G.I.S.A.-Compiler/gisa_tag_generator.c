@@ -918,9 +918,13 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         
     } else if (ast->token.token_number == NT_LABEL) {
         printf("enter NT_LABEL\n");
-        Node * n = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
-                
-        n->token.token_value = n->son->brother->token.token_value;
+        Node * n1 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);   // label making: end
+        n1->token.token_value = n1->son->brother->token.token_value;
+        Node * n2 = tag_nt_instr_interpret_load(ast->brother, temp_in_rA, temp_in_rB);
+
+        n1->brother = n2;
+
+        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n1->token.token_value);
 
         printf("\tLABEL MAKE. LABEL ID is %d.\n", ast->token.token_value);
 

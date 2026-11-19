@@ -20,7 +20,7 @@
     <content> ::= "return" <return_exp> ";" | <exp> ";" | ";" | "if" "(" <exp> ")" <content> <else> | "goto" IDENT ";" | <label> | <block> | "break" ";" | "continue" ";" | "while" "(" <exp> ")" <content> | "do" <content> "while" "(" <exp> ")" ";" | "for" "(" <for_init> <for_exp> ";" <for_exp> ")" <content> | "switch" "(" <exp> ")" <content> | "case" <exp> ":" | "default" ":"
     <return_exp> ::= <exp> | ε
     <else> ::= "else" <content> | ε
-    <label> ::= IDENT ":"
+    <label> ::= IDENT ":" <content>
     <declr> ::= <func_declr> | <var_declr>
     <var_declr> ::= <specifier_list> <ident_declr> <assign> ";"
     <assign> ::= "=" <init> | ε
@@ -67,7 +67,7 @@
     <content> ::= "KW_RETURN" <return_exp> "PN_SEMI" | <exp> "PN_SEMI" | "PN_SEMI" | "KW_IF" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> <else> | "KW_GOTO" IDENT "PN_SEMI" | <label> | <block> | "KW_BREAK" "PN_SEMI" | "KW_CONTINUE" "PN_SEMI" | "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_DO" <content> "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" "PN_SEMI" | "KW_FOR" "OPEN_PAREN" <for_init> <for_exp> "PN_SEMI" <for_exp> "CLOSE_PAREN" <content> | "KW_SWITCH" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_CASE" <exp> "OP_COLON" | "KW_DEFAULT" "OP_COLON"
     <return_exp> ::= <exp> | ε
     <else> ::= "KW_ELSE" <content> | ε
-    <label> ::= IDENT "OP_COLON"
+    <label> ::= IDENT "OP_COLON" <content>
     <declr> ::= <func_declr> | <var_declr>
     <var_declr> ::= <specifier_list> <ident_declr> <assign> "PN_SEMI"
     <assign> ::= "OP_ASSIGN" <init> | ε
@@ -114,7 +114,7 @@
     <content> ::= 4 <return_exp> 9 | <exp> 9 | 9 | 49 5 <exp> 6 <content> <else> | 53 0 9 | <label> | <block> | 57 9 | 58 9 | 55 5 <exp> 6 <content> | 54 <content> 55 5 <exp> 6 9 | 56 5 <for_init> <for_exp> 9 <for_exp> 6 <content> | 59 5 <exp> 6 <content> | 60 <exp> 52 | 61 52
     <return_exp> ::= <exp> | ε
     <else> ::= 50 <content> | ε
-    <label> ::= 0 52
+    <label> ::= 0 52 <content>
     <declr> ::= <func_declr> | <var_declr>
     <var_declr> ::= <specifier_list> <ident_declr> <assign> 9
     <assign> ::= 33 <init> | ε
@@ -228,7 +228,7 @@
 	FOLLOW(<postfix>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
 	FOLLOW(<arg_list>) = {6}
 	FOLLOW(<arg>) = {6}
-	FOLLOW(<num>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 78}
+	FOLLOW(<num>) = {6, 8, 9, 11, 14, 16, 17, 18, 19, 20, 21, 22, 23, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 51, 52, 62, 77, 78}
 	FOLLOW(<unary_op>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, 82, 83, 85}
 	FOLLOW(<binary_op>) = {0, 1, 5, 10, 11, 13, 16, 19, 24, 44, 65, 68, 69, 82, 83, 85}
 
@@ -642,7 +642,7 @@ int follow(int input_token, int nt_set){
             return (input_token == 6);
 
         case NT_NUM:
-            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 78);
+            return (input_token == 6 || input_token == 8 || input_token == 9 || input_token == 11 || input_token == 14 || input_token == 16 || input_token == 17 || input_token == 18 || input_token == 19 || input_token == 20 || input_token == 21 || input_token == 22 || input_token == 23 || input_token == 25 || input_token == 26 || input_token == 27 || input_token == 28 || input_token == 29 || input_token == 30 || input_token == 31 || input_token == 32 || input_token == 33 || input_token == 34 || input_token == 35 || input_token == 36 || input_token == 37 || input_token == 38 || input_token == 39 || input_token == 40 || input_token == 41 || input_token == 42 || input_token == 43 || input_token == 51 || input_token == 52 || input_token == 62 || input_token == 77 || input_token == 78);
 
         case NT_UNARY_OP:
             return (input_token == 0 || input_token == 1 || input_token == 5 || input_token == 10 || input_token == 11 || input_token == 13 || input_token == 16 || input_token == 19 || input_token == 24 || input_token == 44 || input_token == 65 || input_token == 68 || input_token == 69 || input_token == 82 || input_token == 83 || input_token == 85);
@@ -1537,16 +1537,19 @@ Node * p_nt_else(Lexer_result lex_input){   // <else> ::= "KW_ELSE" <instr> | ε
     } else error(2, nextSymbol);
 }
 
-Node * p_nt_label(Lexer_result lex_input){    // <label> ::= IDENT "OP_COLON"
+Node * p_nt_label(Lexer_result lex_input){    // <label> ::= IDENT "OP_COLON" <content>
     if (nextSymbol.token_number == IDENT) {
         printf("parsing: nt_label\n");
         Node * x1 = p_terminal(lex_input, IDENT);
         Node * x2 = p_terminal(lex_input, OP_COLON);
+        Node * x3 = p_nt_content(lex_input);
         
-        Node * n = node_maker(NULL, NULL, NT_LABEL, x1->token.token_value);
+        Node * n1 = node_maker(NULL, x3, NT_LABEL, x1->token.token_value);
 
         free(x1);
         free(x2);
+
+        Node * n = node_maker(n1, NULL, NT_CONTENT, 0);
 
         return n;
     } else error(3, nextSymbol);

@@ -2963,7 +2963,7 @@ void label_name_checker (Node * node) {
 
 
     // *** IN ***
-    if (node->token.token_number == NT_FUNC_DECLR) {
+    if (node->token.token_number == NT_FUNC_DECLR && node->son->brother->brother->brother != NULL) {
         inside_func++;
         enqueue();
 
@@ -3002,7 +3002,7 @@ void label_name_checker (Node * node) {
 
 
     // *** OUT ***
-    if (node->token.token_number == NT_FUNC_DECLR) {
+    if (node->token.token_number == NT_FUNC_DECLR && node->son->brother->brother->brother != NULL) {
         inside_func--;
 
     } else if (node->token.token_number == KW_WHILE || node->token.token_number == KW_DO || node->token.token_number == KW_FOR || node->token.token_number == KW_SWITCH) {
@@ -3028,7 +3028,7 @@ void goto_name_checker (Node * node) {
 
 
     // *** IN ***
-    if (node->token.token_number == NT_FUNC_DECLR) {
+    if (node->token.token_number == NT_FUNC_DECLR && node->son->brother->brother->brother != NULL) {
         inside_func++;
 
     } else if (node->token.token_number == KW_GOTO) {
@@ -3049,7 +3049,7 @@ void goto_name_checker (Node * node) {
 
 
     // *** OUT ***
-    if (node->token.token_number == NT_FUNC_DECLR) {
+    if (node->token.token_number == NT_FUNC_DECLR && node->son->brother->brother->brother != NULL) {
         dequeue();
         inside_func--;
     }
