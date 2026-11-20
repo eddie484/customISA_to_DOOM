@@ -2547,16 +2547,20 @@ void ident_symbolizer(Node * node) {
             node->son = type;
             
         }
-    } /*else if (node->token.token_number == KW_SWITCH) {
-        if (type_rank_change(node->son->son->son->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
+    } else if (node->token.token_number == KW_SWITCH) {
+        if (!(node->son->son->son->brother != NULL && (node->son->son->son->brother->token.token_number == KW_INT || node->son->son->son->brother->token.token_number == KW_LONG || node->son->son->son->brother->token.token_number == KW_SHORT || node->son->son->son->brother->token.token_number == KW_CHAR))) {
+            printf("오류: switch 문의 제어식으로 정수가 아닌 타입이 들어왔습니다: %d. 종료합니다.\n", node->son->son->son->token.token_number);
+            exit(1);
+        }
+        if (type_rank_change(node->son->son->son->brother->token.token_number, 0) < type_rank_change(KW_INT, 0)) {
             Node * previous_exp = node->son;
-            Node * cast = node_maker(node_maker(NULL, NULL, KW_INT, 0), previous_exp, NT_CAST, 0);
+            Node * cast = node_maker(node_maker(NULL, node_maker(NULL, NULL, KW_INT, 0), KW_SIGNED, 0), previous_exp, NT_CAST, 0);
             Node * exp = node_maker(cast, previous_exp->brother, NT_EXP, 0);
             previous_exp->brother = NULL;
             node->son = exp;
         }
             
-    }*/ else if (node->token.token_number == NT_FUNC_DECLR) {    
+    } else if (node->token.token_number == NT_FUNC_DECLR) {    
         pop(); 
         func_depth--;
     }
@@ -2863,19 +2867,20 @@ int pop_switch() {
 
 
 int case_saver(int case_val) {
+    int case_val_int = atoi(lexval_finder(case_val));
 
-    printf("Saving Case Value %d\n", case_val);
+    printf("Saving Case Value %d\n", case_val_int);
 
     //case_val와 같은 값이 있는지 현재 테이블 순회해 검토. 있다면 오류 발생.
     for (int j = 0; j <= case_table_count[case_table_stack_count - 1] - 1; j++) {        // 테이블 내부 순회
         printf("DEBUG. j: %d\n", j);
-        if ((case_val == case_table_stack[case_table_stack_count - 1][j]->name) && (case_table_stack[case_table_stack_count - 1][j]->is_default == 0)) {
-            printf("오류: 이미 선언된 Case Value %d입니다. 종료합니다.\n", case_val);
+        if ((case_val_int == atoi(lexval_finder(case_table_stack[case_table_stack_count - 1][j]->name))) && (case_table_stack[case_table_stack_count - 1][j]->is_default == 0)) {
+            printf("오류: 이미 선언된 Case Value %d입니다. 종료합니다.\n", case_val_int);
             exit(1);
         }
     }
 
-    printf("정상: 이전에 선언되지 않은 Case Value %d입니다. 계속 진행합니다.\n", case_val);
+    printf("정상: 이전에 선언되지 않은 Case Value %d입니다. 계속 진행합니다.\n", case_val_int);
 
     Switch_info * case_label = malloc(sizeof(Switch_info));
     case_label->is_default = 0;
@@ -2889,7 +2894,7 @@ int case_saver(int case_val) {
         case_table_stack[case_table_stack_count - 1] = realloc(case_table_stack[case_table_stack_count - 1], sizeof(Switch_info*) * case_table_limit[case_table_stack_count - 1]);
     }
 
-    printf("Case Value %d를 ID %d로 Table %d에 저장했습니다.\n", case_table_stack[case_table_stack_count - 1][case_table_count[case_table_stack_count - 1] - 1]->name, case_table_stack[case_table_stack_count - 1][case_table_count[case_table_stack_count - 1] - 1]->id, case_table_stack_count - 1);
+    printf("Case Value %d를 ID %d로 Table %d에 저장했습니다.\n", case_val_int, case_table_stack[case_table_stack_count - 1][case_table_count[case_table_stack_count - 1] - 1]->id, case_table_stack_count - 1);
 
     return case_table_stack[case_table_stack_count - 1][case_table_count[case_table_stack_count - 1] - 1]->id;
 }

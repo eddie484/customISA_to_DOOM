@@ -17,7 +17,7 @@
     <block> ::= "{" <instr_list> "}"
     <instr_list> ::= <instr> <instr_list> | ε
     <instr> ::= <content> | <declr>
-    <content> ::= "return" <return_exp> ";" | <exp> ";" | ";" | "if" "(" <exp> ")" <content> <else> | "goto" IDENT ";" | <label> | <block> | "break" ";" | "continue" ";" | "while" "(" <exp> ")" <content> | "do" <content> "while" "(" <exp> ")" ";" | "for" "(" <for_init> <for_exp> ";" <for_exp> ")" <content> | "switch" "(" <exp> ")" <content> | "case" <exp> ":" | "default" ":"
+    <content> ::= "return" <return_exp> ";" | <exp> ";" | ";" | "if" "(" <exp> ")" <content> <else> | "goto" IDENT ";" | <label> | <block> | "break" ";" | "continue" ";" | "while" "(" <exp> ")" <content> | "do" <content> "while" "(" <exp> ")" ";" | "for" "(" <for_init> <for_exp> ";" <for_exp> ")" <content> | "switch" "(" <exp> ")" <content> | "case" <exp> ":" <content> | "default" ":" <content>
     <return_exp> ::= <exp> | ε
     <else> ::= "else" <content> | ε
     <label> ::= IDENT ":" <content>
@@ -64,7 +64,7 @@
     <block> ::= "OPEN_BRACE" <instr_list> "CLOSE_BRACE"
     <instr_list> ::= <instr> <instr_list> | ε
     <instr> ::= <content> | <declr>
-    <content> ::= "KW_RETURN" <return_exp> "PN_SEMI" | <exp> "PN_SEMI" | "PN_SEMI" | "KW_IF" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> <else> | "KW_GOTO" IDENT "PN_SEMI" | <label> | <block> | "KW_BREAK" "PN_SEMI" | "KW_CONTINUE" "PN_SEMI" | "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_DO" <content> "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" "PN_SEMI" | "KW_FOR" "OPEN_PAREN" <for_init> <for_exp> "PN_SEMI" <for_exp> "CLOSE_PAREN" <content> | "KW_SWITCH" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_CASE" <exp> "OP_COLON" | "KW_DEFAULT" "OP_COLON"
+    <content> ::= "KW_RETURN" <return_exp> "PN_SEMI" | <exp> "PN_SEMI" | "PN_SEMI" | "KW_IF" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> <else> | "KW_GOTO" IDENT "PN_SEMI" | <label> | <block> | "KW_BREAK" "PN_SEMI" | "KW_CONTINUE" "PN_SEMI" | "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_DO" <content> "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" "PN_SEMI" | "KW_FOR" "OPEN_PAREN" <for_init> <for_exp> "PN_SEMI" <for_exp> "CLOSE_PAREN" <content> | "KW_SWITCH" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_CASE" <exp> "OP_COLON" <content> | "KW_DEFAULT" "OP_COLON" <content>
     <return_exp> ::= <exp> | ε
     <else> ::= "KW_ELSE" <content> | ε
     <label> ::= IDENT "OP_COLON" <content>
@@ -111,7 +111,7 @@
     <block> ::= 7 <instr_list> 8
     <instr_list> ::= <instr> <instr_list> | ε
     <instr> ::= <content> | <declr>
-    <content> ::= 4 <return_exp> 9 | <exp> 9 | 9 | 49 5 <exp> 6 <content> <else> | 53 0 9 | <label> | <block> | 57 9 | 58 9 | 55 5 <exp> 6 <content> | 54 <content> 55 5 <exp> 6 9 | 56 5 <for_init> <for_exp> 9 <for_exp> 6 <content> | 59 5 <exp> 6 <content> | 60 <exp> 52 | 61 52
+    <content> ::= 4 <return_exp> 9 | <exp> 9 | 9 | 49 5 <exp> 6 <content> <else> | 53 0 9 | <label> | <block> | 57 9 | 58 9 | 55 5 <exp> 6 <content> | 54 <content> 55 5 <exp> 6 9 | 56 5 <for_init> <for_exp> 9 <for_exp> 6 <content> | 59 5 <exp> 6 <content> | 60 <exp> 52 <content> | 61 52 <content>
     <return_exp> ::= <exp> | ε
     <else> ::= 50 <content> | ε
     <label> ::= 0 52 <content>
@@ -1302,7 +1302,7 @@ Node * p_nt_instr(Lexer_result lex_input){      // <instr> ::= <content> | <decl
     } else error(3, nextSymbol);
 }
 
-Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <exp> "PN_SEMI" | <exp> "PN_SEMI" | "PN_SEMI" | "KW_IF" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> <else> | "KW_GOTO" IDENT "PN_SEMI" | <label> | <block> | "KW_BREAK" "PN_SEMI" | "KW_CONTINUE" "PN_SEMI" | "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_DO" <content> "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" "PN_SEMI" | "KW_FOR" "OPEN_PAREN" <for_init> <for_exp> "PN_SEMI" <for_exp> "CLOSE_PAREN" <content> | "KW_SWITCH" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_CASE" <exp> "OP_COLON" | "KW_DEFAULT" "OP_COLON"
+Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <exp> "PN_SEMI" | <exp> "PN_SEMI" | "PN_SEMI" | "KW_IF" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> <else> | "KW_GOTO" IDENT "PN_SEMI" | <label> | <block> | "KW_BREAK" "PN_SEMI" | "KW_CONTINUE" "PN_SEMI" | "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_DO" <content> "KW_WHILE" "OPEN_PAREN" <exp> "CLOSE_PAREN" "PN_SEMI" | "KW_FOR" "OPEN_PAREN" <for_init> <for_exp> "PN_SEMI" <for_exp> "CLOSE_PAREN" <content> | "KW_SWITCH" "OPEN_PAREN" <exp> "CLOSE_PAREN" <content> | "KW_CASE" <exp> "OP_COLON" <content> | "KW_DEFAULT" "OP_COLON" <content>
     if (first(nextSymbol.token_number, NT_LABEL) && peek(lex_input, 1).token_number == OP_COLON) {
         printf("parsing: nt_content: nt_label\n");
         Node * x1 = p_nt_label(lex_input);
@@ -1487,8 +1487,10 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         Node * x1 = p_terminal(lex_input, KW_CASE);
         Node * x2 = p_nt_exp(lex_input, 0);
         Node * x3 = p_terminal(lex_input, OP_COLON);
+        Node * x4 = p_nt_content(lex_input);
 
         x1->son = x2;
+        x1->brother = x4;
         
         Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
 
@@ -1499,9 +1501,12 @@ Node * p_nt_content(Lexer_result lex_input){    // <content> ::= "KW_RETURN" <ex
         printf("parsing: nt_content: KW_DEFAULT\n");
         Node * x1 = p_terminal(lex_input, KW_DEFAULT);
         Node * x2 = p_terminal(lex_input, OP_COLON);
+        Node * x3 = p_nt_content(lex_input);
+
+        x1->brother = x3;
         
         Node * n = node_maker(x1, NULL, NT_CONTENT, 0);
-
+        
         free(x2);
 
         return n;

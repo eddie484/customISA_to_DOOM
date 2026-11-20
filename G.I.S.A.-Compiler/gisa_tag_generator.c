@@ -979,12 +979,23 @@ Node * tag_nt_instr_interpreting(Node * ast, int temp_in_rA, int temp_in_rB){
         Node * n = line_switch(ast, temp_in_rA, temp_in_rB);
         return n;
     } else if (ast->token.token_number == KW_CASE) {
-        Node * n = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);
-        n->token.token_value = n->son->brother->token.token_value;
+        Node * n1 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);
+        n1->token.token_value = n1->son->brother->token.token_value;
+        Node * n2 = tag_nt_instr_interpret_load(ast->brother, temp_in_rA, temp_in_rB);
+
+        n1->brother = n2;
+
+        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n1->token.token_value);
+        
         return n;
     } else if (ast->token.token_number == KW_DEFAULT) {
-        Node * n = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);
-        n->token.token_value = n->son->brother->token.token_value;
+        Node * n1 = line_maker(TAG_LABEL_MAKE, TAG_LABEL, ast->token.token_value, TAG_TEMP, 0, TAG_TEMP, 0);
+        n1->token.token_value = n1->son->brother->token.token_value;
+        Node * n2 = tag_nt_instr_interpret_load(ast->brother, temp_in_rA, temp_in_rB);
+
+        n1->brother = n2;
+
+        Node * n = node_maker(n1, NULL, TAG_LINE_SET, n1->token.token_value);
         return n;
 
     // NUM일 경우
